@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="UniPrint.API/UniPrint.API.csproj" />
+  <Project Path="UniPrint.Business/UniPrint.Business.csproj" />
+  <Project Path="UniPrint.DataAccess/UniPrint.DataAccess.csproj" />
+</Solution>
