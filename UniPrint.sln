@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UniPrint.Business", "UniPri
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UniPrint.API", "UniPrint.API\UniPrint.API.csproj", "{A90A2753-A5AC-4921-B9B7-F7C211F0F364}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UniPrint.Web", "UniPrint.Web\UniPrint.Web.csproj", "{FC5970D6-E03E-4724-BBF5-32890B0A9F7C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,6 +57,18 @@ Global
 		{A90A2753-A5AC-4921-B9B7-F7C211F0F364}.Release|x64.Build.0 = Release|Any CPU
 		{A90A2753-A5AC-4921-B9B7-F7C211F0F364}.Release|x86.ActiveCfg = Release|Any CPU
 		{A90A2753-A5AC-4921-B9B7-F7C211F0F364}.Release|x86.Build.0 = Release|Any CPU
+		{FC5970D6-E03E-4724-BBF5-32890B0A9F7C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FC5970D6-E03E-4724-BBF5-32890B0A9F7C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FC5970D6-E03E-4724-BBF5-32890B0A9F7C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{FC5970D6-E03E-4724-BBF5-32890B0A9F7C}.Debug|x64.Build.0 = Debug|Any CPU
+		{FC5970D6-E03E-4724-BBF5-32890B0A9F7C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{FC5970D6-E03E-4724-BBF5-32890B0A9F7C}.Debug|x86.Build.0 = Debug|Any CPU
+		{FC5970D6-E03E-4724-BBF5-32890B0A9F7C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FC5970D6-E03E-4724-BBF5-32890B0A9F7C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FC5970D6-E03E-4724-BBF5-32890B0A9F7C}.Release|x64.ActiveCfg = Release|Any CPU
+		{FC5970D6-E03E-4724-BBF5-32890B0A9F7C}.Release|x64.Build.0 = Release|Any CPU
+		{FC5970D6-E03E-4724-BBF5-32890B0A9F7C}.Release|x86.ActiveCfg = Release|Any CPU
+		{FC5970D6-E03E-4724-BBF5-32890B0A9F7C}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

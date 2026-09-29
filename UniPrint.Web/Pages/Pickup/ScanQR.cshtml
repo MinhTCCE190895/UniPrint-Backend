@@ -1,0 +1,32 @@
+@page
+@model UniPrint.Web.Pages.Pickup.ScanQRModel
+@{
+    ViewData["Title"] = "Quét Mã QR Nhận Tài Liệu";
+}
+
+<div class="row justify-content-center mt-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-dark text-white text-center py-3">
+                <h4 class="mb-0"><i class="bi bi-qr-code-scan"></i> QUÉT MÃ QR NHẬN TÀI LIỆU</h4>
+            </div>
+            <div class="card-body p-4">
+                @if (!string.IsNullOrEmpty(Model.Message))
+                {
+                    <div class="alert @(Model.IsSuccess ? "alert-success" : "alert-danger")">
+                        @Model.Message
+                    </div>
+                }
+
+                <form method="post">
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Nhập hoặc Quét Token QR</label>
+                        <input asp-for="QrToken" class="form-control form-control-lg text-center font-monospace" placeholder="QR-xxxxxxxxxxxxxxxx" required />
+                        <div class="form-text text-muted">Hệ thống sẽ tự động kiểm tra hạn (EC04), hoàn tất đơn và giải phóng vị trí trên kệ.</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 py-2 fs-5">Xác Nhận Trả Tài Liệu</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

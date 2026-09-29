@@ -1,0 +1,55 @@
+@page
+@model UniPrint.Web.Pages.Staff.QueueModel
+@{
+    ViewData["Title"] = "Hàng Đợi In Ấn - Staff";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2><i class="bi bi-list-task"></i> HÀNG ĐỢI XỬ LÝ IN ẤN (STAFF QUEUE)</h2>
+        <span class="badge bg-primary fs-6">Đơn chờ in: @Model.Orders.Count</span>
+    </div>
+    <hr />
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover shadow-sm align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Mã Đơn</th>
+                    <th>Sinh Viên</th>
+                    <th>Tài Liệu</th>
+                    <th>Cấu Hình</th>
+                    <th>Tổng Tiền</th>
+                    <th>Trạng Thái</th>
+                    <th>Thao Tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Orders.Count == 0)
+                {
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">Hiện không có đơn nào đang chờ in.</td>
+                    </tr>
+                }
+                @foreach (var o in Model.Orders)
+                {
+                    <tr>
+                        <td><code>@o.OrderCode</code></td>
+                        <td>@o.StudentName</td>
+                        <td>@o.DocumentName</td>
+                        <td>
+                            @(o.IsColor ? "Màu" : "Trắng đen"), @(o.IsDoubleSided ? "2 mặt" : "1 mặt")
+                        </td>
+                        <td>@o.TotalPrice.ToString("N0") VNĐ</td>
+                        <td><span class="badge bg-warning text-dark">@o.StatusText</span></td>
+                        <td>
+                            <form method="post" asp-page-handler="Print" asp-route-orderId="@o.Id" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-outline-primary">Bắt đầu in</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

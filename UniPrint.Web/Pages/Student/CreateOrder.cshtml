@@ -1,0 +1,62 @@
+@page
+@model UniPrint.Web.Pages.Student.CreateOrderModel
+@{
+    ViewData["Title"] = "Đặt In Tài Liệu";
+}
+
+<div class="container mt-4">
+    <h2><i class="bi bi-printer"></i> ĐẶT IN TÀI LIỆU TRỰC TUYẾN</h2>
+    <hr />
+
+    <div class="row">
+        <div class="col-md-7">
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-light"><strong>Bước 1: Chọn tài liệu & Cấu hình in</strong></div>
+                <div class="card-body">
+                    <form method="post">
+                        <div class="mb-3">
+                            <label class="form-label">Số trang ước tính</label>
+                            <input asp-for="PageCount" class="form-control" type="number" min="1" value="10" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Số bản in (Copies)</label>
+                            <input asp-for="NumberOfCopies" class="form-control" type="number" min="1" value="1" />
+                        </div>
+                        <div class="form-check mb-2">
+                            <input asp-for="IsColor" class="form-check-input" type="checkbox" id="isColor" />
+                            <label class="form-check-label" for="isColor">In màu (Mặc định: Trắng đen)</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input asp-for="IsDoubleSided" class="form-check-input" type="checkbox" id="isDoubleSided" checked />
+                            <label class="form-check-label" for="isDoubleSided">In 2 mặt (Tiết kiệm 10% chi phí)</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input asp-for="HasBinding" class="form-check-input" type="checkbox" id="hasBinding" />
+                            <label class="form-check-label" for="hasBinding">Đóng gáy sách (+5.000 VNĐ/bản)</label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input asp-for="HasStaple" class="form-check-input" type="checkbox" id="hasStaple" checked />
+                            <label class="form-check-label" for="hasStaple">Bấm kim góc (+1.000 VNĐ/bản)</label>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100 py-2">Xác Nhận Đặt In</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-5">
+            <div class="card border-primary shadow-sm">
+                <div class="card-header bg-primary text-white"><strong>Tạm tính chi phí</strong></div>
+                <div class="card-body">
+                    <p class="text-muted">Giá được chốt cố định tại thời điểm tạo đơn theo quy tắc BR02.</p>
+                    <div class="alert alert-info">
+                        <strong>Bảng giá tham khảo:</strong><br />
+                        - Trang đen trắng: 350đ / trang<br />
+                        - Trang in màu: 1.500đ / trang<br />
+                        - Giảm giá 2 mặt: -10%<br />
+                        - Bấm ghim: 1.000đ | Đóng gáy: 5.000đ
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
