@@ -1,206 +1,143 @@
-# 🖨️ UniPrint – Online Printing & Study Material Platform
+# 🖨️ UniPrint - Nền Tảng In Ấn Trực Tuyến & Kho Học Liệu Sinh Viên
 
-> **Nền tảng In Ấn Trực Tuyến & Thư Viện Chia Sẻ Tài Liệu Học Tập Cho Sinh Viên**  
-> Dự án môn học được xây dựng theo kiến trúc **N-Tier (N-Layer)** trên nền tảng **.NET 8 (LTS)** kết hợp **ASP.NET Core Web API** và **Razor Pages UI**.
+[![.NET 8](https://img.shields.io/badge/.NET-8.0%20LTS-512BD4?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/)
+[![EF Core](https://img.shields.io/badge/EF%20Core-8.0-blue?style=flat-square)](https://learn.microsoft.com/ef/core/)
+[![Architecture](https://img.shields.io/badge/Architecture-N--Tier%20Layered-success?style=flat-square)](#1-kiến-trúc-hệ-thống)
+[![Frontend](https://img.shields.io/badge/UI-Razor%20Pages%20Bootstrap-orange?style=flat-square)](#3-giao-diện-frontend-razor-pages)
+[![Database](https://img.shields.io/badge/Database-MS%20SQL%20Server-red?style=flat-square)](https://www.microsoft.com/sql-server)
 
-[![.NET 8](https://img.shields.io/badge/.NET-8.0%20LTS-purple.svg)](https://dotnet.microsoft.com/)
-[![EF Core](https://img.shields.io/badge/EF%20Core-8.0.11-blue.svg)](https://learn.microsoft.com/ef/core/)
-[![Architecture](https://img.shields.io/badge/Architecture-N--Tier-brightgreen.svg)]()
-[![Build Status](https://img.shields.io/badge/Build-Passing-success.svg)]()
+**UniPrint** là giải pháp phần mềm toàn diện giải quyết bài toán in ấn tài liệu trong trường đại học, kết hợp nền tảng chia sẻ học liệu số giữa sinh viên với nhau.
 
----
-
-## 📌 MỤC LỤC
-1. [Giới Thiệu Tổng Quan](#1-giới-thiệu-tổng-quan)
-2. [Luồng Nghiệp Vụ Cốt Lõi (Business Flow)](#2-luồng-nghiệp-vụ-cốt-lõi-business-flow)
-3. [Kiến Trúc Hệ Thống (N-Tier Architecture)](#3-kiến-trúc-hệ-thống-n-tier-architecture)
-4. [Tài Khoản Đăng Nhập Mẫu (Seed Data)](#4-tài-khoản-đăng-nhập-mẫu-seed-data)
-5. [Hướng Dẫn Khởi Chạy Dự Án (Quick Start)](#5-hướng-dẫn-khởi-chạy-dự-án-quick-start)
-6. [Bản Đồ Route & Chức Năng (Pages & APIs)](#6-bản-đồ-route--chức-năng-pages--apis)
-7. [Các Quy Tắc Nghiệp Vụ Quan Trọng (Business Rules & Edge Cases)](#7-các-quy-tắc-nghiệp-vụ-quan-trọng-business-rules--edge-cases)
-8. [Phân Chia Trách Nhiệm Tính Năng (Feature Ownership)](#8-phân-chia-trách-nhiệm-tính-năng-feature-ownership)
+> 📖 **Xem đặc tả chi tiết nghiệp vụ, sơ đồ Use Case, Sequence Diagram & ERD tại:**  
+> 👉 [**docs/FEATURES_AND_USE_CASES.md**](docs/FEATURES_AND_USE_CASES.md)
 
 ---
 
-## 1. Giới Thiệu Tổng Quan
+## 1. Kiến Trúc Hệ Thống (N-Tier Architecture)
 
-**UniPrint** giải quyết bài toán chen lấn, chờ đợi in ấn tài liệu tại các trường đại học bằng cách số hóa toàn bộ quy trình:
-* **Sinh viên (Student):** Upload tài liệu (PDF, Word), chọn cấu hình in (trắng đen/màu, 1 mặt/2 mặt, gáy/ghim), xem báo giá tự động, đặt đơn và đến nhận tài liệu thông qua việc quét **mã QR**.
-* **Nhân viên in ấn (Staff):** Theo dõi hàng đợi in ấn tập trung, in tài liệu, phân loại tài liệu vào các **kệ lưu trữ (A1, A2, B1...)**, quét mã QR của sinh viên để xác nhận giao đồ.
-* **Thư viện tài liệu (Study Hub):** Kho dữ liệu mở giúp sinh viên tải về hoặc in trực tiếp các slide bài giảng, tóm tắt môn học do cộng đồng chia sẻ (sau khi được Admin duyệt).
-* **Quản trị viên (Admin):** Quản lý tài khoản, cấu hình bảng giá in ấn, kiểm duyệt nội dung Study Hub.
-
----
-
-## 2. Luồng Nghiệp Vụ Cốt Lõi (Business Flow)
-
-### 🔹 Luồng In Ấn & Giao Nhận Bằng Mã QR (Main Flow):
-```mermaid
-sequenceDiagram
-    autonumber
-    actor SinhVien as 👨‍🎓 Sinh Viên
-    participant Web as 🌐 UniPrint Web (Razor)
-    participant BE as ⚙️ Backend (API/Services)
-    participant DB as 🗄️ SQL Server
-    actor Staff as 👨‍💼 Nhân Viên In (Staff)
-
-    SinhVien->>Web: Upload file & chọn cấu hình in
-    Web->>BE: Tính giá in tức thời
-    BE-->>Web: Trả về bảng giá chi tiết
-    SinhVien->>Web: Xác nhận tạo đơn in
-    BE->>DB: Khóa giá vào PrintOption & sinh mã PickupQR
-    Staff->>Web: Xem hàng đợi in ấn (Queue)
-    Staff->>Web: Bấm "Bắt đầu in" (Chặn sinh viên hủy đơn)
-    Staff->>Web: In xong -> Gán đơn vào Kệ trống (A1, A2...)
-    Web-->>SinhVien: Thông báo "Sẵn sàng nhận hàng" kèm Mã QR
-    SinhVien->>Staff: Đưa mã QR tại quầy thư viện
-    Staff->>Web: Quét/Nhập mã QR xác nhận
-    BE->>DB: Đổi trạng thái Completed & giải phóng slot Kệ
-    Staff-->>SinhVien: Giao tài liệu hoàn tất
-```
-
----
-
-## 3. Kiến Trúc Hệ Thống (N-Tier Architecture)
-
-Dự án được phân tách thành **4 Project rõ ràng** tuân thủ nguyên tắc N-Tier truyền thống:
+Dự án được tổ chức theo mô hình phân tầng **N-Tier chuẩn mực**, chạy trên **.NET 8 LTS**:
 
 ```text
 UniPrint/
-├── UniPrint.DataAccess/         # [TẦNG DATA ACCESS - DAL]
-│   ├── Entities/                # 15 Entities tách riêng từng file (User, Document, PrintOrder, Shelf...)
-│   ├── Enums/                   # 5 Enums tách riêng từng file (UserRole, PrintOrderStatus...)
-│   ├── Context/                 # UniPrintDbContext (EF Core, cấu hình quan hệ bảng & Seed Data)
-│   └── Repositories/            # GenericRepository<T> & UnitOfWork (quản lý transaction)
+├── UniPrint.DataAccess/         # [TẦNG DATA ACCESS (DAL)]
+│   ├── Entities/                # 15 Entities độc lập (User, Document, PrintOrder, Shelf, PickupQR...)
+│   ├── Enums/                   # 5 Enums hệ thống (UserRole, PrintOrderStatus, PaymentMethod...)
+│   ├── Context/                 # UniPrintDbContext (EF Core, cấu hình quan hệ & nạp sẵn Seed Data)
+│   └── Repositories/            # GenericRepository<T>, UnitOfWork quản lý Transaction
 │
-├── UniPrint.Business/           # [TẦNG BUSINESS LOGIC - BLL]
-│   ├── Common/                  # ApiResponse<T> chuẩn hóa dữ liệu trả về cho API
-│   ├── DTOs/                    # Data Transfer Objects (Auth, PrintOrder, Document, StudyHub)
-│   └── Services/                # Toàn bộ logic nghiệp vụ bám sát đặc tả:
-│       ├── AuthService.cs       # Đăng ký, đăng nhập JWT, băm mật khẩu BCrypt
-│       ├── DocumentService.cs   # Upload, đọc số trang, dung lượng file
-│       ├── PriceCalculator.cs   # Thuật toán tính giá in & chiết khấu 2 mặt
-│       ├── PrintOrderService.cs # Xử lý đơn in, xếp kệ, quét QR hoàn tất đơn
-│       └── StudyHubService.cs   # Thư viện tài liệu, duyệt bài Admin, đánh giá sao
+├── UniPrint.Business/           # [TẦNG BUSINESS LOGIC (BLL)]
+│   ├── Common/                  # ApiResponse<T> chuẩn hóa dữ liệu trả về
+│   ├── DTOs/                    # Data Transfer Objects cho từng Feature
+│   └── Services/                # Xử lý nghiệp vụ chính:
+│       ├── AuthService.cs       # Đăng ký, đăng nhập JWT Bearer, băm mật khẩu BCrypt (F01)
+│       ├── DocumentService.cs   # Upload và đọc metadata tài liệu (F02)
+│       ├── PriceCalculator.cs   # Thuật toán tính giá in tức thời và khóa giá chốt đơn (BR02)
+│       ├── PrintOrderService.cs # Tạo đơn in, xử lý hàng đợi Staff, gán kệ, quét mã QR (BR02, EC06)
+│       └── StudyHubService.cs   # Chia sẻ tài liệu, Admin duyệt bài (BR04), đánh giá sao (BR05)
 │
-├── UniPrint.API/                # [TẦNG WEB API - RESTful Service]
-│   ├── Controllers/             # RESTful API (AuthController, PrintOrdersController...)
-│   ├── Middlewares/             # ExceptionHandlingMiddleware (bắt lỗi hệ thống tập trung)
-│   └── Program.cs               # Cấu hình JWT Bearer, Swagger UI Authorize, CORS
+├── UniPrint.API/                # [TẦNG WEB API (Backend RESTful)]
+│   ├── Controllers/             # RESTful API Controllers cho hệ thống bên ngoài / Mobile
+│   ├── Middlewares/             # ExceptionHandlingMiddleware bắt lỗi tập trung
+│   └── Program.cs               # Cấu hình JWT Bearer, Swagger UI & CORS
 │
-└── UniPrint.Web/                # [TẦNG GIAO DIỆN - RAZOR PAGES UI]
-    ├── Pages/                   # UI viết hoàn toàn bằng C# Razor Pages (.cshtml + .cshtml.cs):
-    │   ├── Shared/_Layout.cshtml# Navbar điều hướng tích hợp phân quyền
-    │   ├── Auth/                # Đăng nhập, đăng ký, trang cá nhân
-    │   ├── Student/             # Đặt in trực tuyến, tính giá trực tiếp, lịch sử đơn
-    │   ├── Staff/               # Hàng đợi in ấn Staff, quản lý gán kệ lưu trữ
-    │   ├── Pickup/              # Quét mã QR xác nhận giao hàng
-    │   └── StudyHub/            # ⭐ Kho tài liệu chia sẻ sinh viên (Module độc lập)
-    └── Program.cs               # Cấu hình Cookie Authentication & DI Services
+└── UniPrint.Web/                # [TẦNG PRESENTATION (Frontend Razor Pages)]
+    ├── Pages/
+    │   ├── Shared/_Layout.cshtml# Navbar điều hướng tích hợp cả 5 phân hệ
+    │   ├── Auth/                # Đăng nhập, đăng ký, thông tin tài khoản cá nhân
+    │   ├── Student/             # Upload file, chọn cấu hình in, xem giá realtime, quản lý đơn
+    │   ├── Staff/               # Dashboard hàng đợi in ấn, cập nhật tiến độ, gán kệ lưu trữ
+    │   ├── Pickup/              # Quét mã QR nhận tài liệu, thanh toán tiền mặt / VietQR
+    │   └── StudyHub/            # ⭐ Kho tài liệu học tập, xem trước, tải về, đánh giá, duyệt bài
+    └── Program.cs               # Cấu hình Cookie Authentication & Dependency Injection
 ```
 
 ---
 
-## 4. Tài Khoản Đăng Nhập Mẫu (Seed Data)
+## 2. Các Tính Năng & Phân Hệ Cốt Lõi
 
-Database đã nạp sẵn 3 tài khoản mặc định đại diện cho 3 vai trò với mật khẩu chung là **`123456`**:
+### 🔹 Phân hệ 1: Sinh Viên (Student Flow - Luồng in ấn chính)
+* **Upload tài liệu cá nhân:** Tải file PDF, DOCX; hệ thống tự động đọc số trang và kích thước file.
+* **Cấu hình in ấn linh hoạt:** Chọn in màu/đen trắng, in 1 mặt/2 mặt (giảm 10%), đóng gáy sách hoặc bấm kim góc.
+* **Tính giá tức thời & Khóa giá (BR02):** Giá được tính trực tiếp và chốt cố định khi tạo đơn, không bị ảnh hưởng nếu bảng giá hệ thống thay đổi sau đó.
+* **Mã QR nhận tài liệu (Pickup QR):** Đơn in hoàn tất sẽ sinh mã QR có thời hạn 7 ngày để sinh viên đưa cho nhân viên quét tại quầy.
 
-| Vai trò | Email đăng nhập | Mật khẩu | Quyền hạn trong hệ thống |
-| :--- | :--- | :---: | :--- |
-| **Admin** | `admin@uniprint.edu.vn` | `123456` | Toàn quyền: Duyệt tài liệu Study Hub, sửa bảng giá in ấn, quản lý User |
-| **Staff** | `staff@uniprint.edu.vn` | `123456` | Tiếp nhận đơn hàng, in tài liệu, gán kệ (`A1`, `A2`, `B1`), quét QR giao hàng |
-| **Student** | `student@uniprint.edu.vn` | `123456` | Upload file, chọn cấu hình in, xem giá, lấy mã QR nhận hàng, dùng Study Hub |
+### 🔹 Phân hệ 2: Nhân Viên (Staff Operations)
+* **Hàng đợi in ấn (Staff Queue):** Xem danh sách các đơn đang chờ xử lý, sắp xếp ưu tiên theo thời gian.
+* **Tiến trình in ấn:** Bấm nhận đơn $\rightarrow$ chuyển trạng thái sang `Printing` (lúc này sinh viên không thể hủy đơn).
+* **Quản lý Kệ lưu trữ (Shelf):** Sau khi in xong, nhân viên chọn kệ còn chỗ (`A1`, `A2`, `B1`) để đặt tài liệu và chuyển đơn sang `ReadyForPickup`. Hệ thống tự động kiểm tra sức chứa tối đa (`EC06`).
+* **Quét mã QR giao tài liệu:** Nhân viên quét mã QR của sinh viên, hệ thống kiểm tra hạn (`EC04`), đánh dấu hoàn tất đơn (`Completed`) và tự động giải phóng vị trí trên kệ.
+
+### 🔹 Phân hệ 3: Study Hub (Kho học liệu số - Module độc lập)
+* **Chia sẻ tài liệu:** Sinh viên đăng tài liệu vào kho dùng chung (mặc định ở trạng thái `Pending` chờ duyệt).
+* **Kiểm duyệt (Admin):** Admin xem danh sách bài chờ và bấm Duyệt (`Approved`) hoặc Từ chối (`Rejected`).
+* **Tìm kiếm & Bộ lọc:** Tìm kiếm theo từ khóa, lọc theo Môn học (`PRN231`, `SWD392`...) và Thể loại (Slide, Đề thi, Tóm tắt).
+* **Đánh giá & Tương tác:** Sinh viên đánh giá 1–5 ⭐ (mỗi SV chỉ đánh giá 1 lần/bài), báo cáo vi phạm, thêm vào mục Yêu thích.
+
+> 💡 **Tính độc lập:** Module Study Hub được thiết kế hoàn toàn tách biệt. Khi đem dự án sang môn học khác (như làm App Mobile chỉ tập trung vào in ấn), nhóm có thể **cắt bỏ toàn bộ module Study Hub** mà luồng in ấn chính vẫn chạy mượt mà 100%!
 
 ---
 
-## 5. Hướng Dẫn Khởi Chạy Dự Án (Quick Start)
+## 3. Tài Khoản Thử Nghiệm Mặc Định (Seed Data)
 
-### Yêu cầu môi trường:
-* [.NET 8 SDK (LTS)](https://dotnet.microsoft.com/download/dotnet/8.0)
-* [Microsoft SQL Server](https://www.microsoft.com/sql-server) (bản 2016 trở lên hoặc SQL Server Express / LocalDB)
-* Visual Studio 2022 (v17.8+) hoặc Visual Studio Code / JetBrains Rider
+Khi khởi tạo database, hệ thống đã nạp sẵn 3 tài khoản mẫu với mật khẩu mặc định là **`123456`**:
 
-### Bước 1: Clone dự án về máy
+| Vai trò | Email đăng nhập | Mật khẩu | Quyền hạn chính |
+| :--- | :--- | :---: | :--- |
+| **Admin** | `admin@uniprint.edu.vn` | `123456` | Quản trị người dùng, duyệt tài liệu Study Hub, cấu hình bảng giá |
+| **Staff** | `staff@uniprint.edu.vn` | `123456` | Xử lý hàng đợi in, in ấn, xếp kệ (`A1`, `A2`, `B1`), quét QR giao tài liệu |
+| **Student** | `student@uniprint.edu.vn` | `123456` | Upload file, cấu hình in, tạo đơn, quét QR lấy đồ, dùng Study Hub |
+
+---
+
+## 4. Hướng Dẫn Cài Đặt & Chạy Dự Án
+
+### Yêu cầu môi trường
+* **.NET 8 SDK** trở lên (Khuyến nghị bản LTS).
+* **Microsoft SQL Server** (2016 trở lên hoặc SQL Server Express / LocalDB).
+* **Visual Studio 2022** (v17.8 trở lên) hoặc VS Code / JetBrains Rider.
+
+### Bước 1: Clone Repository
 ```bash
 git clone https://github.com/MinhTCCE190895/UniPrint-Backend.git
 cd UniPrint-Backend
 ```
 
-### Bước 2: Cập nhật chuỗi kết nối SQL Server
-Mở file `UniPrint.Web/appsettings.json` và `UniPrint.API/appsettings.json`, kiểm tra chuỗi kết nối phù hợp với máy của bạn:
+### Bước 2: Cấu hình chuỗi kết nối SQL Server
+Mở file `UniPrint.Web/appsettings.json` và `UniPrint.API/appsettings.json`, kiểm tra `DefaultConnection` phù hợp với máy tính của bạn:
 ```json
 "ConnectionStrings": {
   "DefaultConnection": "Server=localhost;Database=UniPrintDb;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True"
 }
 ```
 
-### Bước 3: Tạo Database & Nạp dữ liệu mẫu
-Chạy lệnh Migration để tự động sinh các bảng và tài khoản mẫu:
+### Bước 3: Tạo Database & Nạp Seed Data (EF Core Migration)
+Chạy lệnh sau tại thư mục gốc của Solution:
 ```bash
-dotnet ef migrations add InitialCreate --project UniPrint.DataAccess --startup-project UniPrint.Web
-dotnet ef database update --project UniPrint.DataAccess --startup-project UniPrint.Web
+dotnet ef migrations add InitialCreate --project UniPrint.DataAccess --startup-project UniPrint.API
+dotnet ef database update --project UniPrint.DataAccess --startup-project UniPrint.API
 ```
 
-### Bước 4: Chạy ứng dụng
+### Bước 4: Khởi chạy dự án
 
-#### 🔹 Cách 1: Chạy giao diện Web (Razor Pages):
+#### Cách 1: Chạy trực tiếp bằng Visual Studio (F5)
+1. Mở file [UniPrint.sln](UniPrint.sln).
+2. Chuột phải vào project **`UniPrint.Web`** $\rightarrow$ chọn **Set as Startup Project**.
+3. Nhấn **F5** (hoặc `Ctrl + F5`) để mở giao diện web trên trình duyệt (`https://localhost:7xxx`).
+
+#### Cách 2: Chạy bằng dòng lệnh (CLI)
 ```bash
+# Chạy giao diện Web (Razor Pages):
 dotnet run --project UniPrint.Web
-```
-👉 Mở trình duyệt truy cập: `https://localhost:5001` (hoặc cổng hiển thị trên Terminal).
 
-#### 🔹 Cách 2: Chạy Backend RESTful API (Swagger UI):
-```bash
+# Hoặc chạy riêng Web API backend (kèm Swagger):
 dotnet run --project UniPrint.API
 ```
-👉 Mở trình duyệt truy cập: `https://localhost:7000/swagger` để kiểm thử toàn bộ API.
+
+* **Giao diện Web:** `https://localhost:7100` (hoặc cổng xuất hiện trên terminal)
+* **Swagger API UI:** `https://localhost:7000/swagger`
 
 ---
 
-## 6. Bản Đồ Route & Chức Năng (Pages & APIs)
-
-### Giao diện Razor Pages (`UniPrint.Web`):
-* `/` hoặc `/Index`: Trang chủ giới thiệu nền tảng.
-* `/Auth/Login`: Trang đăng nhập bằng Email & Mật khẩu.
-* `/Student/CreateOrder`: Form cấu hình in ấn & xem báo giá trực tiếp.
-* `/Staff/Queue`: Hàng đợi in ấn cho nhân viên tiệm in.
-* `/Pickup/ScanQR`: Giao diện quét / nhập mã QR giao tài liệu cho sinh viên.
-* `/StudyHub/Index`: Thư viện tài liệu học tập cộng đồng.
-
-### Endpoints REST API (`UniPrint.API`):
-* `POST /api/auth/login`: Xác thực và cấp mã JWT Access Token.
-* `POST /api/printorders/calculate-price`: Tính giá in dự kiến dựa trên số trang, màu sắc, loại in.
-* `POST /api/printorders`: Sinh viên tạo đơn in mới kèm thông số chốt giá.
-* `GET  /api/printorders/queue`: Staff lấy danh sách đơn chờ in.
-* `POST /api/printorders/{id}/assign-shelf`: Gán đơn đã in xong vào kệ lưu trữ còn trống.
-* `POST /api/printorders/scan-pickup-qr?qrToken=...`: Quét mã QR hoàn tất đơn in.
-* `GET  /api/studyhub/materials`: Tìm kiếm và lọc tài liệu đã duyệt theo môn học, danh mục.
-* `PATCH /api/studyhub/admin/materials/{id}/moderate`: Admin duyệt hoặc từ chối tài liệu.
-
----
-
-## 7. Các Quy Tắc Nghiệp Vụ Quan Trọng (Business Rules & Edge Cases)
-
-Hệ thống đã cài đặt sẵn các logic bảo đảm an toàn dữ liệu:
-* **BR02 – Chốt giá đơn in:** Giá in được tính và lưu cố định tại thời điểm tạo đơn (`PrintOption.TotalPrice`). Sau này Admin có tăng/giảm giá thì các đơn đã tạo vẫn giữ nguyên giá cũ.
-* **BR02 – Hủy đơn có điều kiện:** Sinh viên chỉ được hủy khi đơn ở trạng thái `Pending` hoặc `Processing`. Một khi Staff đã bấm bắt đầu in (`Printing`), hệ thống chặn tuyệt đối không cho hủy.
-* **BR04 – Kiểm duyệt tài liệu:** Tài liệu do sinh viên đăng lên Study Hub mặc định ở trạng thái `Pending`. Chỉ khi Admin bấm duyệt (`Approved`), tài liệu mới hiển thị công khai.
-* **EC04 – Hạn sử dụng mã QR:** Mã `PickupQR` có thời hạn 7 ngày. Mã đã quét hoặc hết hạn sẽ bị hệ thống từ chối.
-* **EC06 – Kiểm soát sức chứa kệ:** Trước khi gán đơn in vào kệ, hệ thống kiểm tra `CurrentCount < MaxCapacity`. Kệ đầy sẽ báo lỗi yêu cầu chọn kệ khác. Khi sinh viên lấy tài liệu, kệ tự động giải phóng 1 slot.
-
----
-
-## 8. Phân Chia Trách Nhiệm Tính Năng (Feature Ownership)
-
-Dự án chia đều cho 5 thành viên theo mô hình **Full-stack Feature (20 Điểm / Người)**:
-
-* **Thành viên 1:** Module Xác thực, Phân quyền RBAC, Base Layout & Middleware.
-* **Thành viên 2:** Module Sinh viên đặt in, Upload tài liệu, Tính giá & Quản lý đơn cá nhân.
-* **Thành viên 3:** Module Nhân viên Staff, Hàng đợi in ấn, Quản lý Kệ lưu trữ.
-* **Thành viên 4:** Module Quét mã QR nhận hàng, Thanh toán & Bảng giá in ấn.
-* ⭐ **Thành viên 5 (Module Độc Lập - Study Hub):** Thư viện tài liệu chia sẻ, Đánh giá sao, Kiểm duyệt bài đăng.  
-  *(Khi cần mang dự án sang môn học khác như Mobile App, chỉ cần loại bỏ module của Thành viên 5 là hệ thống In ấn cốt lõi của 4 thành viên còn lại vẫn hoạt động độc lập 100%).*
-
----
-
-*© 2026 UniPrint Team - All Rights Reserved.*
+## 5. Phân Công Công Việc Nhóm (Task Matrix)
+Dự án đã được phân chia đều thành 5 Feature độc lập, mỗi thành viên đảm nhận Full-stack (cả Backend lẫn Frontend) với trọng số chuẩn hóa **20 điểm / người**:
+* Chi tiết bảng phân chia, độ khó, điểm số và deadline xem tại file: [UniPrint_Task_Assignment.xlsx](../UniPrint_Task_Assignment.xlsx).
