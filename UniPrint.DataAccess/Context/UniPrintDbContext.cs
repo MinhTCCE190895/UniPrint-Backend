@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using UniPrint.DataAccess.Entities;
 using UniPrint.DataAccess.Enums;
 
@@ -85,6 +85,11 @@ public class UniPrintDbContext : DbContext
                   .HasForeignKey(m => m.UploadedByStudentId)
                   .OnDelete(DeleteBehavior.Restrict);
 
+            entity.HasOne(m => m.Document)
+                  .WithMany()
+                  .HasForeignKey(m => m.DocumentId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
             entity.HasOne(m => m.Subject)
                   .WithMany(s => s.Materials)
                   .HasForeignKey(m => m.SubjectId)
@@ -96,15 +101,49 @@ public class UniPrintDbContext : DbContext
                   .OnDelete(DeleteBehavior.Restrict);
         });
 
-        // Configure Favorite (Unique constraint student + material)
-        modelBuilder.Entity<Favorite>()
-            .HasIndex(f => new { f.StudentId, f.MaterialId })
-            .IsUnique();
+        // Configure Favorite
+        modelBuilder.Entity<Favorite>(entity =>
+        {
+            entity.HasKey(f => f.Id);
+            entity.HasIndex(f => new { f.StudentId, f.MaterialId }).IsUnique();
+            entity.HasOne(f => f.Student)
+                  .WithMany()
+                  .HasForeignKey(f => f.StudentId)
+                  .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(f => f.Material)
+                  .WithMany(m => m.Favorites)
+                  .HasForeignKey(f => f.MaterialId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
 
-        // Configure MaterialReview (Unique constraint 1 review per student per material)
-        modelBuilder.Entity<MaterialReview>()
-            .HasIndex(r => new { r.StudentId, r.MaterialId })
-            .IsUnique();
+        // Configure MaterialReview
+        modelBuilder.Entity<MaterialReview>(entity =>
+        {
+            entity.HasKey(r => r.Id);
+            entity.HasIndex(r => new { r.StudentId, r.MaterialId }).IsUnique();
+            entity.HasOne(r => r.Student)
+                  .WithMany()
+                  .HasForeignKey(r => r.StudentId)
+                  .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(r => r.Material)
+                  .WithMany(m => m.Reviews)
+                  .HasForeignKey(r => r.MaterialId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configure MaterialReport
+        modelBuilder.Entity<MaterialReport>(entity =>
+        {
+            entity.HasKey(r => r.Id);
+            entity.HasOne(r => r.ReportedByStudent)
+                  .WithMany()
+                  .HasForeignKey(r => r.ReportedByStudentId)
+                  .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(r => r.Material)
+                  .WithMany()
+                  .HasForeignKey(r => r.MaterialId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
 
         // Seed initial data
         SeedData(modelBuilder);
@@ -117,7 +156,7 @@ public class UniPrintDbContext : DbContext
         var studentId = Guid.Parse("33333333-3333-3333-3333-333333333333");
 
         // Password hash for '123456'
-        const string defaultHash = "$2a$11$wK.1P0eXoXJ8b7rIvdqjB.ZkmrYxPfvU6zRlh7q8yXqj8wU2s1l8G";
+        const string defaultHash = "$2a$11$nkHIbAh1DXxeK0OfMp0ZYuAjScHQrqa.Cer4TpnS9FmMiuqYiz0HK";
 
         modelBuilder.Entity<User>().HasData(
             new User
@@ -167,15 +206,15 @@ public class UniPrintDbContext : DbContext
         );
 
         modelBuilder.Entity<Shelf>().HasData(
-            new Shelf { Id = Guid.Parse("55555555-5555-5555-5555-555555555501"), ShelfCode = "A1", Location = "Tầng 1 - Kệ Trái", MaxCapacity = 20, CurrentCount = 0, CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
-            new Shelf { Id = Guid.Parse("55555555-5555-5555-5555-555555555502"), ShelfCode = "A2", Location = "Tầng 1 - Kệ Trái", MaxCapacity = 20, CurrentCount = 0, CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
-            new Shelf { Id = Guid.Parse("55555555-5555-5555-5555-555555555503"), ShelfCode = "B1", Location = "Tầng 1 - Kệ Phải", MaxCapacity = 20, CurrentCount = 0, CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
+            new Shelf { Id = Guid.Parse("55555555-5555-5555-5555-555555555501"), ShelfCode = "A1", Location = "Táº§ng 1 - Ká»‡ TrÃ¡i", MaxCapacity = 20, CurrentCount = 0, CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+            new Shelf { Id = Guid.Parse("55555555-5555-5555-5555-555555555502"), ShelfCode = "A2", Location = "Táº§ng 1 - Ká»‡ TrÃ¡i", MaxCapacity = 20, CurrentCount = 0, CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+            new Shelf { Id = Guid.Parse("55555555-5555-5555-5555-555555555503"), ShelfCode = "B1", Location = "Táº§ng 1 - Ká»‡ Pháº£i", MaxCapacity = 20, CurrentCount = 0, CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
         );
 
         modelBuilder.Entity<Category>().HasData(
-            new Category { Id = Guid.Parse("66666666-6666-6666-6666-666666666601"), Name = "Slide Bài Giảng", Description = "Tài liệu trình chiếu từ giảng viên", CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
-            new Category { Id = Guid.Parse("66666666-6666-6666-6666-666666666602"), Name = "Đề Thi & Đáp Án", Description = "Tổng hợp đề thi các kỳ trước", CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
-            new Category { Id = Guid.Parse("66666666-6666-6666-6666-666666666603"), Name = "Tóm Tắt Ôn Tập", Description = "Cheat sheet & tóm tắt kiến thức cốt lõi", CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
+            new Category { Id = Guid.Parse("66666666-6666-6666-6666-666666666601"), Name = "Slide BÃ i Giáº£ng", Description = "TÃ i liá»‡u trÃ¬nh chiáº¿u tá»« giáº£ng viÃªn", CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+            new Category { Id = Guid.Parse("66666666-6666-6666-6666-666666666602"), Name = "Äá» Thi & ÄÃ¡p Ãn", Description = "Tá»•ng há»£p Ä‘á» thi cÃ¡c ká»³ trÆ°á»›c", CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+            new Category { Id = Guid.Parse("66666666-6666-6666-6666-666666666603"), Name = "TÃ³m Táº¯t Ã”n Táº­p", Description = "Cheat sheet & tÃ³m táº¯t kiáº¿n thá»©c cá»‘t lÃµi", CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
         );
 
         modelBuilder.Entity<Subject>().HasData(
@@ -184,3 +223,4 @@ public class UniPrintDbContext : DbContext
         );
     }
 }
+

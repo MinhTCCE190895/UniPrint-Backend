@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authentication.Cookies;
+﻿using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using UniPrint.Business.Services;
 using UniPrint.DataAccess.Context;
@@ -32,7 +32,6 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 
 builder.Services.AddRazorPages(options =>
 {
-    // Cấu hình phân quyền theo folder
     options.Conventions.AuthorizeFolder("/Student", "StudentOnly");
     options.Conventions.AuthorizeFolder("/Staff", "StaffOnly");
 });
@@ -44,6 +43,13 @@ builder.Services.AddAuthorization(options =>
 });
 
 var app = builder.Build();
+
+// Tự động khởi tạo Database và Seed Data nếu chưa có
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<UniPrintDbContext>();
+    dbContext.Database.EnsureCreated();
+}
 
 if (!app.Environment.IsDevelopment())
 {

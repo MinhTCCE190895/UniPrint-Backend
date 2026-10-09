@@ -1,0 +1,68 @@
+﻿@page
+@model UniPrint.Web.Pages.Auth.RegisterModel
+@{
+    ViewData["Title"] = "Đăng Ký Tài Khoản - UniPrint";
+}
+
+<div class="row justify-content-center mt-4">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white text-center py-3">
+                <h4 class="mb-0 fw-bold">ĐĂNG KÝ TÀI KHOẢN</h4>
+                <p class="mb-0 small text-white-50">Dành cho sinh viên sử dụng hệ thống in ấn UniPrint</p>
+            </div>
+            <div class="card-body p-4">
+                @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.ErrorMessage
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+
+                <form method="post">
+                    <div class="mb-3">
+                        <label asp-for="FullName" class="form-label fw-semibold">Họ và tên <span class="text-danger">*</span></label>
+                        <input asp-for="FullName" class="form-control" placeholder="Nguyễn Văn A" required />
+                        <span asp-validation-for="FullName" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Email" class="form-label fw-semibold">Email trường cấp <span class="text-danger">*</span></label>
+                        <input asp-for="Email" class="form-control" placeholder="sinhvien@uniprint.edu.vn" required />
+                        <span asp-validation-for="Email" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="PhoneNumber" class="form-label fw-semibold">Số điện thoại</label>
+                        <input asp-for="PhoneNumber" class="form-control" placeholder="0912345678" />
+                        <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Password" class="form-label fw-semibold">Mật khẩu <span class="text-danger">*</span></label>
+                        <input asp-for="Password" type="password" class="form-control" placeholder="Tối thiểu 6 ký tự" required />
+                        <span asp-validation-for="Password" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="ConfirmPassword" class="form-label fw-semibold">Xác nhận mật khẩu <span class="text-danger">*</span></label>
+                        <input asp-for="ConfirmPassword" type="password" class="form-control" placeholder="Nhập lại mật khẩu" required />
+                        <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">Đăng Ký Ngay</button>
+                </form>
+
+                <div class="mt-4 text-center">
+                    <span class="text-muted">Đã có tài khoản?</span>
+                    <a asp-page="/Auth/Login" class="text-primary fw-semibold ms-1">Đăng nhập</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

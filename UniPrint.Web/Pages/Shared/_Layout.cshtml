@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="utf-8" />
@@ -17,30 +17,49 @@
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                        <li class="nav-item">
-                            <a class="nav-link text-white" asp-page="/Student/CreateOrder">Đặt In (Student)</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-white" asp-page="/Staff/Queue">Hàng Đợi In (Staff)</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-white" asp-page="/Pickup/ScanQR">Quét Mã QR Nhận Hàng</a>
-                        </li>
+                        @if (User.IsInRole("Student"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-white" asp-page="/Student/CreateOrder">📄 Đặt In</a>
+                            </li>
+                        }
+                        @if (User.IsInRole("Staff") || User.IsInRole("Admin"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-white" asp-page="/Staff/Queue">📋 Hàng Đợi In (Staff)</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-white" asp-page="/Pickup/ScanQR">📷 Quét Mã QR Nhận Hàng</a>
+                            </li>
+                        }
                         <li class="nav-item">
                             <a class="nav-link text-warning fw-semibold" asp-page="/StudyHub/Index">📚 Study Hub</a>
                         </li>
                     </ul>
-                    <ul class="navbar-nav">
+                    <ul class="navbar-nav align-items-center">
                         @if (User.Identity?.IsAuthenticated == true)
                         {
+                            <li class="nav-item me-2">
+                                <span class="nav-link text-white">
+                                    Xin chào, <strong>@User.Identity.Name</strong>
+                                    <span class="badge bg-light text-primary ms-1">
+                                        @(User.IsInRole("Admin") ? "Admin" : User.IsInRole("Staff") ? "Staff" : "Sinh viên")
+                                    </span>
+                                </span>
+                            </li>
                             <li class="nav-item">
-                                <span class="nav-link text-white">Xin chào, <strong>@User.Identity.Name</strong></span>
+                                <form method="post" asp-page="/Auth/Logout" class="d-inline">
+                                    <button type="submit" class="btn btn-outline-light btn-sm">Đăng Xuất</button>
+                                </form>
                             </li>
                         }
                         else
                         {
+                            <li class="nav-item me-2">
+                                <a class="btn btn-outline-light btn-sm" asp-page="/Auth/Login">Đăng Nhập</a>
+                            </li>
                             <li class="nav-item">
-                                <a class="btn btn-outline-light btn-sm mt-1" asp-page="/Auth/Login">Đăng Nhập</a>
+                                <a class="btn btn-warning btn-sm fw-semibold" asp-page="/Auth/Register">Đăng Ký</a>
                             </li>
                         }
                     </ul>

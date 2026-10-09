@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -52,7 +52,7 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
-// 4. CORS for Frontend Client (React / Blazor / Next.js)
+// 4. CORS for Frontend Clients
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -102,6 +102,13 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 var app = builder.Build();
+
+// Tự động khởi tạo Database và Seed Data nếu chưa có
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<UniPrintDbContext>();
+    dbContext.Database.EnsureCreated();
+}
 
 // 6. HTTP Request Pipeline
 app.UseMiddleware<ExceptionHandlingMiddleware>();

@@ -1,10 +1,11 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using UniPrint.Business.DTOs;
 using UniPrint.Business.Services;
+using UniPrint.DataAccess.Enums;
 
 namespace UniPrint.Web.Pages.Auth;
 
@@ -25,11 +26,11 @@ public class LoginModel : PageModel
 
     public string? ErrorMessage { get; set; }
 
-    public void OnGet()
+    public void OnGet([FromQuery] string? returnUrl = null)
     {
     }
 
-    public async Task<IActionResult> OnPostAsync()
+    public async Task<IActionResult> OnPostAsync([FromQuery] string? returnUrl = null)
     {
         var result = await _authService.LoginAsync(new LoginRequestDto
         {
@@ -56,6 +57,17 @@ public class LoginModel : PageModel
 
         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
 
-        return RedirectToPage("/Index");
+        if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+        {
+            return LocalRedirect(returnUrl);
+        }
+
+        // Điều hướng thông minh theo vai trò
+        if (result.Data.Role == UserRole.Staff || result.Data.Role == UserRole.Admin)
+        {
+            return RedirectToPage("/Staff/Queue");
+        }
+
+        return RedirectToPage("/Student/CreateOrder");
     }
 }
