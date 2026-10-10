@@ -147,7 +147,10 @@ public class PrintOrderService : IPrintOrderService
 
     public async Task<ApiResponse<List<PrintOrderResponseDto>>> GetStaffQueueOrdersAsync(CancellationToken ct = default)
     {
+        // Task 11 (FEAT3-01): Lấy danh sách hàng đợi in ấn, sắp xếp ưu tiên theo thời gian tạo (FIFO)
+        // Không lấy các đơn đã hoàn tất (Completed) hoặc đã hủy (Cancelled)
         var orders = await _unitOfWork.Repository<PrintOrder>().Query()
+            .AsNoTracking()
             .Include(o => o.Student)
             .Include(o => o.Document)
             .Include(o => o.PrintOption)
@@ -208,8 +211,35 @@ public class PrintOrderService : IPrintOrderService
 
     public async Task<ApiResponse<bool>> UpdateOrderStatusAsync(Guid orderId, Guid staffId, PrintOrderStatus newStatus, CancellationToken ct = default)
     {
+        // Task 12 (FEAT3-02): Staff nhận đơn và cập nhật tiến trình in: Pending -> Processing -> Printing
+        // Ràng buộc: Kiểm tra đơn tồn tại, cấm chuyển trạng thái đơn đã hoàn tất hoặc đã hủy
         var order = await _unitOfWork.Repository<PrintOrder>().GetByIdAsync(orderId, ct);
         if (order == null) return ApiResponse<bool>.Fail("Không tìm thấy đơn hàng.");
+
+        if (order.Status == PrintOrderStatus.Cancelled)
+        {
+            return ApiResponse<bool>.Fail("Đơn hàng này đã bị hủy, không thể cập nhật tiến trình.");
+        }
+
+        if (order.Status == PrintOrderStatus.Completed)
+        {
+            return ApiResponse<bool>.Fail("Đơn hàng này đã hoàn tất, không thể thay đổi trạng thái.");
+        }
+
+        // Quy tắc chuyển trạng thái hợp lệ: Pending -> Processing -> Printing
+        bool isValidTransition = (order.Status, newStatus) switch
+        {
+            (PrintOrderStatus.Pending, PrintOrderStatus.Processing) => true,
+            (PrintOrderStatus.Pending, PrintOrderStatus.Printing) => true, // Cho phép Staff nhận in thẳng
+            (PrintOrderStatus.Processing, PrintOrderStatus.Printing) => true,
+            (PrintOrderStatus.Printing, PrintOrderStatus.ReadyForPickup) => true, // In xong sẵn sàng nhận
+            _ => false
+        };
+
+        if (!isValidTransition)
+        {
+            return ApiResponse<bool>.Fail($"Không thể chuyển trạng thái đơn in từ {order.Status} sang {newStatus}.");
+        }
 
         order.StaffId = staffId;
         order.Status = newStatus;
