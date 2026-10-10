@@ -7,7 +7,10 @@
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2><i class="bi bi-list-task"></i> HÀNG ĐỢI XỬ LÝ IN ẤN (STAFF QUEUE)</h2>
-        <span class="badge bg-primary fs-6">Đơn chờ in: @Model.Orders.Count</span>
+        <div>
+            <span class="badge bg-warning text-dark fs-6 me-2">Đang chờ xử lý in: @Model.Orders.Count(o => o.Status == UniPrint.DataAccess.Enums.PrintOrderStatus.Pending || o.Status == UniPrint.DataAccess.Enums.PrintOrderStatus.Processing || o.Status == UniPrint.DataAccess.Enums.PrintOrderStatus.Printing)</span>
+            <span class="badge bg-success fs-6">Đã in xong (Chờ lấy): @Model.Orders.Count(o => o.Status == UniPrint.DataAccess.Enums.PrintOrderStatus.ReadyForPickup)</span>
+        </div>
     </div>
     <hr />
 
@@ -16,6 +19,7 @@
             <thead class="table-dark">
                 <tr>
                     <th>Mã Đơn</th>
+                    <th>Thời Gian Đặt (FIFO)</th>
                     <th>Sinh Viên</th>
                     <th>Tài Liệu</th>
                     <th>Cấu Hình</th>
@@ -28,24 +32,65 @@
                 @if (Model.Orders.Count == 0)
                 {
                     <tr>
-                        <td colspan="7" class="text-center py-4 text-muted">Hiện không có đơn nào đang chờ in.</td>
+                        <td colspan="8" class="text-center py-4 text-muted">Hiện không có đơn nào đang chờ in.</td>
                     </tr>
                 }
                 @foreach (var o in Model.Orders)
                 {
                     <tr>
                         <td><code>@o.OrderCode</code></td>
+                        <td>
+                            <small class="text-muted"><i class="bi bi-clock"></i> @o.CreatedAt.ToLocalTime().ToString("HH:mm:ss dd/MM")</small>
+                        </td>
                         <td>@o.StudentName</td>
                         <td>@o.DocumentName</td>
                         <td>
                             @(o.IsColor ? "Màu" : "Trắng đen"), @(o.IsDoubleSided ? "2 mặt" : "1 mặt")
                         </td>
-                        <td>@o.TotalPrice.ToString("N0") VNĐ</td>
-                        <td><span class="badge bg-warning text-dark">@o.StatusText</span></td>
+                        <td><strong>@o.TotalPrice.ToString("N0") VNĐ</strong></td>
                         <td>
-                            <form method="post" asp-page-handler="Print" asp-route-orderId="@o.Id" class="d-inline">
-                                <button type="submit" class="btn btn-sm btn-outline-primary">Bắt đầu in</button>
-                            </form>
+                            @switch (o.Status)
+                            {
+                                case UniPrint.DataAccess.Enums.PrintOrderStatus.Pending:
+                                    <span class="badge bg-secondary">Chờ tiếp nhận (Pending)</span>
+                                    break;
+                                case UniPrint.DataAccess.Enums.PrintOrderStatus.Processing:
+                                    <span class="badge bg-warning text-dark">Đã tiếp nhận (Processing)</span>
+                                    break;
+                                case UniPrint.DataAccess.Enums.PrintOrderStatus.Printing:
+                                    <span class="badge bg-primary">Đang in (Printing)</span>
+                                    break;
+                                case UniPrint.DataAccess.Enums.PrintOrderStatus.ReadyForPickup:
+                                    <span class="badge bg-success">Chờ nhận đồ (Ready)</span>
+                                    break;
+                                default:
+                                    <span class="badge bg-info text-dark">@o.StatusText</span>
+                                    break;
+                            }
+                        </td>
+                        <td>
+                            @if (o.Status == UniPrint.DataAccess.Enums.PrintOrderStatus.Pending)
+                            {
+                                <form method="post" asp-page-handler="UpdateStatus" asp-route-orderId="@o.Id" asp-route-newStatus="@UniPrint.DataAccess.Enums.PrintOrderStatus.Processing" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-warning">Tiếp nhận đơn</button>
+                                </form>
+                            }
+                            else if (o.Status == UniPrint.DataAccess.Enums.PrintOrderStatus.Processing)
+                            {
+                                <form method="post" asp-page-handler="UpdateStatus" asp-route-orderId="@o.Id" asp-route-newStatus="@UniPrint.DataAccess.Enums.PrintOrderStatus.Printing" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-primary">Bắt đầu in</button>
+                                </form>
+                            }
+                            else if (o.Status == UniPrint.DataAccess.Enums.PrintOrderStatus.Printing)
+                            {
+                                <form method="post" asp-page-handler="UpdateStatus" asp-route-orderId="@o.Id" asp-route-newStatus="@UniPrint.DataAccess.Enums.PrintOrderStatus.ReadyForPickup" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-success">Đã in xong</button>
+                                </form>
+                            }
+                            else if (o.Status == UniPrint.DataAccess.Enums.PrintOrderStatus.ReadyForPickup)
+                            {
+                                <span class="text-success small fw-semibold"><i class="bi bi-check2-circle"></i> Chờ sinh viên quét QR</span>
+                            }
                         </td>
                     </tr>
                 }

@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using UniPrint.DataAccess.Entities;
 using UniPrint.DataAccess.Enums;
 
@@ -220,6 +220,136 @@ public class UniPrintDbContext : DbContext
         modelBuilder.Entity<Subject>().HasData(
             new Subject { Id = Guid.Parse("77777777-7777-7777-7777-777777777701"), Code = "PRN231", Name = "Building Cross-Platform Applications with .NET", CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
             new Subject { Id = Guid.Parse("77777777-7777-7777-7777-777777777702"), Code = "SWD392", Name = "Software Architecture and Design", CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
+        );
+
+        // Seed Documents mẫu của sinh viên
+        var doc1Id = Guid.Parse("88888888-8888-8888-8888-888888888801");
+        var doc2Id = Guid.Parse("88888888-8888-8888-8888-888888888802");
+        modelBuilder.Entity<Document>().HasData(
+            new Document
+            {
+                Id = doc1Id,
+                UserId = studentId,
+                FileName = "BaoCao_DoAn_TotNghiep.pdf",
+                FilePath = "/uploads/sample_baocao.pdf",
+                FileExtension = ".pdf",
+                FileSizeBytes = 2048576,
+                PageCount = 35,
+                CreatedAt = new DateTime(2026, 10, 1, 8, 0, 0, DateTimeKind.Utc)
+            },
+            new Document
+            {
+                Id = doc2Id,
+                UserId = studentId,
+                FileName = "Slide_ThuyetTrinh_PRN231.pdf",
+                FilePath = "/uploads/sample_slide.pdf",
+                FileExtension = ".pdf",
+                FileSizeBytes = 1048576,
+                PageCount = 20,
+                CreatedAt = new DateTime(2026, 10, 2, 9, 30, 0, DateTimeKind.Utc)
+            }
+        );
+
+        // Seed Cấu hình in (PrintOption)
+        var opt1Id = Guid.Parse("99999999-9999-9999-9999-999999999901");
+        var opt2Id = Guid.Parse("99999999-9999-9999-9999-999999999902");
+        modelBuilder.Entity<PrintOption>().HasData(
+            new PrintOption
+            {
+                Id = opt1Id,
+                NumberOfCopies = 2,
+                IsColor = false,
+                IsDoubleSided = true,
+                HasBinding = true,
+                HasStaple = false,
+                UnitPricePerPage = 315m,
+                TotalPrice = 27050m,
+                CreatedAt = new DateTime(2026, 10, 1, 8, 5, 0, DateTimeKind.Utc)
+            },
+            new PrintOption
+            {
+                Id = opt2Id,
+                NumberOfCopies = 1,
+                IsColor = true,
+                IsDoubleSided = false,
+                HasBinding = false,
+                HasStaple = true,
+                UnitPricePerPage = 1500m,
+                TotalPrice = 31000m,
+                CreatedAt = new DateTime(2026, 10, 2, 9, 35, 0, DateTimeKind.Utc)
+            }
+        );
+
+        // Seed Đơn in mẫu (PrintOrder) để test Staff Queue
+        var order1Id = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa01");
+        var order2Id = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa02");
+        modelBuilder.Entity<PrintOrder>().HasData(
+            new PrintOrder
+            {
+                Id = order1Id,
+                OrderCode = "ORD-20261001-001",
+                StudentId = studentId,
+                DocumentId = doc1Id,
+                PrintOptionId = opt1Id,
+                Status = PrintOrderStatus.Pending,
+                Notes = "In gấp sáng nay giúp em ạ",
+                CreatedAt = new DateTime(2026, 10, 1, 8, 10, 0, DateTimeKind.Utc)
+            },
+            new PrintOrder
+            {
+                Id = order2Id,
+                OrderCode = "ORD-20261002-002",
+                StudentId = studentId,
+                DocumentId = doc2Id,
+                PrintOptionId = opt2Id,
+                Status = PrintOrderStatus.Processing,
+                Notes = "Dập ghim góc trái",
+                CreatedAt = new DateTime(2026, 10, 2, 9, 40, 0, DateTimeKind.Utc)
+            }
+        );
+
+        // Seed PickupQR cho 2 đơn
+        modelBuilder.Entity<PickupQR>().HasData(
+            new PickupQR
+            {
+                Id = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbb01"),
+                OrderId = order1Id,
+                QrToken = "QR-ORD20261001-TOKEN01",
+                ExpiresAt = new DateTime(2026, 10, 8, 8, 10, 0, DateTimeKind.Utc),
+                IsUsed = false,
+                CreatedAt = new DateTime(2026, 10, 1, 8, 10, 0, DateTimeKind.Utc)
+            },
+            new PickupQR
+            {
+                Id = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbb02"),
+                OrderId = order2Id,
+                QrToken = "QR-ORD20261002-TOKEN02",
+                ExpiresAt = new DateTime(2026, 10, 9, 9, 40, 0, DateTimeKind.Utc),
+                IsUsed = false,
+                CreatedAt = new DateTime(2026, 10, 2, 9, 40, 0, DateTimeKind.Utc)
+            }
+        );
+
+        // Seed Payment cho 2 đơn
+        modelBuilder.Entity<Payment>().HasData(
+            new Payment
+            {
+                Id = Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccc01"),
+                OrderId = order1Id,
+                Amount = 27050m,
+                Method = PaymentMethod.Cash,
+                Status = PaymentStatus.Pending,
+                CreatedAt = new DateTime(2026, 10, 1, 8, 10, 0, DateTimeKind.Utc)
+            },
+            new Payment
+            {
+                Id = Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccc02"),
+                OrderId = order2Id,
+                Amount = 31000m,
+                Method = PaymentMethod.Cash,
+                Status = PaymentStatus.Pending,
+                CreatedAt = new DateTime(2026, 10, 2, 9, 40, 0, DateTimeKind.Utc)
+            }
         );
     }
 }

@@ -23,10 +23,11 @@ public class QueueModel : PageModel
         Orders = result.Data ?? new List<PrintOrderResponseDto>();
     }
 
-    public async Task<IActionResult> OnPostPrintAsync(Guid orderId)
+    public async Task<IActionResult> OnPostUpdateStatusAsync(Guid orderId, PrintOrderStatus newStatus)
     {
-        var staffId = Guid.Parse("22222222-2222-2222-2222-222222222222"); // Staff seed
-        await _orderService.UpdateOrderStatusAsync(orderId, staffId, PrintOrderStatus.Printing);
+        var staffIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        var staffId = staffIdClaim != null ? Guid.Parse(staffIdClaim) : Guid.Parse("22222222-2222-2222-2222-222222222222");
+        await _orderService.UpdateOrderStatusAsync(orderId, staffId, newStatus);
         return RedirectToPage();
     }
 }
