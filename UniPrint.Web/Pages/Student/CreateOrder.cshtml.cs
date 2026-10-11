@@ -10,12 +10,24 @@ public class CreateOrderModel : PageModel
 {
     private readonly IPriceCalculatorService _priceCalculator;
     private readonly IPrintOrderService _orderService;
+    private readonly IDocumentService _documentService;
 
-    public CreateOrderModel(IPriceCalculatorService priceCalculator, IPrintOrderService orderService)
+    public CreateOrderModel(
+        IPriceCalculatorService priceCalculator,
+        IPrintOrderService orderService,
+        IDocumentService documentService)
     {
         _priceCalculator = priceCalculator;
         _orderService = orderService;
+        _documentService = documentService;
     }
+
+    public List<DocumentResponseDto> MyDocuments { get; set; } = new();
+
+    [BindProperty(SupportsGet = true)]
+    public Guid? DocumentId { get; set; }
+
+    public string? SelectedDocumentName { get; set; }
 
     [BindProperty]
     public int PageCount { get; set; } = 10;
@@ -35,8 +47,31 @@ public class CreateOrderModel : PageModel
     [BindProperty]
     public bool HasStaple { get; set; } = true;
 
-    public void OnGet()
+    public async Task<IActionResult> OnGetAsync()
     {
+        var studentIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(studentIdStr, out var studentId))
+        {
+            return RedirectToPage("/Auth/Login");
+        }
+
+        var docsResult = await _documentService.GetMyDocumentsAsync(studentId);
+        if (docsResult.Success && docsResult.Data != null)
+        {
+            MyDocuments = docsResult.Data;
+        }
+
+        if (DocumentId.HasValue)
+        {
+            var doc = MyDocuments.FirstOrDefault(d => d.Id == DocumentId.Value);
+            if (doc != null)
+            {
+                SelectedDocumentName = doc.FileName;
+                PageCount = doc.PageCount;
+            }
+        }
+
+        return Page();
     }
 
     public async Task<IActionResult> OnPostAsync()
@@ -48,6 +83,7 @@ public class CreateOrderModel : PageModel
         }
 
         // Logic demo tạo đơn
-        return RedirectToPage("/Student/MyOrders");
+        await Task.CompletedTask;
+        return RedirectToPage("/Student/Documents");
     }
 }

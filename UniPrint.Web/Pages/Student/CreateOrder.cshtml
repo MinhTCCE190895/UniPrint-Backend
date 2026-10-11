@@ -5,18 +5,54 @@
 }
 
 <div class="container mt-4">
-    <h2><i class="bi bi-printer"></i> ĐẶT IN TÀI LIỆU TRỰC TUYẾN</h2>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h2><i class="bi bi-printer text-primary"></i> ĐẶT IN TÀI LIỆU TRỰC TUYẾN</h2>
+            <p class="text-muted mb-0">Cấu hình in và chốt giá in theo quy tắc nghiệp vụ BR02.</p>
+        </div>
+        <a asp-page="/Student/Documents" class="btn btn-outline-secondary">
+            <i class="bi bi-folder2-open"></i> Quản Lý Tài Liệu
+        </a>
+    </div>
     <hr />
 
     <div class="row">
         <div class="col-md-7">
-            <div class="card mb-4 shadow-sm">
+            <div class="card mb-4 shadow-sm border-0">
                 <div class="card-header bg-light"><strong>Bước 1: Chọn tài liệu & Cấu hình in</strong></div>
                 <div class="card-body">
                     <form method="post">
                         <div class="mb-3">
-                            <label class="form-label">Số trang ước tính</label>
-                            <input asp-for="PageCount" class="form-control" type="number" min="1" value="10" />
+                            <label class="form-label fw-bold">Tài liệu cần in</label>
+                            @if (!string.IsNullOrEmpty(Model.SelectedDocumentName))
+                            {
+                                <div class="alert alert-primary py-2 d-flex justify-content-between align-items-center mb-0">
+                                    <span><i class="bi bi-file-earmark-text me-1"></i> <strong>@Model.SelectedDocumentName</strong></span>
+                                    <span class="badge bg-primary">@Model.PageCount trang</span>
+                                </div>
+                                <input type="hidden" asp-for="DocumentId" />
+                            }
+                            else if (Model.MyDocuments.Any())
+                            {
+                                <select asp-for="DocumentId" class="form-select" onchange="window.location.href = '/Student/CreateOrder?documentId=' + this.value;">
+                                    <option value="">-- Chọn tài liệu từ kho cá nhân --</option>
+                                    @foreach (var doc in Model.MyDocuments)
+                                    {
+                                        <option value="@doc.Id">@doc.FileName (@doc.PageCount trang)</option>
+                                    }
+                                </select>
+                            }
+                            else
+                            {
+                                <div class="alert alert-warning py-2 mb-0">
+                                    Bạn chưa có tài liệu nào. <a asp-page="/Student/Documents" class="fw-bold">Tải lên tài liệu tại đây</a> để tự động tính trang!
+                                </div>
+                            }
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Số trang in (Tự động đọc từ file)</label>
+                            <input asp-for="PageCount" class="form-control" type="number" min="1" />
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Số bản in (Copies)</label>
