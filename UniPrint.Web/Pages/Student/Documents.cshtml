@@ -1,0 +1,138 @@
+@page
+@model UniPrint.Web.Pages.Student.DocumentsModel
+@{
+    ViewData["Title"] = "Quản Lý Tài Liệu";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h2 class="mb-1"><i class="bi bi-folder2-open text-primary"></i> QUẢN LÝ TÀI LIỆU CÁ NHÂN</h2>
+            <p class="text-muted mb-0">Tải lên file PDF hoặc DOCX để hệ thống tự động đọc số trang và kích thước file.</p>
+        </div>
+        <a asp-page="/Student/CreateOrder" class="btn btn-primary">
+            <i class="bi bi-printer"></i> Đến Trang Đặt In
+        </a>
+    </div>
+    <hr />
+
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i> <strong>Thành công!</strong> @Model.SuccessMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> <strong>Lỗi:</strong> @Model.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Khu vực Upload File (Task 6) -->
+    <div class="card mb-4 shadow-sm border-0 bg-light">
+        <div class="card-body p-4">
+            <h5 class="card-title fw-bold text-dark mb-3">
+                <i class="bi bi-cloud-arrow-up text-primary me-2"></i> Tải Tài Liệu Mới (PDF / DOCX)
+            </h5>
+            <form method="post" asp-page-handler="Upload" enctype="multipart/form-data">
+                <div class="row g-3 align-items-center">
+                    <div class="col-md-9">
+                        <input asp-for="UploadedFile" type="file" class="form-control form-control-lg" accept=".pdf,.docx" required />
+                        <div class="form-text mt-1 text-muted">
+                            <i class="bi bi-info-circle"></i> Định dạng hỗ trợ: <strong>.pdf</strong>, <strong>.docx</strong> (Dung lượng tối đa: 50MB). Hệ thống sẽ tự động phân tích đọc số trang.
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-success btn-lg w-100">
+                            <i class="bi bi-upload me-1"></i> Tải Lên Ngay
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Danh Sách Tài Liệu Đã Tải Lên (Task 7) -->
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold text-dark">
+                <i class="bi bi-files text-secondary me-2"></i> Danh Sách Tài Liệu Của Bạn
+            </h5>
+            <span class="badge bg-primary fs-6">@Model.Documents.Count tài liệu</span>
+        </div>
+        <div class="card-body p-0">
+            @if (Model.Documents.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col" class="ps-4">Tên Tài Liệu</th>
+                                <th scope="col" class="text-center">Định Dạng</th>
+                                <th scope="col" class="text-center">Số Trang (Auto)</th>
+                                <th scope="col" class="text-center">Dung Lượng</th>
+                                <th scope="col" class="text-center">Thời Gian Tải Lên</th>
+                                <th scope="col" class="text-end pe-4">Thao Tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var doc in Model.Documents)
+                            {
+                                var isPdf = doc.FileExtension.Equals(".pdf", StringComparison.OrdinalIgnoreCase);
+                                var formattedSize = doc.FileSizeBytes >= 1048576
+                                    ? $"{doc.FileSizeBytes / (1024.0 * 1024.0):F2} MB"
+                                    : $"{doc.FileSizeBytes / 1024.0:F1} KB";
+
+                                <tr>
+                                    <td class="ps-4 fw-semibold text-break">
+                                        <i class="bi @(isPdf ? "bi-filetype-pdf text-danger" : "bi-filetype-docx text-primary") fs-5 me-2"></i>
+                                        @doc.FileName
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge @(isPdf ? "bg-danger" : "bg-primary")">
+                                            @doc.FileExtension.ToUpperInvariant()
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-secondary-subtle text-dark border px-3 py-2 fs-6">
+                                            📄 @doc.PageCount trang
+                                        </span>
+                                    </td>
+                                    <td class="text-center text-muted">@formattedSize</td>
+                                    <td class="text-center text-muted small">
+                                        @doc.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <div class="d-inline-flex gap-2">
+                                            <a asp-page="/Student/CreateOrder" asp-route-documentId="@doc.Id" class="btn btn-outline-primary btn-sm">
+                                                <i class="bi bi-printer"></i> Đặt In
+                                            </a>
+                                            <form method="post" asp-page-handler="Delete" onsubmit="return confirm('Bạn có chắc chắn muốn xóa tài liệu này?');" class="d-inline">
+                                                <input type="hidden" name="documentId" value="@doc.Id" />
+                                                <button type="submit" class="btn btn-outline-danger btn-sm" title="Xóa tài liệu">
+                                                    <i class="bi bi-trash"></i> Xóa
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <div class="text-muted mb-3" style="font-size: 3rem;">📁</div>
+                    <h5 class="text-muted">Chưa có tài liệu nào được tải lên</h5>
+                    <p class="text-muted small">Hãy chọn file PDF hoặc DOCX ở trên và nhấn "Tải Lên Ngay" để bắt đầu đặt in.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>

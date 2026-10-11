@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -20,6 +20,7 @@ builder.Services.AddDbContext<UniPrintDbContext>(options =>
 // 2. Dependency Injection (UnitOfWork & Services)
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IDocumentInspector, DocumentInspector>();
 builder.Services.AddScoped<IDocumentService, DocumentService>();
 builder.Services.AddScoped<IPriceCalculatorService, PriceCalculatorService>();
 builder.Services.AddScoped<IPrintOrderService, PrintOrderService>();
