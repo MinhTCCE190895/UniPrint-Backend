@@ -141,3 +141,18 @@ dotnet run --project UniPrint.API
 ## 5. Phân Công Công Việc Nhóm (Task Matrix)
 Dự án đã được phân chia đều thành 5 Feature độc lập, mỗi thành viên đảm nhận Full-stack (cả Backend lẫn Frontend) với trọng số chuẩn hóa **20 điểm / người**:
 * Chi tiết bảng phân chia, độ khó, điểm số và deadline xem tại file: [UniPrint_Task_Assignment.xlsx](../UniPrint_Task_Assignment.xlsx).
+
+## Task 16/17 — Pickup QR (mobile integration)
+
+Giữ cấu trúc Controller -> Business Service -> UnitOfWork/Repository -> EF Core.
+
+- Tạo token riêng cùng lúc tạo đơn, lưu hạn 7 ngày theo sequence trong FEATURES_AND_USE_CASES; response bổ sung qrExpiresAt theo UTC.
+- Scan API giữ route/query và quyền Staff/Admin; response thành công đổi từ boolean sang PrintOrderResponseDto để mobile hiển thị đơn Completed.
+- Kiểm tra staff đang hoạt động, token chưa dùng/còn hạn, đơn ReadyForPickup và kệ hợp lệ trước khi cập nhật.
+- SaveChanges ghi đồng thời token đã dùng, đơn Completed và giảm CurrentCount. Concurrency token trên các cột sẵn có ngăn ghi đè khi quét hoặc cập nhật kệ đồng thời; không thêm cột database.
+- Razor pickup dùng người đăng nhập, bỏ ID staff demo cố định. API chi tiết đơn không cho sinh viên đọc QR của đơn người khác.
+- QR hết hạn giữ nguyên đơn/kệ chờ cấp lại theo EC04; cấp lại mã là luồng riêng.
+
+Kiểm tra: `dotnet test UniPrint.Tests/UniPrint.Tests.csproj` và `dotnet build UniPrint.sln`. Các test pickup dùng SQLite để kiểm tra transaction/rollback; cần kiểm thử thêm trên SQL Server và camera thiết bị khi triển khai.
+
+Chạy API cho mobile: `dotnet run --project UniPrint.API --launch-profile http` (cổng 5045 theo launchSettings). Cấu hình SQL Server theo hướng dẫn ở trên trước khi chạy. Dùng endpoint assign-shelf hiện có để gán kệ trước khi pickup.

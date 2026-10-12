@@ -58,6 +58,13 @@ public class PrintOrdersController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetOrderById(Guid id)
     {
+        // Pickup tokens must not be disclosed to another student.
+        if (!User.IsInRole("Staff") && !User.IsInRole("Admin"))
+        {
+            var ownOrders = await _orderService.GetStudentOrdersAsync(GetCurrentUserId());
+            if (ownOrders.Data == null || !ownOrders.Data.Any(order => order.Id == id))
+                return NotFound();
+        }
         var result = await _orderService.GetOrderByIdAsync(id);
         if (!result.Success) return NotFound(result);
         return Ok(result);

@@ -65,6 +65,7 @@ public class PrintOrderResponseDto
     public string StatusText => Status.ToString();
     public string? ShelfCode { get; set; }
     public string? QrToken { get; set; }
+    public DateTimeOffset? QrExpiresAt { get; set; }
     public PaymentStatus PaymentStatus { get; set; }
     public DateTime CreatedAt { get; set; }
 }
