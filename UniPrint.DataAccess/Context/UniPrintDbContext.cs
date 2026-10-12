@@ -28,6 +28,10 @@ public class UniPrintDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        // Existing columns protect pickup and shared shelf updates without new columns.
+        modelBuilder.Entity<PickupQR>().Property(q => q.IsUsed).IsConcurrencyToken();
+        modelBuilder.Entity<PrintOrder>().Property(o => o.Status).IsConcurrencyToken();
+        modelBuilder.Entity<Shelf>().Property(s => s.CurrentCount).IsConcurrencyToken();
 
         // Configure User
         modelBuilder.Entity<User>(entity =>

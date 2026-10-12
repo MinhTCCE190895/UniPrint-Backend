@@ -15,7 +15,7 @@ public interface IPrintOrderService
     Task<ApiResponse<PrintOrderResponseDto>> GetOrderByIdAsync(Guid orderId, CancellationToken ct = default);
     Task<ApiResponse<bool>> UpdateOrderStatusAsync(Guid orderId, Guid staffId, PrintOrderStatus newStatus, CancellationToken ct = default);
     Task<ApiResponse<bool>> AssignShelfAsync(Guid orderId, Guid staffId, Guid shelfId, CancellationToken ct = default);
-    Task<ApiResponse<bool>> ScanPickupQrAsync(string qrToken, Guid staffId, CancellationToken ct = default);
+    Task<ApiResponse<PrintOrderResponseDto>> ScanPickupQrAsync(string qrToken, Guid staffId, CancellationToken ct = default);
     Task<ApiResponse<bool>> CancelOrderAsync(Guid orderId, Guid studentId, CancellationToken ct = default);
 }
 
@@ -108,6 +108,7 @@ public class PrintOrderService : IPrintOrderService
             TotalPrice = printOption.TotalPrice,
             Status = order.Status,
             QrToken = qrToken,
+            QrExpiresAt = new DateTimeOffset(DateTime.SpecifyKind(pickupQr.ExpiresAt, DateTimeKind.Utc)),
             PaymentStatus = payment.Status,
             CreatedAt = order.CreatedAt
         }, "Tạo đơn in thành công!");
@@ -137,6 +138,7 @@ public class PrintOrderService : IPrintOrderService
                 Status = o.Status,
                 ShelfCode = o.Shelf != null ? o.Shelf.ShelfCode : null,
                 QrToken = o.PickupQR != null ? o.PickupQR.QrToken : null,
+                QrExpiresAt = o.PickupQR != null ? new DateTimeOffset(DateTime.SpecifyKind(o.PickupQR.ExpiresAt, DateTimeKind.Utc)) : null,
                 PaymentStatus = o.Payment != null ? o.Payment.Status : PaymentStatus.Pending,
                 CreatedAt = o.CreatedAt
             })
@@ -204,6 +206,7 @@ public class PrintOrderService : IPrintOrderService
             Status = o.Status,
             ShelfCode = o.Shelf?.ShelfCode,
             QrToken = o.PickupQR?.QrToken,
+            QrExpiresAt = o.PickupQR != null ? new DateTimeOffset(DateTime.SpecifyKind(o.PickupQR.ExpiresAt, DateTimeKind.Utc)) : null,
             PaymentStatus = o.Payment?.Status ?? PaymentStatus.Pending,
             CreatedAt = o.CreatedAt
         });
@@ -253,6 +256,8 @@ public class PrintOrderService : IPrintOrderService
     {
         var order = await _unitOfWork.Repository<PrintOrder>().GetByIdAsync(orderId, ct);
         if (order == null) return ApiResponse<bool>.Fail("Không tìm thấy đơn hàng.");
+        if (order.ShelfId != null || (order.Status != PrintOrderStatus.Printing && order.Status != PrintOrderStatus.ReadyForPickup))
+            return ApiResponse<bool>.Fail("Đơn hàng đã có kệ hoặc chưa ở trạng thái cho phép gán kệ.");
 
         var shelf = await _unitOfWork.Repository<Shelf>().GetByIdAsync(shelfId, ct);
         if (shelf == null || !shelf.IsAvailable)
@@ -272,8 +277,14 @@ public class PrintOrderService : IPrintOrderService
         return ApiResponse<bool>.Ok(true, $"Đã gán đơn hàng vào kệ {shelf.ShelfCode} và sẵn sàng nhận tài liệu.");
     }
 
-    public async Task<ApiResponse<bool>> ScanPickupQrAsync(string qrToken, Guid staffId, CancellationToken ct = default)
+    public async Task<ApiResponse<PrintOrderResponseDto>> ScanPickupQrAsync(string qrToken, Guid staffId, CancellationToken ct = default)
     {
+        var staff = await _unitOfWork.Repository<User>().GetByIdAsync(staffId, ct);
+        if (staff == null || !staff.IsActive || (staff.Role != UserRole.Staff && staff.Role != UserRole.Admin))
+            return ApiResponse<PrintOrderResponseDto>.Fail("Chỉ nhân viên được xác nhận nhận tài liệu.");
+        if (string.IsNullOrWhiteSpace(qrToken))
+            return ApiResponse<PrintOrderResponseDto>.Fail("Mã QR không hợp lệ.");
+        qrToken = qrToken.Trim();
         var qr = await _unitOfWork.Repository<PickupQR>().Query()
             .Include(q => q.Order)
             .ThenInclude(o => o.Shelf)
@@ -281,22 +292,32 @@ public class PrintOrderService : IPrintOrderService
 
         if (qr == null)
         {
-            return ApiResponse<bool>.Fail("Mã QR không hợp lệ.");
+            return ApiResponse<PrintOrderResponseDto>.Fail("Mã QR không hợp lệ.");
         }
 
         if (qr.IsUsed)
         {
-            return ApiResponse<bool>.Fail("Mã QR này đã được sử dụng trước đó.");
+            return ApiResponse<PrintOrderResponseDto>.Fail("Mã QR này đã được sử dụng trước đó.");
         }
 
-        if (qr.ExpiresAt < DateTime.UtcNow)
+        var now = DateTime.UtcNow;
+        if (qr.ExpiresAt <= now)
         {
-            return ApiResponse<bool>.Fail("Mã QR đã hết hạn (EC04).");
+            return ApiResponse<PrintOrderResponseDto>.Fail("Mã QR đã hết hạn (EC04).");
         }
+
+        if (qr.Order.Status != PrintOrderStatus.ReadyForPickup)
+            return ApiResponse<PrintOrderResponseDto>.Fail("Đơn hàng chưa sẵn sàng nhận hoặc đã hoàn tất/hủy.");
+        if (qr.Order.Shelf == null || qr.Order.Shelf.CurrentCount <= 0)
+            return ApiResponse<PrintOrderResponseDto>.Fail("Đơn hàng chưa có vị trí kệ hợp lệ. Vui lòng kiểm tra lại kệ.");
+
+        // Load the response before committing so a later read cannot hide a successful pickup.
+        var response = await GetOrderByIdAsync(qr.OrderId, ct);
+        if (!response.Success) return response;
 
         // Đánh dấu hoàn tất
         qr.IsUsed = true;
-        qr.UsedAt = DateTime.UtcNow;
+        qr.UsedAt = now;
 
         var order = qr.Order;
         order.StaffId = staffId;
@@ -312,8 +333,18 @@ public class PrintOrderService : IPrintOrderService
         _unitOfWork.Repository<PickupQR>().Update(qr);
         _unitOfWork.Repository<PrintOrder>().Update(order);
 
-        await _unitOfWork.SaveChangesAsync(ct);
-        return ApiResponse<bool>.Ok(true, "Xác nhận nhận tài liệu thành công. Đơn hàng đã hoàn tất!");
+        try
+        {
+            // EF saves all three updates in one transaction. Concurrency tokens reject stale scans.
+            await _unitOfWork.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return ApiResponse<PrintOrderResponseDto>.Fail("Đơn hàng hoặc kệ vừa được cập nhật. Vui lòng tải lại trước khi thử tiếp.");
+        }
+        response.Data!.Status = PrintOrderStatus.Completed;
+        response.Data.QrToken = null;
+        return ApiResponse<PrintOrderResponseDto>.Ok(response.Data, "Xác nhận nhận tài liệu thành công. Đơn hàng đã hoàn tất!");
     }
 
     public async Task<ApiResponse<bool>> CancelOrderAsync(Guid orderId, Guid studentId, CancellationToken ct = default)
