@@ -43,4 +43,29 @@ public class AuthController : ControllerBase
         var result = await _authService.GetProfileAsync(userId);
         return Ok(result);
     }
+
+    [Authorize]
+    [HttpPut("profile")]
+    [HttpPut("me")]
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequestDto request)
+    {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userIdStr, out var userId)) return Unauthorized();
+
+        var result = await _authService.UpdateProfileAsync(userId, request);
+        if (!result.Success) return BadRequest(result);
+        return Ok(result);
+    }
+
+    [Authorize]
+    [HttpPut("change-password")]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDto request)
+    {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userIdStr, out var userId)) return Unauthorized();
+
+        var result = await _authService.ChangePasswordAsync(userId, request);
+        if (!result.Success) return BadRequest(result);
+        return Ok(result);
+    }
 }
