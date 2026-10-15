@@ -35,3 +35,17 @@ public class UserProfileDto
     public string? AvatarUrl { get; set; }
     public UserRole Role { get; set; }
 }
+
+public class UpdateProfileRequestDto
+{
+    public string FullName { get; set; } = string.Empty;
+    public string? PhoneNumber { get; set; }
+    public string? AvatarUrl { get; set; }
+}
+
+public class ChangePasswordRequestDto
+{
+    public string CurrentPassword { get; set; } = string.Empty;
+    public string NewPassword { get; set; } = string.Empty;
+    public string ConfirmPassword { get; set; } = string.Empty;
+}
