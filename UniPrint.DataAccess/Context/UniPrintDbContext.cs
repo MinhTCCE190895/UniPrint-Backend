@@ -210,9 +210,9 @@ public class UniPrintDbContext : DbContext
         );
 
         modelBuilder.Entity<Shelf>().HasData(
-            new Shelf { Id = Guid.Parse("55555555-5555-5555-5555-555555555501"), ShelfCode = "A1", Location = "Táº§ng 1 - Ká»‡ TrÃ¡i", MaxCapacity = 20, CurrentCount = 0, CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
-            new Shelf { Id = Guid.Parse("55555555-5555-5555-5555-555555555502"), ShelfCode = "A2", Location = "Táº§ng 1 - Ká»‡ TrÃ¡i", MaxCapacity = 20, CurrentCount = 0, CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
-            new Shelf { Id = Guid.Parse("55555555-5555-5555-5555-555555555503"), ShelfCode = "B1", Location = "Táº§ng 1 - Ká»‡ Pháº£i", MaxCapacity = 20, CurrentCount = 0, CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
+            new Shelf { Id = Guid.Parse("55555555-5555-5555-5555-555555555501"), ShelfCode = "A1", Location = "Tầng 1 - Kệ Trái", MaxCapacity = 20, CurrentCount = 0, CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+            new Shelf { Id = Guid.Parse("55555555-5555-5555-5555-555555555502"), ShelfCode = "A2", Location = "Tầng 1 - Kệ Trái", MaxCapacity = 20, CurrentCount = 0, CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+            new Shelf { Id = Guid.Parse("55555555-5555-5555-5555-555555555503"), ShelfCode = "B1", Location = "Tầng 1 - Kệ Phải", MaxCapacity = 20, CurrentCount = 0, CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
         );
 
         modelBuilder.Entity<Category>().HasData(
