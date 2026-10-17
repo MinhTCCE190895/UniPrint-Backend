@@ -262,7 +262,7 @@ public class PrintOrderService : IPrintOrderService
         var shelf = await _unitOfWork.Repository<Shelf>().GetByIdAsync(shelfId, ct);
         if (shelf == null || !shelf.IsAvailable)
         {
-            return ApiResponse<bool>.Fail("Kệ lưu trữ không tồn tại hoặc đã đầy chỗ (EC06).");
+            return ApiResponse<bool>.Fail("Kệ lưu trữ không tồn tại hoặc đã đầy chỗ.");
         }
 
         order.StaffId = staffId;

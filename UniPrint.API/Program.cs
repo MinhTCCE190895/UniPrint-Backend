@@ -24,6 +24,7 @@ builder.Services.AddScoped<IDocumentInspector, DocumentInspector>();
 builder.Services.AddScoped<IDocumentService, DocumentService>();
 builder.Services.AddScoped<IPriceCalculatorService, PriceCalculatorService>();
 builder.Services.AddScoped<IPrintOrderService, PrintOrderService>();
+builder.Services.AddScoped<IShelfService, ShelfService>();
 builder.Services.AddScoped<IStudyHubService, StudyHubService>();
 
 // 3. Authentication & JWT Bearer

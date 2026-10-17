@@ -20,6 +20,7 @@ builder.Services.AddScoped<IDocumentInspector, DocumentInspector>();
 builder.Services.AddScoped<IDocumentService, DocumentService>();
 builder.Services.AddScoped<IPriceCalculatorService, PriceCalculatorService>();
 builder.Services.AddScoped<IPrintOrderService, PrintOrderService>();
+builder.Services.AddScoped<IShelfService, ShelfService>();
 builder.Services.AddScoped<IStudyHubService, StudyHubService>();
 
 // 3. Cookie Authentication for Razor Pages
@@ -50,6 +51,21 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<UniPrintDbContext>();
     dbContext.Database.EnsureCreated();
+
+    // Chuẩn hóa font tiếng Việt cho dữ liệu Shelves trong database nếu bị lỗi mã hóa UTF-8
+    var seedShelves = dbContext.Shelves.ToList();
+    foreach (var s in seedShelves)
+    {
+        if (s.ShelfCode == "A1" || s.ShelfCode == "A2")
+        {
+            s.Location = "Tầng 1 - Kệ Trái";
+        }
+        else if (s.ShelfCode == "B1")
+        {
+            s.Location = "Tầng 1 - Kệ Phải";
+        }
+    }
+    dbContext.SaveChanges();
 
     // Tự động bơm đơn in mẫu nếu database chưa có đơn nào
     var studentId = Guid.Parse("33333333-3333-3333-3333-333333333333");
