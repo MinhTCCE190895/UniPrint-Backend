@@ -1,0 +1,232 @@
+@page
+@model UniPrint.Web.Pages.Staff.ShelvesModel
+@{
+    ViewData["Title"] = "Quản Lý Kệ Lưu Trữ - Staff";
+    var totalShelves = Model.Shelves.Count;
+    var availableShelves = Model.Shelves.Count(s => s.IsAvailable);
+    var fullShelves = Model.Shelves.Count(s => !s.IsAvailable);
+    var totalOrders = Model.Shelves.Sum(s => s.CurrentCount);
+    var totalCapacity = Model.Shelves.Sum(s => s.MaxCapacity);
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h2 class="mb-0"><i class="bi bi-inboxes"></i> QUẢN LÝ KỆ LƯU TRỮ (SHELVES)</h2>
+            <small class="text-muted">Quản lý các kệ tài liệu (A1, A2, B1...) & kiểm soát sức chứa tối đa</small>
+        </div>
+        <div>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createShelfModal">
+                <i class="bi bi-plus-circle"></i> Thêm Kệ Mới
+            </button>
+            <a asp-page="/Staff/Queue" class="btn btn-outline-secondary ms-2">
+                <i class="bi bi-arrow-left"></i> Về Hàng Đợi In
+            </a>
+        </div>
+    </div>
+    <hr />
+
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i> @Model.SuccessMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> @Model.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Summary Stats Bar -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body py-2 px-3">
+                    <span class="text-muted small">Tổng số kệ</span>
+                    <h4 class="mb-0 text-dark fw-bold">@totalShelves</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body py-2 px-3">
+                    <span class="text-muted small">Kệ còn chỗ</span>
+                    <h4 class="mb-0 text-success fw-bold">@availableShelves</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body py-2 px-3">
+                    <span class="text-muted small">Kệ đã đầy</span>
+                    <h4 class="mb-0 text-danger fw-bold">@fullShelves</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body py-2 px-3">
+                    <span class="text-muted small">Tổng đơn đang lưu / Sức chứa</span>
+                    <h4 class="mb-0 text-primary fw-bold">@totalOrders / @totalCapacity</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shelves Grid -->
+    @if (Model.Shelves.Count == 0)
+    {
+        <div class="alert alert-info text-center py-4">
+            <p class="mb-0">Chưa có kệ lưu trữ nào trong hệ thống. Hãy nhấn <strong>Thêm Kệ Mới</strong> để tạo kệ đầu tiên.</p>
+        </div>
+    }
+    else
+    {
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            @foreach (var s in Model.Shelves)
+            {
+                <div class="col">
+                    <div class="card h-100 shadow-sm border @(!s.IsAvailable ? "border-danger" : "border-secondary-subtle")">
+                        <div class="card-header d-flex justify-content-between align-items-center @(!s.IsAvailable ? "bg-danger text-white" : "bg-light")">
+                            <h5 class="card-title mb-0 fw-bold">Kệ @s.ShelfCode</h5>
+                            @if (s.IsAvailable)
+                            {
+                                <span class="badge bg-success">Còn chỗ</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning text-dark">Đã đầy</span>
+                            }
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text text-muted mb-2">
+                                <i class="bi bi-geo-alt"></i> <strong>Vị trí:</strong> @s.Location
+                            </p>
+                            
+                            <div class="d-flex justify-content-between small text-muted mb-1">
+                                <span>Sức chứa:</span>
+                                <strong>@s.CurrentCount / @s.MaxCapacity đơn (@s.OccupancyRate%)</strong>
+                            </div>
+                            <div class="progress mb-2" style="height: 10px;">
+                                <div class="progress-bar @(s.OccupancyRate >= 100 ? "bg-danger" : s.OccupancyRate >= 70 ? "bg-warning" : "bg-primary")" 
+                                     role="progressbar" 
+                                     style="width: @(Math.Min(100, s.OccupancyRate))%" 
+                                     aria-valuenow="@s.CurrentCount" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="@s.MaxCapacity">
+                                </div>
+                            </div>
+
+                            @if (!s.IsAvailable)
+                            {
+                                <div class="alert alert-danger py-1 px-2 small mb-0 mt-2" role="alert">
+                                    <i class="bi bi-exclamation-octagon"></i> Kệ đã đạt sức chứa tối đa. Không thể gán thêm đơn.
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="text-success small mt-2">
+                                    <i class="bi bi-check2"></i> Còn trống @(s.MaxCapacity - s.CurrentCount) chỗ để lưu đơn in.
+                                </div>
+                            }
+                        </div>
+                        <div class="card-footer bg-white d-flex justify-content-end gap-2">
+                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editModal-@s.Id">
+                                Sửa Kệ
+                            </button>
+
+                            @if (s.CurrentCount > 0)
+                            {
+                                <button type="button" class="btn btn-sm btn-outline-secondary" disabled title="Không thể xóa kệ đang có đơn lưu trữ">
+                                    Xóa
+                                </button>
+                            }
+                            else
+                            {
+                                <form method="post" asp-page-handler="Delete" asp-route-id="@s.Id" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa kệ @s.ShelfCode không?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Xóa</button>
+                                </form>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Edit Shelf Modal -->
+                <div class="modal fade" id="editModal-@s.Id" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <form method="post" asp-page-handler="Update">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Cập Nhật Kệ @s.ShelfCode</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <input type="hidden" name="EditShelfId" value="@s.Id" />
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Mã Kệ <span class="text-danger">*</span></label>
+                                        <input type="text" name="UpdateInput.ShelfCode" class="form-control" value="@s.ShelfCode" required />
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Vị Trí Lưu Trữ</label>
+                                        <input type="text" name="UpdateInput.Location" class="form-control" value="@s.Location" />
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Sức Chứa Tối Đa (MaxCapacity) <span class="text-danger">*</span></label>
+                                        <input type="number" name="UpdateInput.MaxCapacity" class="form-control" value="@s.MaxCapacity" min="@Math.Max(1, s.CurrentCount)" required />
+                                        <div class="form-text text-muted">
+                                            Hiện tại kệ đang có <strong>@s.CurrentCount</strong> đơn. Sức chứa tối đa không được nhỏ hơn @s.CurrentCount.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Hủy</button>
+                                    <button type="submit" class="btn btn-primary btn-sm">Lưu Thay Đổi</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<!-- Create Shelf Modal -->
+<div class="modal fade" id="createShelfModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="Create">
+                <div class="modal-header">
+                    <h5 class="modal-title">Thêm Kệ Lưu Trữ Mới</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Mã Kệ <span class="text-danger">*</span></label>
+                        <input type="text" name="CreateInput.ShelfCode" class="form-control" placeholder="Ví dụ: A1, A2, B1, C1..." required />
+                        <div class="form-text">Mã kệ viết hoa, phân biệt duy nhất từng ngăn/kệ.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Vị Trí Lưu Trữ</label>
+                        <input type="text" name="CreateInput.Location" class="form-control" placeholder="Ví dụ: Tầng 1 - Kệ Trái" value="Tầng 1 - Kệ Trái" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Sức Chứa Tối Đa (MaxCapacity) <span class="text-danger">*</span></label>
+                        <input type="number" name="CreateInput.MaxCapacity" class="form-control" value="20" min="1" required />
+                        <div class="form-text">Sức chứa mặc định theo quy định hệ thống là 20 đơn.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Tạo Kệ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
