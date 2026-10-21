@@ -70,12 +70,12 @@
                         @if (User.Identity?.IsAuthenticated == true)
                         {
                             <li class="nav-item me-2">
-                                <span class="nav-link text-white">
-                                    Xin chào, <strong>@User.Identity.Name</strong>
+                                <a class="@NavClass("/Auth/Profile")" asp-page="/Auth/Profile" title="Xem và cập nhật hồ sơ cá nhân">
+                                    👤 Xin chào, <strong>@User.Identity.Name</strong>
                                     <span class="badge bg-light text-primary ms-1">
                                         @(User.IsInRole("Admin") ? "Admin" : User.IsInRole("Staff") ? "Staff" : "Sinh viên")
                                     </span>
-                                </span>
+                                </a>
                             </li>
                             <li class="nav-item">
                                 <form method="post" asp-page="/Auth/Logout" class="d-inline">
