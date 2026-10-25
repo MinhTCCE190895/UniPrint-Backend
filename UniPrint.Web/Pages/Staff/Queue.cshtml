@@ -14,6 +14,22 @@
     </div>
     <hr />
 
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-2"></i>@Model.SuccessMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>@Model.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
     <div class="table-responsive">
         <table class="table table-bordered table-hover shadow-sm align-middle">
             <thead class="table-dark">
@@ -52,20 +68,28 @@
                             @switch (o.Status)
                             {
                                 case UniPrint.DataAccess.Enums.PrintOrderStatus.Pending:
-                                    <span class="badge bg-secondary">Chờ tiếp nhận (Pending)</span>
+                                    <span class="badge bg-secondary">Chờ tiếp nhận</span>
                                     break;
                                 case UniPrint.DataAccess.Enums.PrintOrderStatus.Processing:
-                                    <span class="badge bg-warning text-dark">Đã tiếp nhận (Processing)</span>
+                                    <span class="badge bg-warning text-dark">Đã tiếp nhận</span>
                                     break;
                                 case UniPrint.DataAccess.Enums.PrintOrderStatus.Printing:
-                                    <span class="badge bg-primary">Đang in (Printing)</span>
+                                    <span class="badge bg-primary">Đang in</span>
                                     break;
                                 case UniPrint.DataAccess.Enums.PrintOrderStatus.ReadyForPickup:
-                                    <span class="badge bg-success">Chờ nhận đồ (Ready)</span>
+                                    <span class="badge bg-success">Chờ nhận đồ</span>
                                     break;
                                 default:
                                     <span class="badge bg-info text-dark">@o.StatusText</span>
                                     break;
+                            }
+                            @if (!string.IsNullOrEmpty(o.ShelfCode))
+                            {
+                                <div class="mt-1">
+                                    <span class="badge bg-light text-primary border border-primary">
+                                        <i class="bi bi-inboxes"></i> Kệ: @o.ShelfCode
+                                    </span>
+                                </div>
                             }
                         </td>
                         <td>
@@ -83,13 +107,47 @@
                             }
                             else if (o.Status == UniPrint.DataAccess.Enums.PrintOrderStatus.Printing)
                             {
-                                <form method="post" asp-page-handler="UpdateStatus" asp-route-orderId="@o.Id" asp-route-newStatus="@UniPrint.DataAccess.Enums.PrintOrderStatus.ReadyForPickup" class="d-inline">
-                                    <button type="submit" class="btn btn-sm btn-success">Đã in xong</button>
-                                </form>
+                                @if (Model.AvailableShelves.Count > 0)
+                                {
+                                    <form method="post" asp-page-handler="AssignShelf" asp-route-orderId="@o.Id" class="d-inline-flex align-items-center">
+                                        <select name="shelfId" class="form-select form-select-sm me-1" style="width: 140px;" required>
+                                            <option value="">-- Chọn Kệ --</option>
+                                            @foreach (var shelf in Model.AvailableShelves)
+                                            {
+                                                <option value="@shelf.Id">Kệ @shelf.ShelfCode (@(shelf.MaxCapacity - shelf.CurrentCount) chỗ)</option>
+                                            }
+                                        </select>
+                                        <button type="submit" class="btn btn-sm btn-success text-nowrap">
+                                            <i class="bi bi-box-arrow-in-down"></i> In xong & Xếp kệ
+                                        </button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <form method="post" asp-page-handler="UpdateStatus" asp-route-orderId="@o.Id" asp-route-newStatus="@UniPrint.DataAccess.Enums.PrintOrderStatus.ReadyForPickup" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-success">Đã in xong</button>
+                                    </form>
+                                }
                             }
                             else if (o.Status == UniPrint.DataAccess.Enums.PrintOrderStatus.ReadyForPickup)
                             {
-                                <span class="text-success small fw-semibold"><i class="bi bi-check2-circle"></i> Chờ sinh viên quét QR</span>
+                                @if (string.IsNullOrEmpty(o.ShelfCode) && Model.AvailableShelves.Count > 0)
+                                {
+                                    <form method="post" asp-page-handler="AssignShelf" asp-route-orderId="@o.Id" class="d-inline-flex align-items-center">
+                                        <select name="shelfId" class="form-select form-select-sm me-1" style="width: 130px;" required>
+                                            <option value="">-- Chọn Kệ --</option>
+                                            @foreach (var shelf in Model.AvailableShelves)
+                                            {
+                                                <option value="@shelf.Id">Kệ @shelf.ShelfCode</option>
+                                            }
+                                        </select>
+                                        <button type="submit" class="btn btn-sm btn-primary text-nowrap">Xếp kệ</button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <span class="text-success small fw-semibold"><i class="bi bi-check2-circle"></i> Chờ sinh viên quét QR</span>
+                                }
                             }
                         </td>
                     </tr>
