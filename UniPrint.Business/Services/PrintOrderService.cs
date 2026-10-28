@@ -376,10 +376,18 @@ public class PrintOrderService : IPrintOrderService
 
     public async Task<ApiResponse<bool>> CancelOrderAsync(Guid orderId, Guid studentId, CancellationToken ct = default)
     {
-        var order = await _unitOfWork.Repository<PrintOrder>().GetByIdAsync(orderId, ct);
+        var order = await _unitOfWork.Repository<PrintOrder>().Query()
+            .Include(o => o.Payment)
+            .FirstOrDefaultAsync(o => o.Id == orderId, ct);
         if (order == null || order.StudentId != studentId)
         {
             return ApiResponse<bool>.Fail("Không tìm thấy đơn hàng.");
+        }
+
+        // Task 18: đơn đã thanh toán (VietQR) không tự hủy được, cần liên hệ quầy để hoàn tiền.
+        if (order.Payment?.Status == PaymentStatus.Paid)
+        {
+            return ApiResponse<bool>.Fail("Đơn hàng đã được thanh toán, vui lòng liên hệ quầy in để hủy và hoàn tiền.");
         }
 
         // BR02: Khi Staff đã bắt đầu in (Printing trở đi) -> không được hủy

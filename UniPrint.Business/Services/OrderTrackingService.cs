@@ -62,7 +62,8 @@ public class OrderTrackingService : IOrderTrackingService
             CreatedAt = order.CreatedAt,
             UpdatedAt = order.UpdatedAt,
             Notes = order.Notes,
-            CanCancel = order.Status is PrintOrderStatus.Pending or PrintOrderStatus.Processing,
+            CanCancel = order.Status is PrintOrderStatus.Pending or PrintOrderStatus.Processing
+                        && order.Payment?.Status != PaymentStatus.Paid,
             StudentName = order.Student?.FullName ?? string.Empty,
             DocumentName = order.Document?.FileName ?? string.Empty,
             PageCount = order.Document?.PageCount ?? 0,

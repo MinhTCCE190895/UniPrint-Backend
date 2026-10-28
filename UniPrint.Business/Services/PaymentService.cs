@@ -176,7 +176,19 @@ public class PaymentService : IPaymentService
             Status = PaymentStatus.Pending
         };
         await _unitOfWork.Repository<Payment>().AddAsync(payment, ct);
-        await _unitOfWork.SaveChangesAsync(ct);
+        try
+        {
+            await _unitOfWork.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException)
+        {
+            // Request khác vừa tạo hóa đơn cho đơn này (OrderId unique) -> dùng bản đã có.
+            _unitOfWork.Repository<Payment>().Delete(payment);
+            var existing = await _unitOfWork.Repository<Payment>().Query()
+                .FirstAsync(p => p.OrderId == order.Id, ct);
+            order.Payment = existing;
+            return existing;
+        }
         order.Payment = payment;
         return payment;
     }

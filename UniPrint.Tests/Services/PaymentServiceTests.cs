@@ -213,6 +213,21 @@ public class PaymentServiceTests : IDisposable
             p => p.OrderId == Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa01"));
     }
 
+    [Fact]
+    public async Task PaidOrder_CannotBeCancelledByStudent()
+    {
+        _order.Status = PrintOrderStatus.Pending;
+        await _db.SaveChangesAsync();
+        Assert.True((await Service(_db).ConfirmPaymentAsync(_order.Id, _staff.Id,
+            new ConfirmPaymentDto { Method = PaymentMethod.VietQR_PayOS, TransactionCode = "FT999" })).Success);
+
+        var orderService = new PrintOrderService(new UnitOfWork(_db), new PriceCalculatorService(new UnitOfWork(_db)));
+        var cancel = await orderService.CancelOrderAsync(_order.Id, _student.Id);
+
+        Assert.False(cancel.Success);
+        Assert.Equal(PrintOrderStatus.Pending, _order.Status);
+    }
+
     public void Dispose() { _db.Dispose(); _connection.Dispose(); }
 }
 
