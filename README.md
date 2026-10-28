@@ -174,3 +174,14 @@ Chạy API cho mobile: `dotnet run --project UniPrint.API --launch-profile http`
 - Sinh viên chỉ xem được đơn của mình (đơn khác trả 404); Staff/Admin xem mọi đơn.
 - Token QR chỉ được trả khi đơn đang chờ nhận, chưa dùng và còn hạn (EC04).
 - Web: `Student/Orders` (danh sách đơn) và `Orders/Tracking/{id}` (theo dõi chi tiết, đổi phương thức thanh toán, hiển thị QR nhận & VietQR).
+
+## Task 20 — Update Price Configuration (Admin)
+
+- `PriceConfigService` + endpoints trong `PriceController`:
+  - `GET /api/price/config` (công khai): bảng giá đang áp dụng.
+  - `PUT /api/price/config` (Admin): cập nhật giá trang đen trắng, màu, chiết khấu 2 mặt, phí gáy, phí ghim.
+  - `GET /api/price/config/history?take=10` (Admin): lịch sử các phiên bản bảng giá.
+- Mỗi lần cập nhật tạo phiên bản mới, bản cũ chuyển `IsActive = false` trong cùng một transaction → luôn chỉ có 1 bảng giá áp dụng.
+- Kiểm tra hợp lệ: giá > 0, giá màu ≥ giá đen trắng, chiết khấu 0–<100%, phí không âm, tối đa 1.000.000đ; không lưu nếu không có thay đổi.
+- Đơn đã tạo giữ nguyên giá đã chốt (BR02) — có test kiểm chứng.
+- Web: trang `Admin/PriceConfig` (form + xem trước giá + lịch sử).

@@ -26,6 +26,7 @@ builder.Services.AddScoped<IStudyHubService, StudyHubService>();
 builder.Services.AddSingleton(UniPrint.Business.Common.VietQrSettings.FromConfiguration(builder.Configuration));
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IOrderTrackingService, OrderTrackingService>();
+builder.Services.AddScoped<IPriceConfigService, PriceConfigService>();
 
 // 3. Cookie Authentication for Razor Pages
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

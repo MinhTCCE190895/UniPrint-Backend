@@ -71,6 +71,12 @@
                                 <a class="@NavClass("/Pickup/Payments")" asp-page="/Pickup/Payments">Thanh Toán</a>
                             </li>
                         }
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <li class="nav-item">
+                                <a class="@NavClass("/Admin/PriceConfig")" asp-page="/Admin/PriceConfig">Bảng Giá</a>
+                            </li>
+                        }
                         <li class="nav-item">
                             <a class="@NavClassWarning("/StudyHub/Index")" asp-page="/StudyHub/Index">Study Hub</a>
                         </li>
