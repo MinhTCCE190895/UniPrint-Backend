@@ -156,3 +156,14 @@ Giữ cấu trúc Controller -> Business Service -> UnitOfWork/Repository -> EF 
 Kiểm tra: `dotnet test UniPrint.Tests/UniPrint.Tests.csproj` và `dotnet build UniPrint.sln`. Các test pickup dùng SQLite để kiểm tra transaction/rollback; cần kiểm thử thêm trên SQL Server và camera thiết bị khi triển khai.
 
 Chạy API cho mobile: `dotnet run --project UniPrint.API --launch-profile http` (cổng 5045 theo launchSettings). Cấu hình SQL Server theo hướng dẫn ở trên trước khi chạy. Dùng endpoint assign-shelf hiện có để gán kệ trước khi pickup.
+
+## Task 18 — Process Payment (Cash / VietQR)
+
+- `PaymentService` + `PaymentsController` (`/api/payments`):
+  - `GET order/{orderId}`: xem hóa đơn (SV chủ đơn hoặc Staff/Admin); nếu chọn VietQR sẽ kèm `vietQr.qrPayload` (chuỗi EMVCo/NAPAS để app vẽ QR) và `vietQr.qrImageUrl`.
+  - `PUT order/{orderId}/method` (Student): chọn `1 = Cash` (trả khi nhận) hoặc `2 = VietQR_PayOS` (chuyển khoản).
+  - `POST order/{orderId}/confirm` (Staff/Admin): xác nhận đã thu tiền mặt (chỉ khi đơn đã in xong/đang chờ nhận) hoặc đã nhận chuyển khoản (bắt buộc mã giao dịch).
+  - `GET unpaid?keyword=` (Staff/Admin): danh sách hóa đơn chưa thanh toán.
+- Số tiền luôn lấy theo giá đã chốt trên đơn (BR02). `Payment.Status` là concurrency token để chặn xác nhận 2 lần.
+- Tài khoản nhận tiền cấu hình ở section `VietQR` trong `appsettings.json`.
+- Web: trang `Pickup/Payments` cho Staff.

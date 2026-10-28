@@ -26,6 +26,9 @@ builder.Services.AddScoped<IPriceCalculatorService, PriceCalculatorService>();
 builder.Services.AddScoped<IPrintOrderService, PrintOrderService>();
 builder.Services.AddScoped<IShelfService, ShelfService>();
 builder.Services.AddScoped<IStudyHubService, StudyHubService>();
+// Task 18-20: Thanh toán, theo dõi đơn, cấu hình bảng giá
+builder.Services.AddSingleton(UniPrint.Business.Common.VietQrSettings.FromConfiguration(builder.Configuration));
+builder.Services.AddScoped<IPaymentService, PaymentService>();
 
 // 3. Authentication & JWT Bearer
 var jwtSecret = builder.Configuration["JwtSettings:Secret"] ?? "UniPrint_Super_Secret_Key_For_Course_Project_2026_FPTU_Must_Be_Long_And_Secure!";

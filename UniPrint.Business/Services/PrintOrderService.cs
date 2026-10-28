@@ -133,6 +133,7 @@ public class PrintOrderService : IPrintOrderService
             QrToken = qrToken,
             QrExpiresAt = new DateTimeOffset(DateTime.SpecifyKind(pickupQr.ExpiresAt, DateTimeKind.Utc)),
             PaymentStatus = payment.Status,
+            PaymentMethod = payment.Method,
             CreatedAt = order.CreatedAt
         }, "Tạo đơn in thành công!");
     }
@@ -163,6 +164,7 @@ public class PrintOrderService : IPrintOrderService
                 QrToken = o.PickupQR != null ? o.PickupQR.QrToken : null,
                 QrExpiresAt = o.PickupQR != null ? new DateTimeOffset(DateTime.SpecifyKind(o.PickupQR.ExpiresAt, DateTimeKind.Utc)) : null,
                 PaymentStatus = o.Payment != null ? o.Payment.Status : PaymentStatus.Pending,
+                PaymentMethod = o.Payment != null ? o.Payment.Method : PaymentMethod.Cash,
                 CreatedAt = o.CreatedAt
             })
             .ToListAsync(ct);
@@ -196,6 +198,7 @@ public class PrintOrderService : IPrintOrderService
                 Status = o.Status,
                 ShelfCode = o.Shelf != null ? o.Shelf.ShelfCode : null,
                 PaymentStatus = o.Payment != null ? o.Payment.Status : PaymentStatus.Pending,
+                PaymentMethod = o.Payment != null ? o.Payment.Method : PaymentMethod.Cash,
                 CreatedAt = o.CreatedAt
             })
             .ToListAsync(ct);
@@ -231,6 +234,7 @@ public class PrintOrderService : IPrintOrderService
             QrToken = o.PickupQR?.QrToken,
             QrExpiresAt = o.PickupQR != null ? new DateTimeOffset(DateTime.SpecifyKind(o.PickupQR.ExpiresAt, DateTimeKind.Utc)) : null,
             PaymentStatus = o.Payment?.Status ?? PaymentStatus.Pending,
+            PaymentMethod = o.Payment?.Method ?? PaymentMethod.Cash,
             CreatedAt = o.CreatedAt
         });
     }
