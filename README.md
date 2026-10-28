@@ -167,3 +167,10 @@ Chạy API cho mobile: `dotnet run --project UniPrint.API --launch-profile http`
 - Số tiền luôn lấy theo giá đã chốt trên đơn (BR02). `Payment.Status` là concurrency token để chặn xác nhận 2 lần.
 - Tài khoản nhận tiền cấu hình ở section `VietQR` trong `appsettings.json`.
 - Web: trang `Pickup/Payments` cho Staff.
+
+## Task 19 — Get Order Tracking Details
+
+- `GET /api/printorders/{id}/tracking` (`OrderTrackingService`): mã đơn, trạng thái + timeline, cấu hình in và giá đã chốt, vị trí kệ (mã + vị trí), thông tin mã QR nhận (`canPickup`, `expiresAt`, `isUsed`) và hóa đơn thanh toán (kèm VietQR nếu chưa trả).
+- Sinh viên chỉ xem được đơn của mình (đơn khác trả 404); Staff/Admin xem mọi đơn.
+- Token QR chỉ được trả khi đơn đang chờ nhận, chưa dùng và còn hạn (EC04).
+- Web: `Student/Orders` (danh sách đơn) và `Orders/Tracking/{id}` (theo dõi chi tiết, đổi phương thức thanh toán, hiển thị QR nhận & VietQR).

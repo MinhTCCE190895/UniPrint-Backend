@@ -52,6 +52,9 @@
                             <li class="nav-item">
                                 <a class="@NavClass("/Student/CreateOrder")" asp-page="/Student/CreateOrder">Đặt In</a>
                             </li>
+                            <li class="nav-item">
+                                <a class="@NavClass("/Student/Orders")" asp-page="/Student/Orders">Đơn In Của Tôi</a>
+                            </li>
                         }
                         @if (User.IsInRole("Staff") || User.IsInRole("Admin"))
                         {

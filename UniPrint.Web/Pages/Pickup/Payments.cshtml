@@ -49,7 +49,9 @@ else
                     {
                         var canCollectCash = cashStatuses.Contains(p.OrderStatus);
                         <tr>
-                            <td class="fw-semibold font-monospace">@p.OrderCode</td>
+                            <td class="fw-semibold font-monospace">
+                                <a asp-page="/Orders/Tracking" asp-route-id="@p.OrderId" class="text-decoration-none">@p.OrderCode</a>
+                            </td>
                             <td>@p.StudentName</td>
                             <td><span class="badge bg-secondary">@p.OrderStatus</span></td>
                             <td>

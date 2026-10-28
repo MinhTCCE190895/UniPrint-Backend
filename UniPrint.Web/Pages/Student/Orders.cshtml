@@ -1,0 +1,48 @@
+@page
+@model UniPrint.Web.Pages.Student.OrdersModel
+@using UniPrint.Business.Services
+@using UniPrint.DataAccess.Enums
+@{
+    ViewData["Title"] = "Đơn In Của Tôi";
+    var vnd = System.Globalization.CultureInfo.GetCultureInfo("vi-VN");
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="fw-bold mb-0">📦 Đơn In Của Tôi</h3>
+    <a asp-page="/Student/CreateOrder" class="btn btn-primary">+ Đặt in mới</a>
+</div>
+
+@if (!Model.Orders.Any())
+{
+    <div class="card border-0 shadow-sm">
+        <div class="card-body text-center text-muted py-5">Bạn chưa có đơn in nào.</div>
+    </div>
+}
+else
+{
+    <div class="list-group shadow-sm">
+        @foreach (var o in Model.Orders)
+        {
+            <a asp-page="/Orders/Tracking" asp-route-id="@o.Id" class="list-group-item list-group-item-action py-3">
+                <div class="d-flex flex-wrap justify-content-between gap-2">
+                    <div>
+                        <div class="fw-bold font-monospace text-primary">@o.OrderCode</div>
+                        <div class="small">@o.DocumentName</div>
+                        <div class="small text-muted">@(DateTime.SpecifyKind(o.CreatedAt, DateTimeKind.Utc).ToLocalTime().ToString("HH:mm dd/MM/yyyy"))</div>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge bg-secondary">@OrderTrackingService.GetStatusLabel(o.Status)</span>
+                        @if (!string.IsNullOrEmpty(o.ShelfCode))
+                        {
+                            <span class="badge bg-success">Kệ @o.ShelfCode</span>
+                        }
+                        <div class="fw-bold mt-1">@o.TotalPrice.ToString("N0", vnd) đ</div>
+                        <div class="small @(o.PaymentStatus == PaymentStatus.Paid ? "text-success" : "text-warning")">
+                            @(o.PaymentStatus == PaymentStatus.Paid ? "Đã thanh toán" : "Chưa thanh toán")
+                        </div>
+                    </div>
+                </div>
+            </a>
+        }
+    </div>
+}
