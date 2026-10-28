@@ -1,0 +1,205 @@
+@page "{id:guid}"
+@model UniPrint.Web.Pages.Orders.TrackingModel
+@using UniPrint.DataAccess.Enums
+@{
+    var t = Model.Tracking!;
+    ViewData["Title"] = $"Theo Dõi Đơn {t.OrderCode}";
+    var vnd = System.Globalization.CultureInfo.GetCultureInfo("vi-VN");
+    string Local(DateTime utc) => DateTime.SpecifyKind(utc, DateTimeKind.Utc).ToLocalTime().ToString("HH:mm dd/MM/yyyy");
+    var payment = t.Payment;
+}
+
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-page="/Index" class="text-decoration-none">Trang chủ</a></li>
+        @if (Model.IsStudentOwner)
+        {
+            <li class="breadcrumb-item"><a asp-page="/Student/Orders" class="text-decoration-none">Đơn in của tôi</a></li>
+        }
+        <li class="breadcrumb-item active" aria-current="page">@t.OrderCode</li>
+    </ol>
+</nav>
+
+@if (!string.IsNullOrEmpty(Model.Message))
+{
+    <div class="alert @(Model.IsSuccess ? "alert-success" : "alert-danger")">@Model.Message</div>
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+    <div>
+        <h3 class="fw-bold mb-0 font-monospace">@t.OrderCode</h3>
+        <div class="text-muted small">Đặt lúc @Local(t.CreatedAt) • @t.StudentName</div>
+    </div>
+    <span class="badge fs-6 @(t.Status == PrintOrderStatus.Cancelled ? "bg-danger" : t.Status == PrintOrderStatus.Completed ? "bg-success" : "bg-primary")">@t.StatusLabel</span>
+</div>
+
+<!-- Tiến trình đơn -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <div class="d-flex flex-wrap justify-content-between gap-2">
+            @foreach (var step in t.Timeline)
+            {
+                <div class="text-center flex-fill" style="min-width: 110px">
+                    <div class="mx-auto rounded-circle d-flex align-items-center justify-content-center fw-bold
+                                @(step.Status == PrintOrderStatus.Cancelled ? "bg-danger text-white" : step.IsDone ? "bg-success text-white" : "bg-light text-muted border")"
+                         style="width: 36px; height: 36px;">
+                        @(step.IsDone ? "✓" : "•")
+                    </div>
+                    <div class="small mt-1 @(step.IsCurrent ? "fw-bold" : "text-muted")">@step.Label</div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <!-- Thông tin đơn in -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white fw-bold">Chi tiết đơn in</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-5 text-muted fw-normal">Tài liệu</dt>
+                    <dd class="col-sm-7">@t.DocumentName (@t.PageCount trang)</dd>
+                    <dt class="col-sm-5 text-muted fw-normal">Số bản</dt>
+                    <dd class="col-sm-7">@t.NumberOfCopies</dd>
+                    <dt class="col-sm-5 text-muted fw-normal">Cấu hình</dt>
+                    <dd class="col-sm-7">
+                        @(t.IsColor ? "In màu" : "Đen trắng") • @(t.IsDoubleSided ? "2 mặt" : "1 mặt")
+                        @if (t.HasBinding) { <span> • Đóng gáy</span> }
+                        @if (t.HasStaple) { <span> • Bấm kim</span> }
+                    </dd>
+                    <dt class="col-sm-5 text-muted fw-normal">Đơn giá / trang</dt>
+                    <dd class="col-sm-7">@t.UnitPricePerPage.ToString("N0", vnd) đ</dd>
+                    <dt class="col-sm-5 text-muted fw-normal">Tổng tiền (giá đã chốt)</dt>
+                    <dd class="col-sm-7 fw-bold text-primary">@t.TotalPrice.ToString("N0", vnd) đ</dd>
+                    @if (!string.IsNullOrWhiteSpace(t.Notes))
+                    {
+                        <dt class="col-sm-5 text-muted fw-normal">Ghi chú</dt>
+                        <dd class="col-sm-7">@t.Notes</dd>
+                    }
+                </dl>
+            </div>
+        </div>
+
+        <!-- Hóa đơn thanh toán -->
+        @if (payment != null)
+        {
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <span class="fw-bold">Hóa đơn thanh toán</span>
+                    <span class="badge @(payment.Status == PaymentStatus.Paid ? "bg-success" : "bg-warning text-dark")">@payment.StatusText</span>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5 text-muted fw-normal">Số tiền</dt>
+                        <dd class="col-sm-7 fw-bold">@payment.Amount.ToString("N0", vnd) đ</dd>
+                        <dt class="col-sm-5 text-muted fw-normal">Phương thức</dt>
+                        <dd class="col-sm-7">@payment.MethodText</dd>
+                        @if (!string.IsNullOrEmpty(payment.TransactionCode))
+                        {
+                            <dt class="col-sm-5 text-muted fw-normal">Mã giao dịch</dt>
+                            <dd class="col-sm-7 font-monospace">@payment.TransactionCode</dd>
+                        }
+                        @if (payment.PaidAt.HasValue)
+                        {
+                            <dt class="col-sm-5 text-muted fw-normal">Thanh toán lúc</dt>
+                            <dd class="col-sm-7">@Local(payment.PaidAt.Value)</dd>
+                        }
+                    </dl>
+
+                    @if (Model.IsStudentOwner && payment.Status != PaymentStatus.Paid && t.Status != PrintOrderStatus.Cancelled)
+                    {
+                        <hr />
+                        <div class="d-flex flex-wrap gap-2">
+                            <form method="post" asp-page-handler="SelectMethod" asp-route-id="@t.Id">
+                                <input type="hidden" name="method" value="@((int)PaymentMethod.Cash)" />
+                                <button type="submit" class="btn btn-sm @(payment.Method == PaymentMethod.Cash ? "btn-primary" : "btn-outline-primary")">Tiền mặt khi nhận</button>
+                            </form>
+                            <form method="post" asp-page-handler="SelectMethod" asp-route-id="@t.Id">
+                                <input type="hidden" name="method" value="@((int)PaymentMethod.VietQR_PayOS)" />
+                                <button type="submit" class="btn btn-sm @(payment.Method == PaymentMethod.VietQR_PayOS ? "btn-primary" : "btn-outline-primary")">Chuyển khoản VietQR</button>
+                            </form>
+                        </div>
+                    }
+
+                    @if (payment.VietQr != null)
+                    {
+                        <div class="row g-3 align-items-center mt-2">
+                            <div class="col-md-5 text-center">
+                                <img src="@payment.VietQr.QrImageUrl" alt="Mã VietQR chuyển khoản" class="img-fluid border rounded" style="max-width: 220px" />
+                            </div>
+                            <div class="col-md-7 small">
+                                <div><span class="text-muted">Ngân hàng:</span> @payment.VietQr.BankName</div>
+                                <div><span class="text-muted">Số tài khoản:</span> <span class="font-monospace">@payment.VietQr.AccountNo</span></div>
+                                <div><span class="text-muted">Chủ tài khoản:</span> @payment.VietQr.AccountName</div>
+                                <div><span class="text-muted">Số tiền:</span> <strong>@payment.VietQr.Amount.ToString("N0", vnd) đ</strong></div>
+                                <div><span class="text-muted">Nội dung CK:</span> <strong class="font-monospace">@payment.VietQr.TransferContent</strong></div>
+                                <div class="text-muted mt-2">Giữ nguyên nội dung chuyển khoản. Nhân viên sẽ xác nhận khi nhận được tiền.</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="col-lg-5">
+        <!-- Vị trí kệ nhận hàng -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white fw-bold">Vị trí nhận tài liệu</div>
+            <div class="card-body text-center">
+                @if (!string.IsNullOrEmpty(t.ShelfCode))
+                {
+                    <div class="display-6 fw-bold text-success">Kệ @t.ShelfCode</div>
+                    <div class="text-muted">@t.ShelfLocation</div>
+                }
+                else
+                {
+                    <div class="text-muted">Đơn chưa được xếp lên kệ.</div>
+                }
+            </div>
+        </div>
+
+        <!-- Mã QR nhận tài liệu -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white fw-bold">Mã QR nhận tài liệu</div>
+            <div class="card-body text-center">
+                @if (t.PickupQr?.CanPickup == true && Model.IsStudentOwner)
+                {
+                    <div id="pickup-qr" class="d-inline-block p-2 bg-white border rounded" data-token="@t.PickupQr.QrToken"></div>
+                    <div class="small text-muted mt-2">Hạn nhận: @t.PickupQr.ExpiresAt.ToLocalTime().ToString("HH:mm dd/MM/yyyy")</div>
+                    <div class="small text-muted">Đưa mã này cho nhân viên quầy in để nhận tài liệu.</div>
+                }
+                else if (t.PickupQr?.IsUsed == true)
+                {
+                    <div class="text-success fw-semibold">Đã nhận tài liệu@(t.PickupQr.UsedAt.HasValue ? $" lúc {t.PickupQr.UsedAt.Value.ToLocalTime():HH:mm dd/MM/yyyy}" : "").</div>
+                }
+                else if (t.PickupQr?.IsExpired == true && t.Status != PrintOrderStatus.Completed && t.Status != PrintOrderStatus.Cancelled)
+                {
+                    <div class="text-danger">Mã QR đã hết hạn (EC04). Vui lòng liên hệ nhân viên.</div>
+                }
+                else if (t.PickupQr?.CanPickup == true)
+                {
+                    <div class="text-muted">Sinh viên đang giữ mã QR nhận tài liệu (hạn @t.PickupQr.ExpiresAt.ToLocalTime().ToString("dd/MM/yyyy")).</div>
+                }
+                else
+                {
+                    <div class="text-muted">Mã QR sẽ hiển thị khi tài liệu đã in xong và sẵn sàng nhận.</div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+        (function () {
+            var el = document.getElementById('pickup-qr');
+            if (el && window.QRCode) {
+                new QRCode(el, { text: el.dataset.token, width: 200, height: 200 });
+            }
+        })();
+    </script>
+}

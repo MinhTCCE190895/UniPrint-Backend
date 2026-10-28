@@ -156,3 +156,32 @@ Giữ cấu trúc Controller -> Business Service -> UnitOfWork/Repository -> EF 
 Kiểm tra: `dotnet test UniPrint.Tests/UniPrint.Tests.csproj` và `dotnet build UniPrint.sln`. Các test pickup dùng SQLite để kiểm tra transaction/rollback; cần kiểm thử thêm trên SQL Server và camera thiết bị khi triển khai.
 
 Chạy API cho mobile: `dotnet run --project UniPrint.API --launch-profile http` (cổng 5045 theo launchSettings). Cấu hình SQL Server theo hướng dẫn ở trên trước khi chạy. Dùng endpoint assign-shelf hiện có để gán kệ trước khi pickup.
+
+## Task 18 — Process Payment (Cash / VietQR)
+
+- `PaymentService` + `PaymentsController` (`/api/payments`):
+  - `GET order/{orderId}`: xem hóa đơn (SV chủ đơn hoặc Staff/Admin); nếu chọn VietQR sẽ kèm `vietQr.qrPayload` (chuỗi EMVCo/NAPAS để app vẽ QR) và `vietQr.qrImageUrl`.
+  - `PUT order/{orderId}/method` (Student): chọn `1 = Cash` (trả khi nhận) hoặc `2 = VietQR_PayOS` (chuyển khoản).
+  - `POST order/{orderId}/confirm` (Staff/Admin): xác nhận đã thu tiền mặt (chỉ khi đơn đã in xong/đang chờ nhận) hoặc đã nhận chuyển khoản (bắt buộc mã giao dịch).
+  - `GET unpaid?keyword=` (Staff/Admin): danh sách hóa đơn chưa thanh toán.
+- Số tiền luôn lấy theo giá đã chốt trên đơn (BR02). `Payment.Status` là concurrency token để chặn xác nhận 2 lần.
+- Tài khoản nhận tiền cấu hình ở section `VietQR` trong `appsettings.json`.
+- Web: trang `Pickup/Payments` cho Staff.
+
+## Task 19 — Get Order Tracking Details
+
+- `GET /api/printorders/{id}/tracking` (`OrderTrackingService`): mã đơn, trạng thái + timeline, cấu hình in và giá đã chốt, vị trí kệ (mã + vị trí), thông tin mã QR nhận (`canPickup`, `expiresAt`, `isUsed`) và hóa đơn thanh toán (kèm VietQR nếu chưa trả).
+- Sinh viên chỉ xem được đơn của mình (đơn khác trả 404); Staff/Admin xem mọi đơn.
+- Token QR chỉ được trả khi đơn đang chờ nhận, chưa dùng và còn hạn (EC04).
+- Web: `Student/Orders` (danh sách đơn) và `Orders/Tracking/{id}` (theo dõi chi tiết, đổi phương thức thanh toán, hiển thị QR nhận & VietQR).
+
+## Task 20 — Update Price Configuration (Admin)
+
+- `PriceConfigService` + endpoints trong `PriceController`:
+  - `GET /api/price/config` (công khai): bảng giá đang áp dụng.
+  - `PUT /api/price/config` (Admin): cập nhật giá trang đen trắng, màu, chiết khấu 2 mặt, phí gáy, phí ghim.
+  - `GET /api/price/config/history?take=10` (Admin): lịch sử các phiên bản bảng giá.
+- Mỗi lần cập nhật tạo phiên bản mới, bản cũ chuyển `IsActive = false` trong cùng một transaction → luôn chỉ có 1 bảng giá áp dụng.
+- Kiểm tra hợp lệ: giá > 0, giá màu ≥ giá đen trắng, chiết khấu 0–<100%, phí không âm, tối đa 1.000.000đ; không lưu nếu không có thay đổi.
+- Đơn đã tạo giữ nguyên giá đã chốt (BR02) — có test kiểm chứng.
+- Web: trang `Admin/PriceConfig` (form + xem trước giá + lịch sử).

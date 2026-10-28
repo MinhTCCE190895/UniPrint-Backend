@@ -133,6 +133,7 @@ public class PrintOrderService : IPrintOrderService
             QrToken = qrToken,
             QrExpiresAt = new DateTimeOffset(DateTime.SpecifyKind(pickupQr.ExpiresAt, DateTimeKind.Utc)),
             PaymentStatus = payment.Status,
+            PaymentMethod = payment.Method,
             CreatedAt = order.CreatedAt
         }, "Tạo đơn in thành công!");
     }
@@ -163,6 +164,7 @@ public class PrintOrderService : IPrintOrderService
                 QrToken = o.PickupQR != null ? o.PickupQR.QrToken : null,
                 QrExpiresAt = o.PickupQR != null ? new DateTimeOffset(DateTime.SpecifyKind(o.PickupQR.ExpiresAt, DateTimeKind.Utc)) : null,
                 PaymentStatus = o.Payment != null ? o.Payment.Status : PaymentStatus.Pending,
+                PaymentMethod = o.Payment != null ? o.Payment.Method : PaymentMethod.Cash,
                 CreatedAt = o.CreatedAt
             })
             .ToListAsync(ct);
@@ -196,6 +198,7 @@ public class PrintOrderService : IPrintOrderService
                 Status = o.Status,
                 ShelfCode = o.Shelf != null ? o.Shelf.ShelfCode : null,
                 PaymentStatus = o.Payment != null ? o.Payment.Status : PaymentStatus.Pending,
+                PaymentMethod = o.Payment != null ? o.Payment.Method : PaymentMethod.Cash,
                 CreatedAt = o.CreatedAt
             })
             .ToListAsync(ct);
@@ -231,6 +234,7 @@ public class PrintOrderService : IPrintOrderService
             QrToken = o.PickupQR?.QrToken,
             QrExpiresAt = o.PickupQR != null ? new DateTimeOffset(DateTime.SpecifyKind(o.PickupQR.ExpiresAt, DateTimeKind.Utc)) : null,
             PaymentStatus = o.Payment?.Status ?? PaymentStatus.Pending,
+            PaymentMethod = o.Payment?.Method ?? PaymentMethod.Cash,
             CreatedAt = o.CreatedAt
         });
     }
@@ -372,10 +376,18 @@ public class PrintOrderService : IPrintOrderService
 
     public async Task<ApiResponse<bool>> CancelOrderAsync(Guid orderId, Guid studentId, CancellationToken ct = default)
     {
-        var order = await _unitOfWork.Repository<PrintOrder>().GetByIdAsync(orderId, ct);
+        var order = await _unitOfWork.Repository<PrintOrder>().Query()
+            .Include(o => o.Payment)
+            .FirstOrDefaultAsync(o => o.Id == orderId, ct);
         if (order == null || order.StudentId != studentId)
         {
             return ApiResponse<bool>.Fail("Không tìm thấy đơn hàng.");
+        }
+
+        // Task 18: đơn đã thanh toán (VietQR) không tự hủy được, cần liên hệ quầy để hoàn tiền.
+        if (order.Payment?.Status == PaymentStatus.Paid)
+        {
+            return ApiResponse<bool>.Fail("Đơn hàng đã được thanh toán, vui lòng liên hệ quầy in để hủy và hoàn tiền.");
         }
 
         // BR02: Khi Staff đã bắt đầu in (Printing trở đi) -> không được hủy
