@@ -32,10 +32,26 @@ public class PrintOrderService : IPrintOrderService
 
     public async Task<ApiResponse<PrintOrderResponseDto>> CreateOrderAsync(Guid studentId, CreatePrintOrderDto request, CancellationToken ct = default)
     {
+        if (request.NumberOfCopies <= 0)
+        {
+            return ApiResponse<PrintOrderResponseDto>.Fail("Số bản in phải lớn hơn hoặc bằng 1.");
+        }
+
         var doc = await _unitOfWork.Repository<Document>().GetByIdAsync(request.DocumentId, ct);
         if (doc == null)
         {
             return ApiResponse<PrintOrderResponseDto>.Fail("Không tìm thấy tài liệu cần in.");
+        }
+
+        if (doc.UserId != studentId)
+        {
+            var isApprovedStudyDoc = await _unitOfWork.Repository<StudyMaterial>().Query()
+                .AnyAsync(sm => sm.DocumentId == doc.Id && sm.Status == MaterialStatus.Approved, ct);
+
+            if (!isApprovedStudyDoc)
+            {
+                return ApiResponse<PrintOrderResponseDto>.Fail("Bạn không có quyền in tài liệu này.");
+            }
         }
 
         // Tính giá và khóa giá cố định cho đơn hàng này (BR02)
@@ -49,6 +65,11 @@ public class PrintOrderService : IPrintOrderService
             HasStaple = request.HasStaple
         }, ct);
 
+        if (!priceCalc.Success || priceCalc.Data == null)
+        {
+            return ApiResponse<PrintOrderResponseDto>.Fail(priceCalc.Message ?? "Không thể tính giá in cho tài liệu này.");
+        }
+
         var printOption = new PrintOption
         {
             NumberOfCopies = request.NumberOfCopies,
@@ -56,8 +77,8 @@ public class PrintOrderService : IPrintOrderService
             IsDoubleSided = request.IsDoubleSided,
             HasBinding = request.HasBinding,
             HasStaple = request.HasStaple,
-            UnitPricePerPage = priceCalc.Data!.UnitPricePerPage,
-            TotalPrice = priceCalc.Data!.TotalEstimatedPrice
+            UnitPricePerPage = priceCalc.Data.UnitPricePerPage,
+            TotalPrice = priceCalc.Data.TotalEstimatedPrice
         };
         await _unitOfWork.Repository<PrintOption>().AddAsync(printOption, ct);
 
@@ -96,11 +117,13 @@ public class PrintOrderService : IPrintOrderService
 
         await _unitOfWork.SaveChangesAsync(ct);
 
+        var student = await _unitOfWork.Repository<User>().GetByIdAsync(studentId, ct);
+
         return ApiResponse<PrintOrderResponseDto>.Ok(new PrintOrderResponseDto
         {
             Id = order.Id,
             OrderCode = order.OrderCode,
-            StudentName = "Student",
+            StudentName = student?.FullName ?? "Student",
             DocumentName = doc.FileName,
             NumberOfCopies = printOption.NumberOfCopies,
             IsColor = printOption.IsColor,

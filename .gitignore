@@ -13,6 +13,12 @@
 *.userosscache
 *.sln.docstates
 
+# Office / Documentation files
+*.docx
+*.xlsx
+PRN232_UniPrint_Task.xlsx
+Quy dinh lam viec va Git Workflow cho Team.docx
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
