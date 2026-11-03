@@ -1,0 +1,416 @@
+@page
+@model UniPrint.Web.Pages.Student.OrdersModel
+@using UniPrint.DataAccess.Enums
+@{
+    ViewData["Title"] = "Đơn Hàng Của Tôi - Theo Dõi & Nhận Bản In";
+    var activeFilter = Model.StatusFilter?.ToLowerInvariant() ?? "all";
+}
+
+<div class="container mt-2">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h2 class="mb-1 d-flex align-items-center gap-2">
+                <svg class="icon-duotone icon-lg" style="color: var(--intent-action-base);" viewBox="0 0 24 24">
+                    <path class="bg-shape" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+                    <path class="stroke-shape" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                </svg>
+                ĐƠN HÀNG CỦA TÔI
+            </h2>
+            <div class="text-muted" style="font-size: 13.5px; font-weight: 500;">
+                Theo dõi tiến độ in ấn, kiểm tra vị trí kệ lưu trữ và lấy mã QR nhận tài liệu tại quầy
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-page="/Student/CreateOrder" class="btn btn-action">
+                <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><path class="bg-shape" d="M6 9h12v9H6z"/><path class="stroke-shape" d="M6 9V3h12v6M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v7H6z"/></svg>
+                Đặt In Mới
+            </a>
+            <a asp-page="/Student/Documents" class="btn btn-secondary">
+                <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><path class="bg-shape" d="M6 3h8l6 6v12H6z"/><path class="stroke-shape" d="M14 3v6h6M6 3h8l6 6v12a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2zM9 13h6M9 17h4"/></svg>
+                Kho Tài Liệu
+            </a>
+        </div>
+    </div>
+
+    <!-- Alert Notifications -->
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show d-flex align-items-center justify-content-between mb-4" role="alert">
+            <div class="d-flex align-items-center gap-2">
+                <svg class="icon-duotone" viewBox="0 0 24 24"><circle class="bg-shape" cx="12" cy="12" r="9"/><path class="stroke-shape" d="M8 12l3 3 5-5"/></svg>
+                <span>@Model.SuccessMessage</span>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center justify-content-between mb-4" role="alert">
+            <div class="d-flex align-items-center gap-2">
+                <svg class="icon-duotone" viewBox="0 0 24 24"><circle class="bg-shape" cx="12" cy="12" r="9"/><path class="stroke-shape" d="M12 8v4M12 16h.01"/></svg>
+                <span>@Model.ErrorMessage</span>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- KPI Summary Overview Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <a asp-page="/Student/Orders" class="text-decoration-none">
+                <div class="card p-3 h-100 transition-all @(activeFilter == "all" ? "border-primary" : "")" style="background-color: var(--surface-card);">
+                    <div class="text-muted small mb-1" style="font-weight: 600; text-transform: uppercase;">Tất Cả Đơn In</div>
+                    <div class="mono" style="font-size: 24px; font-weight: 700; color: var(--text-heading);">
+                        @Model.TotalOrdersCount
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a asp-page="/Student/Orders" asp-route-statusFilter="pending" class="text-decoration-none">
+                <div class="card p-3 h-100 transition-all @(activeFilter == "pending" ? "border-warning" : "")" style="background-color: var(--surface-card);">
+                    <div class="text-muted small mb-1" style="font-weight: 600; text-transform: uppercase;">Chờ Xử Lý</div>
+                    <div class="mono" style="font-size: 24px; font-weight: 700; color: var(--intent-alert-base);">
+                        @Model.PendingCount
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a asp-page="/Student/Orders" asp-route-statusFilter="processing" class="text-decoration-none">
+                <div class="card p-3 h-100 transition-all @(activeFilter == "processing" ? "border-info" : "")" style="background-color: var(--surface-card);">
+                    <div class="text-muted small mb-1" style="font-weight: 600; text-transform: uppercase;">Đang In / Xếp Kệ</div>
+                    <div class="mono" style="font-size: 24px; font-weight: 700; color: var(--intent-action-base);">
+                        @Model.InProgressCount
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a asp-page="/Student/Orders" asp-route-statusFilter="ready" class="text-decoration-none">
+                <div class="card p-3 h-100 transition-all @(activeFilter == "ready" ? "border-success" : "")" style="background-color: var(--surface-card); border-color: var(--intent-confirm-border);">
+                    <div class="small mb-1" style="font-weight: 600; text-transform: uppercase; color: var(--intent-confirm-base);">Sẵn Sàng Nhận (QR)</div>
+                    <div class="mono" style="font-size: 24px; font-weight: 700; color: var(--intent-confirm-base);">
+                        @Model.ReadyForPickupCount
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Status Filter Pills -->
+    <div class="d-flex gap-2 mb-3 overflow-auto pb-1 flex-nowrap" style="white-space: nowrap;">
+        <a asp-page="/Student/Orders" class="btn btn-sm @(activeFilter == "all" ? "btn-action" : "btn-secondary")">
+            Tất Cả (@Model.TotalOrdersCount)
+        </a>
+        <a asp-page="/Student/Orders" asp-route-statusFilter="ready" class="btn btn-sm @(activeFilter == "ready" ? "btn-confirm" : "btn-secondary")">
+            Sẵn Sàng Nhận (@Model.ReadyForPickupCount)
+        </a>
+        <a asp-page="/Student/Orders" asp-route-statusFilter="processing" class="btn btn-sm @(activeFilter == "processing" ? "btn-action" : "btn-secondary")">
+            Đang Xử Lý (@Model.InProgressCount)
+        </a>
+        <a asp-page="/Student/Orders" asp-route-statusFilter="pending" class="btn btn-sm @(activeFilter == "pending" ? "btn-action" : "btn-secondary")">
+            Chờ Xử Lý (@Model.PendingCount)
+        </a>
+        <a asp-page="/Student/Orders" asp-route-statusFilter="completed" class="btn btn-sm @(activeFilter == "completed" ? "btn-action" : "btn-secondary")">
+            Đã Nhận (@Model.CompletedCount)
+        </a>
+        <a asp-page="/Student/Orders" asp-route-statusFilter="cancelled" class="btn btn-sm @(activeFilter == "cancelled" ? "btn-action" : "btn-secondary")">
+            Đã Hủy (@Model.CancelledCount)
+        </a>
+    </div>
+
+    <!-- Orders Table Container -->
+    <div class="table-container mb-4">
+        <div class="p-3 border-bottom d-flex justify-content-between align-items-center" style="background-color: var(--surface-card); border-color: var(--border-card) !important;">
+            <div class="d-flex align-items-center gap-2">
+                <svg class="icon-duotone icon-sm" style="color: var(--intent-action-base);" viewBox="0 0 24 24">
+                    <path class="bg-shape" d="M6 9h12v9H6z"/>
+                    <path class="stroke-shape" d="M6 9V3h12v6M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v7H6z"/>
+                </svg>
+                <strong style="font-size: 14px; color: var(--text-heading);">Danh Sách Đơn Đặt In</strong>
+            </div>
+            <span class="badge status-neutral">@Model.Orders.Count đơn hiển thị</span>
+        </div>
+
+        @if (Model.Orders.Any())
+        {
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-3" style="width: 130px;">Mã Đơn</th>
+                            <th>Tài Liệu & Thời Gian</th>
+                            <th class="text-center" style="width: 140px;">Quy Cách In</th>
+                            <th class="text-end" style="width: 150px;">Tổng Tiền</th>
+                            <th class="text-center" style="width: 170px;">Trạng Thái & Kệ</th>
+                            <th class="text-end pe-3" style="width: 190px;">Mã QR / Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var order in Model.Orders)
+                        {
+                            var isCancelled = order.Status == PrintOrderStatus.Cancelled;
+                            var isReady = order.Status == PrintOrderStatus.ReadyForPickup;
+                            var isPending = order.Status == PrintOrderStatus.Pending;
+                            var isPaid = order.PaymentStatus == PaymentStatus.Paid;
+
+                            <tr>
+                                <!-- Mã Đơn -->
+                                <td class="ps-3">
+                                    <span class="mono fw-bold" style="color: var(--intent-action-base); font-size: 13.5px;">
+                                        @order.OrderCode
+                                    </span>
+                                </td>
+
+                                <!-- Tài Liệu & Thời Gian -->
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <svg class="icon-duotone icon-sm flex-shrink-0" style="color: var(--intent-action-base);" viewBox="0 0 24 24">
+                                            <path class="bg-shape" d="M6 3h8l6 6v12H6z"/>
+                                            <path class="stroke-shape" d="M14 3v6h6M6 3h8l6 6v12a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2z"/>
+                                        </svg>
+                                        <div>
+                                            <strong style="font-size: 13.5px; color: var(--text-heading); word-break: break-all;">
+                                                @order.DocumentName
+                                            </strong>
+                                            <div class="text-muted small mono" style="font-size: 12px;">
+                                                @order.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <!-- Quy Cách In -->
+                                <td class="text-center">
+                                    <span class="badge mono status-neutral" style="font-size: 11.5px;">
+                                        @order.NumberOfCopies bản • @(order.IsColor ? "Màu" : "Trắng đen")
+                                    </span>
+                                    <div class="text-muted small mt-1" style="font-size: 11px;">
+                                        @(order.IsDoubleSided ? "2 mặt" : "1 mặt")
+                                    </div>
+                                </td>
+
+                                <!-- Tổng Tiền & Thanh Toán -->
+                                <td class="text-end">
+                                    <div class="mono fw-bold" style="font-size: 13.5px; color: var(--text-heading);">
+                                        @order.TotalPrice.ToString("N0") VNĐ
+                                    </div>
+                                    @if (isPaid)
+                                    {
+                                        <span class="badge status-available" style="font-size: 11px;">Đã thanh toán</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge status-pending" style="font-size: 11px;">Tiền mặt / Chờ trả</span>
+                                    }
+                                </td>
+
+                                <!-- Trạng Thái & Kệ Lưu Trữ -->
+                                <td class="text-center">
+                                    @if (isReady)
+                                    {
+                                        <span class="badge status-available">Sẵn Sàng Nhận</span>
+                                        @if (!string.IsNullOrEmpty(order.ShelfCode))
+                                        {
+                                            <div class="mt-1 small" style="font-size: 12px; font-weight: 600; color: var(--intent-action-base);">
+                                                Kệ: <span class="mono fw-bold">@order.ShelfCode</span>
+                                            </div>
+                                        }
+                                    }
+                                    else if (order.Status == PrintOrderStatus.ShelfAssigned)
+                                    {
+                                        <span class="badge status-available">Đã Xếp Kệ</span>
+                                        @if (!string.IsNullOrEmpty(order.ShelfCode))
+                                        {
+                                            <div class="mt-1 small mono">Kệ: @order.ShelfCode</div>
+                                        }
+                                    }
+                                    else if (order.Status == PrintOrderStatus.Printing || order.Status == PrintOrderStatus.Processing)
+                                    {
+                                        <span class="badge status-neutral">Đang In Ấn</span>
+                                    }
+                                    else if (isPending)
+                                    {
+                                        <span class="badge status-pending">Chờ Xử Lý</span>
+                                    }
+                                    else if (order.Status == PrintOrderStatus.Completed)
+                                    {
+                                        <span class="badge status-available">Đã Hoàn Tất</span>
+                                    }
+                                    else if (isCancelled)
+                                    {
+                                        <span class="badge status-depleted">Đã Hủy</span>
+                                    }
+                                </td>
+
+                                <!-- Mã QR / Thao Tác -->
+                                <td class="text-end pe-3">
+                                    <div class="d-inline-flex gap-2 justify-content-end align-items-center">
+                                        @if (!isCancelled && !string.IsNullOrEmpty(order.QrToken))
+                                        {
+                                            <button type="button" class="btn @(isReady ? "btn-confirm" : "btn-action") btn-sm"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#qrModal"
+                                                    data-ordercode="@order.OrderCode"
+                                                    data-docname="@order.DocumentName"
+                                                    data-shelf="@(string.IsNullOrEmpty(order.ShelfCode) ? "Chờ phân kệ" : order.ShelfCode)"
+                                                    data-qrtoken="@order.QrToken"
+                                                    data-price="@order.TotalPrice.ToString("N0") VNĐ"
+                                                    data-status="@(isReady ? "Sẵn sàng nhận tại quầy" : order.StatusText)"
+                                                    title="Mở mã QR nhận hàng">
+                                                <svg class="icon-duotone icon-sm" viewBox="0 0 24 24">
+                                                    <path class="bg-shape" d="M4 4h6v6H4zm10 0h6v6h-6zm0 10h6v6h-6zm-10 0h6v6H4z"/>
+                                                    <path class="stroke-shape" d="M3 3h8v8H3zM13 3h8v8h-8zM13 13h8v8h-8zM3 13h8v8H3z"/>
+                                                </svg>
+                                                Mã QR
+                                            </button>
+                                        }
+
+                                        @if (isPending)
+                                        {
+                                            <form method="post" asp-page-handler="Cancel" onsubmit="return confirm('Bạn có chắc chắn muốn hủy đơn hàng @order.OrderCode không?');" class="d-inline m-0">
+                                                <input type="hidden" name="orderId" value="@order.Id" />
+                                                <button type="submit" class="btn btn-danger btn-sm" title="Hủy đơn hàng này">
+                                                    Hủy
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <svg class="icon-duotone mx-auto mb-2 text-muted" style="width: 48px; height: 48px;" viewBox="0 0 24 24">
+                    <path class="bg-shape" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+                    <path class="stroke-shape" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+                <h6 class="text-muted" style="font-weight: 600;">Không tìm thấy đơn đặt in nào</h6>
+                <p class="text-muted small mb-3">Bạn chưa có đơn hàng nào theo bộ lọc này. Hãy bắt đầu tải tài liệu và đặt in ngay!</p>
+                <a asp-page="/Student/CreateOrder" class="btn btn-action btn-sm">
+                    <svg class="icon-duotone icon-sm me-1" viewBox="0 0 24 24"><path class="bg-shape" d="M6 9h12v9H6z"/><path class="stroke-shape" d="M6 9V3h12v6M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v7H6z"/></svg>
+                    Đặt In Tài Liệu Mới
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Modal Hiển Thị Mã QR Nhận Hàng Tại Quầy -->
+<div class="modal fade" id="qrModal" tabindex="-1" aria-labelledby="qrModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: var(--radius-lg); border: 1px solid var(--border-card);">
+            <div class="modal-header py-3" style="background-color: var(--surface-subtle); border-bottom: 1px solid var(--border-subtle);">
+                <div class="d-flex align-items-center gap-2">
+                    <svg class="icon-duotone icon-md" style="color: var(--intent-action-base);" viewBox="0 0 24 24">
+                        <path class="bg-shape" d="M4 4h6v6H4zm10 0h6v6h-6zm0 10h6v6h-6zm-10 0h6v6H4z"/>
+                        <path class="stroke-shape" d="M3 3h8v8H3zM13 3h8v8h-8zM13 13h8v8h-8zM3 13h8v8H3z"/>
+                    </svg>
+                    <h5 class="modal-title mb-0" id="qrModalLabel" style="font-weight: 700; font-size: 16px; color: var(--text-heading);">
+                        MÃ QR NHẬN TÀI LIỆU TẠI QUẦY
+                    </h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <!-- QR Image Display -->
+                <div class="p-3 d-inline-block rounded-3 mb-3" style="background: #ffffff; border: 2px dashed var(--border-card);">
+                    <img id="modalQrImg" src="" alt="Mã QR Nhận Tài Liệu" style="width: 220px; height: 220px; display: block; object-fit: contain;" />
+                </div>
+
+                <div class="mb-3">
+                    <div class="text-muted small mb-1" style="font-size: 12px;">Mã đối soát nhận tài liệu (Pickup Token):</div>
+                    <div class="d-flex align-items-center justify-content-center gap-2">
+                        <span id="modalQrToken" class="mono font-monospace fw-bold px-3 py-1 rounded" style="font-size: 18px; background-color: var(--surface-subtle); color: var(--intent-action-base); border: 1px solid var(--border-card);">
+                            PICKUP-...
+                        </span>
+                        <button type="button" class="btn btn-secondary btn-sm" id="btnCopyToken" title="Sao chép mã">
+                            <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><path class="stroke-shape" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Order Info Details -->
+                <div class="tonal-panel p-3 text-start mb-3" style="font-size: 13px;">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Mã đơn hàng:</span>
+                        <strong class="mono" id="modalOrderCode">-</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Tài liệu in:</span>
+                        <strong id="modalDocName" class="text-truncate ps-2" style="max-width: 240px;">-</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Vị trí kệ:</span>
+                        <strong id="modalShelf" class="text-primary font-monospace">-</strong>
+                    </div>
+                    <div class="d-flex justify-content-between border-top pt-1 mt-1">
+                        <span class="text-muted">Tổng chi phí:</span>
+                        <strong id="modalPrice" class="text-danger mono">-</strong>
+                    </div>
+                </div>
+
+                <div class="alert alert-info py-2 mb-0 d-flex align-items-center gap-2 text-start" style="font-size: 12px;">
+                    <svg class="icon-duotone icon-sm flex-shrink-0" viewBox="0 0 24 24"><circle class="bg-shape" cx="12" cy="12" r="9"/><path class="stroke-shape" d="M12 8v4M12 16h.01"/></svg>
+                    <span>Xuất trình mã QR này hoặc đọc mã Token cho nhân viên tiệm in tại quầy để lấy tài liệu nhanh chóng.</span>
+                </div>
+            </div>
+            <div class="modal-footer py-2" style="background-color: var(--surface-subtle); border-top: 1px solid var(--border-subtle);">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const qrModal = document.getElementById('qrModal');
+            if (qrModal) {
+                qrModal.addEventListener('show.bs.modal', function (event) {
+                    const button = event.relatedTarget;
+                    if (!button) return;
+
+                    const orderCode = button.getAttribute('data-ordercode') || '';
+                    const docName = button.getAttribute('data-docname') || '';
+                    const shelf = button.getAttribute('data-shelf') || '';
+                    const qrToken = button.getAttribute('data-qrtoken') || '';
+                    const price = button.getAttribute('data-price') || '';
+
+                    document.getElementById('modalOrderCode').innerText = orderCode;
+                    document.getElementById('modalDocName').innerText = docName;
+                    document.getElementById('modalShelf').innerText = shelf !== 'Chờ phân kệ' ? ('Kệ ' + shelf) : 'Chờ phân kệ';
+                    document.getElementById('modalQrToken').innerText = qrToken;
+                    document.getElementById('modalPrice').innerText = price;
+
+                    // Load QR Code Image
+                    const qrImg = document.getElementById('modalQrImg');
+                    if (qrImg && qrToken) {
+                        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(qrToken)}`;
+                    }
+                });
+            }
+
+            const btnCopy = document.getElementById('btnCopyToken');
+            if (btnCopy) {
+                btnCopy.addEventListener('click', function () {
+                    const token = document.getElementById('modalQrToken').innerText.trim();
+                    if (token) {
+                        navigator.clipboard.writeText(token).then(() => {
+                            alert('Đã sao chép mã Token: ' + token);
+                        });
+                    }
+                });
+            }
+        });
+    </script>
+}
+

@@ -75,6 +75,12 @@ public class CreateOrderModel : PageModel
 
         await LoadDocumentsAsync(studentId);
 
+        // Hỗ trợ truy cập trực tiếp: nếu không có documentId trên query string, tự động chọn tài liệu đầu tiên trong kho
+        if (!DocumentId.HasValue && MyDocuments.Any())
+        {
+            DocumentId = MyDocuments.First().Id;
+        }
+
         if (DocumentId.HasValue)
         {
             var doc = MyDocuments.FirstOrDefault(d => d.Id == DocumentId.Value);
@@ -82,6 +88,14 @@ public class CreateOrderModel : PageModel
             {
                 SelectedDocumentName = doc.FileName;
                 PageCount = doc.PageCount;
+                await CalculatePriceAsync();
+            }
+            else if (MyDocuments.Any())
+            {
+                var fallbackDoc = MyDocuments.First();
+                DocumentId = fallbackDoc.Id;
+                SelectedDocumentName = fallbackDoc.FileName;
+                PageCount = fallbackDoc.PageCount;
                 await CalculatePriceAsync();
             }
         }
