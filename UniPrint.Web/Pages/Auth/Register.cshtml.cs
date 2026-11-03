@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -83,6 +83,7 @@ public class RegisterModel : PageModel
 
         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
 
-        return RedirectToPage("/Student/CreateOrder");
+        // Tự động chuyển hướng về Trang Chủ (Home Hub) sau khi đăng ký thành công
+        return RedirectToPage("/Index");
     }
 }

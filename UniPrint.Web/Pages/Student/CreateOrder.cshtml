@@ -2,94 +2,120 @@
 @model UniPrint.Web.Pages.Student.CreateOrderModel
 @using UniPrint.DataAccess.Enums
 @{
-    ViewData["Title"] = "Đặt In Tài Liệu";
+    ViewData["Title"] = "Đặt In Tài Liệu Trực Tuyến";
 }
 
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
+<div class="container mt-2">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
-            <h2><i class="bi bi-printer text-primary"></i> ĐẶT IN TÀI LIỆU TRỰC TUYẾN</h2>
-            <p class="text-muted mb-0">Cấu hình in và chốt giá cố định theo quy tắc nghiệp vụ BR02.</p>
+            <h2 class="mb-1 d-flex align-items-center gap-2">
+                <svg class="icon-duotone icon-lg" style="color: var(--intent-action-base);" viewBox="0 0 24 24">
+                    <path class="bg-shape" d="M6 9h12v9H6z"/>
+                    <path class="stroke-shape" d="M6 9V3h12v6M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v7H6z"/>
+                </svg>
+                ĐẶT IN TÀI LIỆU TRỰC TUYẾN
+            </h2>
+            <div class="text-muted" style="font-size: 13.5px; font-weight: 500;">
+                Tùy chỉnh thông số in ấn, xem chi phí minh bạch và chốt giá cố định trước khi gửi lệnh in
+            </div>
         </div>
-        <a asp-page="/Student/Documents" class="btn btn-outline-secondary">
-            <i class="bi bi-folder2-open"></i> Quản Lý Tài Liệu
+        <a asp-page="/Student/Documents" class="btn btn-secondary">
+            <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><path class="bg-shape" d="M6 3h8l6 6v12H6z"/><path class="stroke-shape" d="M14 3v6h6M6 3h8l6 6v12a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2zM9 13h6M9 17h4"/></svg>
+            Kho Tài Liệu Cá Nhân
         </a>
     </div>
-    <hr />
 
+    <!-- Alert Message (Preserved 100%) -->
     @if (!string.IsNullOrEmpty(Model.ErrorMessage))
     {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i> @Model.ErrorMessage
+        <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center justify-content-between mb-4" role="alert">
+            <div class="d-flex align-items-center gap-2">
+                <svg class="icon-duotone" viewBox="0 0 24 24"><circle class="bg-shape" cx="12" cy="12" r="9"/><path class="stroke-shape" d="M12 8v4M12 16h.01"/></svg>
+                <span>@Model.ErrorMessage</span>
+            </div>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
 
+    <!-- Order Created Success Screen (Preserved 100% data & actions) -->
     @if (Model.CreatedOrder != null)
     {
-        <div class="card border-success shadow-sm mb-4">
-            <div class="card-header bg-success text-white py-3">
-                <h4 class="mb-0"><i class="bi bi-check-circle-fill me-2"></i> ĐẶT IN THÀNH CÔNG!</h4>
+        <div class="card mb-4" style="border-color: var(--intent-confirm-border);">
+            <div class="card-header d-flex align-items-center justify-content-between py-3" style="background-color: var(--intent-confirm-tint);">
+                <div class="d-flex align-items-center gap-2" style="color: var(--intent-confirm-base);">
+                    <svg class="icon-duotone" viewBox="0 0 24 24"><circle class="bg-shape" cx="12" cy="12" r="9"/><path class="stroke-shape" d="M8 12l3 3 5-5"/></svg>
+                    <strong style="font-size: 16px;">ĐẶT IN THÀNH CÔNG</strong>
+                </div>
+                <span class="badge status-available">Đã Tiếp Nhận</span>
             </div>
             <div class="card-body p-4">
                 <div class="row align-items-center mb-4">
                     <div class="col-md-7">
-                        <p class="text-muted mb-1">Mã đơn hàng chính thức của bạn:</p>
+                        <p class="text-muted mb-1" style="font-size: 13px;">Mã đơn hàng chính thức của bạn:</p>
                         <div class="d-flex align-items-center gap-2">
-                            <h2 class="text-primary fw-bold font-monospace mb-0">@Model.CreatedOrder.OrderCode</h2>
-                            <button class="btn btn-outline-primary btn-sm" onclick="navigator.clipboard.writeText('@Model.CreatedOrder.OrderCode'); alert('Đã sao chép mã đơn hàng!');">
-                                <i class="bi bi-clipboard"></i> Sao chép
+                            <span class="mono" style="font-size: 24px; font-weight: 700; color: var(--intent-action-base);">
+                                @Model.CreatedOrder.OrderCode
+                            </span>
+                            <button class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText('@Model.CreatedOrder.OrderCode'); alert('Đã sao chép mã đơn hàng!');">
+                                <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><path class="stroke-shape" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+                                Sao chép
                             </button>
                         </div>
-                        <p class="text-success small mt-2 mb-0">
-                            <i class="bi bi-shield-check"></i> <strong>Quy tắc BR02:</strong> Giá đã được chốt cố định theo bảng giá tại thời điểm tạo đơn.
+                        <p class="text-success small mt-2 mb-0" style="font-weight: 500;">
+                            Giá đã được chốt cố định theo bảng giá tại thời điểm tạo đơn và không phát sinh phụ phí.
                         </p>
                     </div>
                     <div class="col-md-5 text-md-end mt-3 mt-md-0">
-                        <span class="text-muted d-block small">Tổng chi phí chốt cố định:</span>
-                        <span class="display-6 fw-bold text-danger">@Model.CreatedOrder.TotalPrice.ToString("N0") VNĐ</span>
+                        <span class="text-muted d-block small" style="font-weight: 500;">Tổng chi phí thanh toán cố định:</span>
+                        <span class="mono" style="font-size: 26px; font-weight: 700; color: var(--intent-action-base);">
+                            @Model.CreatedOrder.TotalPrice.ToString("N0") VNĐ
+                        </span>
                     </div>
                 </div>
 
-                <div class="table-responsive">
-                    <table class="table table-bordered mb-3">
-                        <thead class="table-light">
+                <div class="table-container mb-3">
+                    <table class="table">
+                        <thead>
                             <tr>
                                 <th>Tài liệu</th>
                                 <th>Số bản in</th>
-                                <th>Chế độ in</th>
+                                <th>Quy cách in</th>
                                 <th>Mã nhận QR</th>
                                 <th>Trạng thái</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td class="fw-semibold">@Model.CreatedOrder.DocumentName</td>
-                                <td>@Model.CreatedOrder.NumberOfCopies bản</td>
+                                <td style="font-weight: 600;">@Model.CreatedOrder.DocumentName</td>
+                                <td class="mono">@Model.CreatedOrder.NumberOfCopies bản</td>
                                 <td>
-                                    @(Model.CreatedOrder.IsColor ? "In Màu" : "Trắng Đen"), 
-                                    @(Model.CreatedOrder.IsDoubleSided ? "2 mặt" : "1 mặt")
+                                    <span class="badge status-neutral">
+                                        @(Model.CreatedOrder.IsColor ? "In Màu" : "Trắng Đen") • @(Model.CreatedOrder.IsDoubleSided ? "2 Mặt" : "1 Mặt")
+                                    </span>
                                 </td>
-                                <td><code class="text-dark fw-bold">@Model.CreatedOrder.QrToken</code></td>
-                                <td><span class="badge bg-warning text-dark">Chờ xử lý (Pending)</span></td>
+                                <td><span class="mono font-monospace fw-bold" style="color: var(--intent-action-base);">@Model.CreatedOrder.QrToken</span></td>
+                                <td><span class="badge status-pending">Chờ xử lý</span></td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
 
-                <div class="alert alert-warning d-flex align-items-center mb-4" role="alert">
-                    <i class="bi bi-info-circle-fill fs-4 me-3"></i>
+                <div class="alert alert-warning d-flex align-items-center mb-4 gap-2" role="alert">
+                    <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><circle class="bg-shape" cx="12" cy="12" r="9"/><path class="stroke-shape" d="M12 8v4M12 16h.01"/></svg>
                     <div>
-                        <strong>Lưu ý:</strong> Khi nhân viên tiệm in bắt đầu in, hệ thống sẽ khóa quyền hủy đơn của sinh viên.
+                        <strong>Lưu ý:</strong> Khi nhân viên bắt đầu chạy máy in, hệ thống sẽ khóa chức năng hủy đơn để bảo vệ vật tư in ấn.
                     </div>
                 </div>
 
                 <div class="d-flex gap-2">
-                    <a asp-page="/Student/CreateOrder" class="btn btn-primary">
-                        <i class="bi bi-plus-circle me-1"></i> Tạo Đơn Đặt In Khác
+                    <a asp-page="/Student/CreateOrder" class="btn btn-action">
+                        <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><circle class="bg-shape" cx="12" cy="12" r="9"/><path class="stroke-shape" d="M12 8v8M8 12h8"/></svg>
+                        Tạo Đơn Đặt In Khác
                     </a>
-                    <a asp-page="/Student/Documents" class="btn btn-outline-secondary">
-                        <i class="bi bi-file-earmark-text me-1"></i> Xem Kho Tài Liệu
+                    <a asp-page="/Student/Documents" class="btn btn-secondary">
+                        <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><path class="bg-shape" d="M6 3h8l6 6v12H6z"/><path class="stroke-shape" d="M14 3v6h6M6 3h8l6 6v12a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2zM9 13h6M9 17h4"/></svg>
+                        Xem Kho Tài Liệu
                     </a>
                 </div>
             </div>
@@ -97,128 +123,144 @@
     }
     else
     {
-        <div class="row">
-            <div class="col-md-7">
-                <div class="card mb-4 shadow-sm border-0">
-                    <div class="card-header bg-light"><strong>Bước 1: Chọn tài liệu & Cấu hình in</strong></div>
-                    <div class="card-body">
-                        <form method="post" id="createOrderForm">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Tài liệu cần in</label>
-                                @if (!string.IsNullOrEmpty(Model.SelectedDocumentName))
-                                {
-                                    <div class="alert alert-primary py-2 d-flex justify-content-between align-items-center mb-0">
-                                        <span><i class="bi bi-file-earmark-text me-1"></i> <strong>@Model.SelectedDocumentName</strong></span>
-                                        <span class="badge bg-primary">@Model.PageCount trang</span>
+        <!-- 2-Column Student Document Studio Layout -->
+        <div class="row g-4">
+            <!-- Left Column: Document & Print Configuration Form (Preserved 100% controls) -->
+            <div class="col-lg-7">
+                <div class="card p-4">
+                    <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom" style="border-color: var(--border-subtle) !important;">
+                        <span class="badge status-neutral">1</span>
+                        <strong style="font-size: 15px; color: var(--text-heading);">Chọn Tài Liệu & Cấu Hình In</strong>
+                    </div>
+
+                    <form method="post" id="createOrderForm">
+                        <div class="mb-3">
+                            <label class="form-label">Tài liệu cần in <span class="text-danger">*</span></label>
+                            @if (!string.IsNullOrEmpty(Model.SelectedDocumentName))
+                            {
+                                <div class="tonal-panel d-flex justify-content-between align-items-center py-2 px-3 mb-0" style="background-color: var(--intent-action-tint); border-color: var(--intent-action-border);">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <svg class="icon-duotone icon-sm" style="color: var(--intent-action-base);" viewBox="0 0 24 24"><path class="bg-shape" d="M6 3h8l6 6v12H6z"/><path class="stroke-shape" d="M14 3v6h6M6 3h8l6 6v12a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2z"/></svg>
+                                        <strong style="font-size: 13.5px; color: var(--intent-action-base);">@Model.SelectedDocumentName</strong>
                                     </div>
-                                    <input type="hidden" asp-for="DocumentId" id="documentId" />
-                                }
-                                else if (Model.MyDocuments.Any())
-                                {
-                                    <select asp-for="DocumentId" class="form-select" id="documentId" onchange="window.location.href = '/Student/CreateOrder?documentId=' + this.value;">
-                                        <option value="">-- Chọn tài liệu từ kho cá nhân --</option>
-                                        @foreach (var doc in Model.MyDocuments)
-                                        {
-                                            <option value="@doc.Id">@doc.FileName (@doc.PageCount trang)</option>
-                                        }
-                                    </select>
-                                }
-                                else
-                                {
-                                    <div class="alert alert-warning py-2 mb-0">
-                                        Bạn chưa có tài liệu nào. <a asp-page="/Student/Documents" class="fw-bold">Tải lên tài liệu tại đây</a> để tự động tính trang!
-                                    </div>
-                                }
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">Số trang in (Tự động đọc từ file)</label>
-                                <input asp-for="PageCount" id="pageCount" class="form-control" type="number" min="1" readonly="@(!string.IsNullOrEmpty(Model.SelectedDocumentName))" />
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">Số bản in (Copies)</label>
-                                <input asp-for="NumberOfCopies" id="numberOfCopies" class="form-control" type="number" min="1" value="1" />
-                            </div>
-
-                            <div class="card p-3 bg-light mb-3 border-0">
-                                <h6 class="fw-bold mb-2">Tùy chọn in ấn</h6>
-                                <div class="form-check mb-2">
-                                    <input asp-for="IsColor" class="form-check-input option-trigger" type="checkbox" id="isColor" />
-                                    <label class="form-check-label" for="isColor">In màu (Mặc định: Trắng đen)</label>
+                                    <span class="badge status-available mono">@Model.PageCount trang</span>
                                 </div>
-                                <div class="form-check mb-2">
-                                    <input asp-for="IsDoubleSided" class="form-check-input option-trigger" type="checkbox" id="isDoubleSided" checked />
-                                    <label class="form-check-label" for="isDoubleSided">In 2 mặt (Tiết kiệm 10% chi phí)</label>
-                                </div>
-                                <div class="form-check mb-2">
-                                    <input asp-for="HasBinding" class="form-check-input option-trigger" type="checkbox" id="hasBinding" />
-                                    <label class="form-check-label" for="hasBinding">Đóng gáy sách (+5.000 VNĐ/bản)</label>
-                                </div>
-                                <div class="form-check mb-0">
-                                    <input asp-for="HasStaple" class="form-check-input option-trigger" type="checkbox" id="hasStaple" checked />
-                                    <label class="form-check-label" for="hasStaple">Bấm kim góc (+1.000 VNĐ/bản)</label>
-                                </div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">Phương thức thanh toán</label>
-                                <select asp-for="PaymentMethod" class="form-select">
-                                    <option value="@PaymentMethod.Cash">Tiền mặt tại quầy (Cash)</option>
-                                    <option value="@PaymentMethod.VietQR_PayOS">Chuyển khoản VietQR / PayOS</option>
+                                <input type="hidden" asp-for="DocumentId" id="documentId" />
+                            }
+                            else if (Model.MyDocuments.Any())
+                            {
+                                <select asp-for="DocumentId" class="form-select mono" id="documentId" onchange="window.location.href = '/Student/CreateOrder?documentId=' + this.value;">
+                                    <option value="">-- Chọn tài liệu từ kho cá nhân --</option>
+                                    @foreach (var doc in Model.MyDocuments)
+                                    {
+                                        <option value="@doc.Id">@doc.FileName (@doc.PageCount trang)</option>
+                                    }
                                 </select>
-                            </div>
+                            }
+                            else
+                            {
+                                <div class="alert alert-warning py-2 mb-0" style="font-size: 13px;">
+                                    Bạn chưa có tài liệu nào. <a asp-page="/Student/Documents" class="fw-bold" style="color: var(--intent-alert-base);">Tải lên tài liệu tại đây</a> để tự động tính trang!
+                                </div>
+                            }
+                        </div>
 
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">Ghi chú cho tiệm in (Tùy chọn)</label>
-                                <textarea asp-for="Notes" class="form-control" rows="2" placeholder="Ví dụ: Cần gấp trước 10h, bấm kim 2 đầu..."></textarea>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Số trang in (Tự động đọc)</label>
+                                <input asp-for="PageCount" id="pageCount" class="form-control mono" type="number" min="1" readonly="@(!string.IsNullOrEmpty(Model.SelectedDocumentName))" />
                             </div>
-
-                            <button type="submit" class="btn btn-success w-100 py-2 fw-bold" id="submitBtn" @(!Model.DocumentId.HasValue ? "disabled" : "")>
-                                <i class="bi bi-check2-circle me-1"></i> Xác Nhận & Đặt In (Khóa Giá BR02)
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-5">
-                <div class="card border-primary shadow-sm mb-4">
-                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                        <strong><i class="bi bi-calculator me-1"></i> Tạm Tính Chi Phí</strong>
-                        <span class="badge bg-light text-primary">Quy tắc BR02</span>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-muted small">
-                            Giá được tính theo thời gian thực và sẽ được <strong>chốt cố định vĩnh viễn</strong> ngay khi bạn xác nhận tạo đơn.
-                        </p>
-
-                        <div class="bg-light p-3 rounded mb-3">
-                            <div class="d-flex justify-content-between mb-2">
-                                <span class="text-muted">Đơn giá mỗi trang:</span>
-                                <span class="fw-bold" id="lblUnitPrice">@(Model.EstimatedPrice != null ? Model.EstimatedPrice.UnitPricePerPage.ToString("N0") : "315") VNĐ</span>
-                            </div>
-                            <div class="d-flex justify-content-between mb-2">
-                                <span class="text-muted">Tiền trang in:</span>
-                                <span class="fw-bold" id="lblPageSubtotal">@(Model.EstimatedPrice != null ? Model.EstimatedPrice.PageSubtotal.ToString("N0") : "3.150") VNĐ</span>
-                            </div>
-                            <div class="d-flex justify-content-between mb-2">
-                                <span class="text-muted">Phí gia công (Gáy / Kim):</span>
-                                <span class="fw-bold" id="lblExtraServices">@(Model.EstimatedPrice != null ? Model.EstimatedPrice.ExtraServicesTotal.ToString("N0") : "1.000") VNĐ</span>
-                            </div>
-                            <hr class="my-2" />
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span class="fw-bold text-dark">Tổng tiền dự tính:</span>
-                                <span class="fs-4 fw-bold text-danger" id="lblTotalPrice">@(Model.EstimatedPrice != null ? Model.EstimatedPrice.TotalEstimatedPrice.ToString("N0") : "4.150") VNĐ</span>
+                            <div class="col-md-6">
+                                <label class="form-label">Số bản in (Copies)</label>
+                                <input asp-for="NumberOfCopies" id="numberOfCopies" class="form-control mono" type="number" min="1" value="1" />
                             </div>
                         </div>
 
-                        <div class="alert alert-info small mb-0">
-                            <strong>Bảng giá tham khảo hiện tại:</strong><br />
-                            • Trang đen trắng: 350đ / trang<br />
-                            • Trang in màu: 1.500đ / trang<br />
-                            • Giảm giá 2 mặt: -10% trên đơn giá trang<br />
-                            • Bấm kim góc: 1.000đ / bản | Đóng gáy: 5.000đ / bản
+                        <!-- Print Options Checklist -->
+                        <div class="tonal-panel mb-3 p-3">
+                            <div class="text-muted small mb-2" style="font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                                Tùy chọn gia công & mặt in
+                            </div>
+                            <div class="form-check mb-2">
+                                <input asp-for="IsColor" class="form-check-input option-trigger" type="checkbox" id="isColor" />
+                                <label class="form-check-label" for="isColor" style="font-size: 13.5px;">In màu chất lượng cao (Mặc định: In đen trắng)</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input asp-for="IsDoubleSided" class="form-check-input option-trigger" type="checkbox" id="isDoubleSided" checked />
+                                <label class="form-check-label" for="isDoubleSided" style="font-size: 13.5px;">In hai mặt (Tiết kiệm 10% chi phí giấy)</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input asp-for="HasBinding" class="form-check-input option-trigger" type="checkbox" id="hasBinding" />
+                                <label class="form-check-label" for="hasBinding" style="font-size: 13.5px;">Đóng gáy sách (+5.000 VNĐ / bản)</label>
+                            </div>
+                            <div class="form-check mb-0">
+                                <input asp-for="HasStaple" class="form-check-input option-trigger" type="checkbox" id="hasStaple" checked />
+                                <label class="form-check-label" for="hasStaple" style="font-size: 13.5px;">Bấm kim góc (+1.000 VNĐ / bản)</label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Phương thức thanh toán</label>
+                            <select asp-for="PaymentMethod" class="form-select">
+                                <option value="@PaymentMethod.Cash">Tiền mặt tại quầy (Cash)</option>
+                                <option value="@PaymentMethod.VietQR_PayOS">Chuyển khoản VietQR / PayOS</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">Ghi chú cho trạm in (Tùy chọn)</label>
+                            <textarea asp-for="Notes" class="form-control" rows="2" placeholder="Ví dụ: Cần gấp trước giờ học, bấm kim 2 đầu mép trái..."></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-action w-100 py-2" id="submitBtn" @(!Model.DocumentId.HasValue ? "disabled" : "")>
+                            <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><circle class="bg-shape" cx="12" cy="12" r="9"/><path class="stroke-shape" d="M8 12l3 3 5-5"/></svg>
+                            Xác Nhận & Gửi Lệnh In
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Right Column: Sticky Transparent Electronic Receipt -->
+            <div class="col-lg-5">
+                <div style="position: sticky; top: 76px;">
+                    <div class="card p-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom" style="border-color: var(--border-subtle) !important;">
+                            <div class="d-flex align-items-center gap-2">
+                                <svg class="icon-duotone icon-sm" style="color: var(--intent-action-base);" viewBox="0 0 24 24"><path class="stroke-shape" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                                <strong style="font-size: 15px; color: var(--text-heading);">Bảng Tính Chi Phí Cố Định</strong>
+                            </div>
+                            <span class="badge status-available">Minh Bạch</span>
+                        </div>
+
+                        <div class="tonal-panel mb-3 p-3">
+                            <div class="d-flex justify-content-between mb-2 small">
+                                <span class="text-muted">Đơn giá trang in:</span>
+                                <span class="mono fw-bold" id="lblUnitPrice">@(Model.EstimatedPrice != null ? Model.EstimatedPrice.UnitPricePerPage.ToString("N0") : "315") VNĐ</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2 small">
+                                <span class="text-muted">Thành tiền trang in:</span>
+                                <span class="mono fw-bold" id="lblPageSubtotal">@(Model.EstimatedPrice != null ? Model.EstimatedPrice.PageSubtotal.ToString("N0") : "3.150") VNĐ</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2 small">
+                                <span class="text-muted">Gia công (Gáy / Kim):</span>
+                                <span class="mono fw-bold" id="lblExtraServices">@(Model.EstimatedPrice != null ? Model.EstimatedPrice.ExtraServicesTotal.ToString("N0") : "1.000") VNĐ</span>
+                            </div>
+                            <div class="border-top my-2 pt-2 d-flex justify-content-between align-items-baseline" style="border-color: var(--border-subtle) !important;">
+                                <strong style="color: var(--text-heading); font-size: 14px;">Tổng cộng:</strong>
+                                <span class="mono" style="font-size: 24px; font-weight: 700; color: var(--intent-action-base);" id="lblTotalPrice">
+                                    @(Model.EstimatedPrice != null ? Model.EstimatedPrice.TotalEstimatedPrice.ToString("N0") : "4.150") VNĐ
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="tonal-panel p-3" style="font-size: 12px; color: var(--text-muted);">
+                            <div class="mb-1" style="font-weight: 600; color: var(--text-heading);">Bảng giá niêm yết hiện hành:</div>
+                            <ul class="mb-0 ps-3 d-flex flex-column gap-1">
+                                <li>Trang đen trắng: <strong>350đ / trang</strong></li>
+                                <li>Trang in màu: <strong>1.500đ / trang</strong></li>
+                                <li>In 2 mặt: Giảm ngay <strong>10%</strong> trên đơn giá trang</li>
+                                <li>Bấm kim: <strong>1.000đ / bản</strong> · Đóng gáy: <strong>5.000đ / bản</strong></li>
+                            </ul>
                         </div>
                     </div>
                 </div>

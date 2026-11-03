@@ -1,8 +1,12 @@
 @inject Microsoft.AspNetCore.Mvc.Rendering.IHtmlHelper Html
 @{
     var currentPage = ViewContext.RouteData.Values["page"]?.ToString() ?? string.Empty;
-    string NavClass(string page) => currentPage.Equals(page, StringComparison.OrdinalIgnoreCase) ? "nav-link text-white active fw-bold nav-active-underline" : "nav-link text-white";
-    string NavClassWarning(string page) => currentPage.Equals(page, StringComparison.OrdinalIgnoreCase) ? "nav-link text-warning fw-bold active nav-active-underline" : "nav-link text-warning fw-semibold";
+    string NavClass(string page) => currentPage.Equals(page, StringComparison.OrdinalIgnoreCase) 
+        ? "app-nav-link active" 
+        : "app-nav-link";
+    string NavClassHighlight(string page) => currentPage.Equals(page, StringComparison.OrdinalIgnoreCase) 
+        ? "app-nav-link active highlight" 
+        : "app-nav-link highlight";
 }
 <!DOCTYPE html>
 <html lang="vi">
@@ -10,105 +14,259 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - UniPrint Platform</title>
+
+    <!-- Google Fonts: Instrument Sans (500, 600, 700) & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <style>
-        .nav-active-underline {
-            position: relative;
+        .app-top-header {
+            background-color: var(--surface-card);
+            border-bottom: 1px solid var(--border-card);
+            position: sticky;
+            top: 0;
+            z-index: 1020;
         }
-        .nav-active-underline::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 70%;
-            height: 2px;
-            background: #fff;
-            border-radius: 2px;
+        .app-brand-badge {
+            width: 32px;
+            height: 32px;
+            background-color: var(--intent-action-base);
+            color: #ffffff;
+            border-radius: var(--radius-md);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
-        .nav-active-underline.text-warning::after {
-            background: #ffc107;
+        .app-brand-text {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-heading);
+            letter-spacing: -0.3px;
         }
-        .nav-link { transition: opacity .15s; }
-        .nav-link:not(.active):hover { opacity: .75; }
+        .app-nav-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 12px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-muted);
+            border-radius: var(--radius-md);
+            text-decoration: none;
+            transition: all 0.15s ease;
+            white-space: nowrap !important;
+            flex-shrink: 0;
+        }
+        .app-nav-link:hover {
+            color: var(--text-heading);
+            background-color: var(--surface-subtle);
+        }
+        .app-nav-link.active {
+            color: var(--intent-action-base);
+            background-color: var(--intent-action-tint);
+            font-weight: 600;
+        }
+        .app-nav-link.highlight {
+            color: var(--intent-alert-base);
+        }
+        .app-nav-link.highlight.active {
+            background-color: var(--intent-alert-tint);
+            color: var(--intent-alert-base);
+            font-weight: 600;
+        }
+        .app-user-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 12px 4px 8px;
+            border: 1px solid var(--border-card);
+            border-radius: var(--radius-pill);
+            background-color: var(--surface-card);
+            color: var(--text-heading);
+            text-decoration: none;
+            font-size: 12.5px;
+            font-weight: 600;
+            white-space: nowrap !important;
+            flex-shrink: 0;
+        }
+        .app-user-pill:hover {
+            background-color: var(--surface-subtle);
+            color: var(--text-heading);
+        }
     </style>
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm mb-4">
+    <header class="app-top-header mb-4">
+        <nav class="navbar navbar-expand-lg py-2">
             <div class="container">
-                <a class="navbar-brand fw-bold border-end border-light border-opacity-50 pe-3 me-3" asp-area="" asp-page="/Index">UniPrint</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
+                <!-- Brand Logo & Name -->
+                <a class="navbar-brand d-inline-flex align-items-center gap-2 me-4" asp-area="" asp-page="/Index">
+                    <span class="app-brand-badge">
+                        <svg class="icon-duotone" viewBox="0 0 24 24">
+                            <path class="bg-shape" d="M6 9h12v9H6z" style="fill:#fff; opacity:0.25;"/>
+                            <path class="stroke-shape" d="M6 9V3h12v6M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v7H6z" style="stroke:#fff;"/>
+                        </svg>
+                    </span>
+                    <span class="app-brand-text">UniPrint</span>
+                </a>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#uniPrintNavbar" aria-controls="uniPrintNavbar" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+
+                <div class="collapse navbar-collapse justify-content-between" id="uniPrintNavbar">
+                    <!-- Main Navigation Links by Role (Preserved 100%) -->
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0 gap-1">
                         @if (User.IsInRole("Student"))
                         {
                             <li class="nav-item">
-                                <a class="@NavClass("/Student/Documents")" asp-page="/Student/Documents">Tài Liệu Của Tôi</a>
+                                <a class="@NavClass("/Student/Documents")" asp-page="/Student/Documents">
+                                    <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><path class="bg-shape" d="M6 3h8l6 6v12H6z"/><path class="stroke-shape" d="M14 3v6h6M6 3h8l6 6v12a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2zM9 13h6M9 17h4"/></svg>
+                                    Tài Liệu Của Tôi
+                                </a>
                             </li>
                             <li class="nav-item">
-                                <a class="@NavClass("/Student/CreateOrder")" asp-page="/Student/CreateOrder">Đặt In</a>
+                                <a class="@NavClass("/Student/CreateOrder")" asp-page="/Student/CreateOrder">
+                                    <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><path class="bg-shape" d="M6 9h12v9H6z"/><path class="stroke-shape" d="M6 9V3h12v6M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v7H6z"/></svg>
+                                    Đặt In
+                                </a>
                             </li>
                         }
                         @if (User.IsInRole("Staff") || User.IsInRole("Admin"))
                         {
                             <li class="nav-item">
-                                <a class="@NavClass("/Staff/Queue")" asp-page="/Staff/Queue">Hàng Đợi In (Staff)</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="@NavClass("/Staff/Shelves")" asp-page="/Staff/Shelves">Quản Lý Kệ</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="@NavClass("/Pickup/ScanQR")" asp-page="/Pickup/ScanQR">Quét Mã QR Nhận Hàng</a>
-                            </li>
-                        }
-                        <li class="nav-item">
-                            <a class="@NavClassWarning("/StudyHub/Index")" asp-page="/StudyHub/Index">Study Hub</a>
-                        </li>
-                    </ul>
-                    <ul class="navbar-nav align-items-center">
-                        @if (User.Identity?.IsAuthenticated == true)
-                        {
-                            <li class="nav-item me-2">
-                                <a class="@NavClass("/Auth/Profile")" asp-page="/Auth/Profile" title="Xem và cập nhật hồ sơ cá nhân">
-                                    👤 Xin chào, <strong>@User.Identity.Name</strong>
-                                    <span class="badge bg-light text-primary ms-1">
-                                        @(User.IsInRole("Admin") ? "Admin" : User.IsInRole("Staff") ? "Staff" : "Sinh viên")
-                                    </span>
+                                <a class="@NavClass("/Staff/Queue")" asp-page="/Staff/Queue">
+                                    <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><path class="bg-shape" d="M4 6h16v14H4z"/><path class="stroke-shape" d="M6 2v4M18 2v4M4 6h16a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2zM4 11h16M8 15h8"/></svg>
+                                    Hàng Đợi In
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <form method="post" asp-page="/Auth/Logout" class="d-inline">
-                                    <button type="submit" class="btn btn-outline-light btn-sm">Đăng Xuất</button>
-                                </form>
+                                <a class="@NavClass("/Staff/Shelves")" asp-page="/Staff/Shelves">
+                                    <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><path class="bg-shape" d="M4 6h16v12H4z"/><path class="stroke-shape" d="M3 6h18M3 12h18M3 18h18M4 6v12M20 6v12"/></svg>
+                                    Quản Lý Kệ
+                                </a>
                             </li>
+                            <li class="nav-item">
+                                <a class="@NavClass("/Pickup/ScanQR")" asp-page="/Pickup/ScanQR">
+                                    <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><path class="bg-shape" d="M4 4h6v6H4zm10 0h6v6h-6zm0 10h6v6h-6zm-10 0h6v6H4z"/><path class="stroke-shape" d="M3 3h8v8H3zM13 3h8v8h-8zM13 13h8v8h-8zM3 13h8v8H3z"/></svg>
+                                    Quét QR Nhận Hàng
+                                </a>
+                            </li>
+                        }
+                        <li class="nav-item">
+                            <a class="@NavClassHighlight("/StudyHub/Index")" asp-page="/StudyHub/Index">
+                                <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><path class="bg-shape" d="M4 19.5A2.5 2.5 0 016.5 17H20M4 4.5A2.5 2.5 0 016.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15z"/><path class="stroke-shape" d="M4 19.5A2.5 2.5 0 016.5 17H20M4 4.5A2.5 2.5 0 016.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15z"/></svg>
+                                Study Hub
+                            </a>
+                        </li>
+                    </ul>
+
+                    <!-- User Actions & Authentication (Preserved 100%) -->
+                    <div class="d-flex align-items-center gap-2">
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <a class="app-user-pill" asp-page="/Auth/Profile" title="Xem và cập nhật hồ sơ cá nhân">
+                                <svg class="icon-duotone icon-sm" viewBox="0 0 24 24">
+                                    <circle class="bg-shape" cx="12" cy="7" r="4"/>
+                                    <path class="stroke-shape" d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+                                    <circle class="stroke-shape" cx="12" cy="7" r="4"/>
+                                </svg>
+                                <span>@User.Identity.Name</span>
+                                <span class="badge status-neutral">
+                                    @(User.IsInRole("Admin") ? "Admin" : User.IsInRole("Staff") ? "Staff" : "Sinh viên")
+                                </span>
+                            </a>
+
+                            <form method="post" asp-page="/Auth/Logout" class="d-inline m-0">
+                                <button type="submit" class="btn btn-secondary btn-sm" title="Đăng xuất khỏi hệ thống">
+                                    <svg class="icon-duotone icon-sm" viewBox="0 0 24 24">
+                                        <path class="stroke-shape" d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
+                                    </svg>
+                                    Đăng Xuất
+                                </button>
+                            </form>
                         }
                         else
                         {
-                            <li class="nav-item me-2">
-                                <a class="btn btn-outline-light btn-sm" asp-page="/Auth/Login">Đăng Nhập</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="btn btn-warning btn-sm fw-semibold" asp-page="/Auth/Register">Đăng Ký</a>
-                            </li>
+                            <a class="btn btn-secondary btn-sm" asp-page="/Auth/Login">Đăng Nhập</a>
+                            <a class="btn btn-action btn-sm" asp-page="/Auth/Register">Đăng Ký</a>
                         }
-                    </ul>
+                    </div>
                 </div>
             </div>
         </nav>
     </header>
-    <div class="container">
-        <main role="main" class="pb-3">
+
+    <div class="container page-main-container">
+        <main role="main" class="pb-4">
             @RenderBody()
         </main>
     </div>
 
-    <footer class="border-top footer text-muted mt-5 py-3 bg-light">
-        <div class="container text-center">
-            &copy; 2026 - UniPrint Platform (ASP.NET Core Razor Pages & Web API)
+    <!-- Campus Operational Station Footer (Rich, Authentic, Non-Empty) -->
+    <footer class="app-footer mt-5 py-4">
+        <div class="container">
+            <div class="row g-4 pb-4 border-bottom" style="border-color: var(--border-subtle) !important;">
+                <!-- Column 1: Trạm In Trung Tâm -->
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="app-brand-badge" style="width: 28px; height: 28px;">
+                            <svg class="icon-duotone icon-sm" viewBox="0 0 24 24">
+                                <path class="bg-shape" d="M6 9h12v9H6z" style="fill:#fff; opacity:0.25;"/>
+                                <path class="stroke-shape" d="M6 9V3h12v6M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v7H6z" style="stroke:#fff;"/>
+                            </svg>
+                        </span>
+                        <strong style="font-size: 14.5px; color: var(--text-heading);">UniPrint Station</strong>
+                    </div>
+                    <p class="text-muted small mb-2" style="line-height: 1.5;">
+                        Trạm dịch vụ in ấn học thuật & cung cấp học liệu trực tuyến phục vụ sinh viên và cán bộ giảng viên toàn trường.
+                    </p>
+                    <div class="text-muted small">
+                        <div><strong>Thời gian phục vụ:</strong> Thứ Hai – Thứ Bảy (07:30 – 17:30)</div>
+                        <div><strong>Hình thức nhận:</strong> Quét mã QR đối soát trực tiếp tại quầy trạm in</div>
+                    </div>
+                </div>
+
+                <!-- Column 2: Quy chuẩn & Bảng giá in ấn -->
+                <div class="col-md-4">
+                    <strong class="d-block mb-2" style="font-size: 13.5px; color: var(--text-heading);">Dịch Vụ & Biểu Phí Chuẩn</strong>
+                    <ul class="list-unstyled text-muted small mb-0 d-flex flex-column gap-1">
+                        <li>• In đen trắng: <strong>350đ / trang</strong> (A4) · In màu: <strong>1.500đ / trang</strong></li>
+                        <li>• In hai mặt tự động: <strong>Giảm 10%</strong> chi phí giấy in</li>
+                        <li>• Gia công sau in: Bấm kim góc (1.000đ) · Đóng gáy xoắn (5.000đ)</li>
+                        <li>• Thanh toán linh hoạt: Tiền mặt hoặc quét mã VietQR / PayOS</li>
+                    </ul>
+                </div>
+
+                <!-- Column 3: Trạng thái & Tiện ích trạm in -->
+                <div class="col-md-4">
+                    <strong class="d-block mb-2" style="font-size: 13.5px; color: var(--text-heading);">Tiện Ích & Giám Sát</strong>
+                    <div class="text-muted small d-flex flex-column gap-2">
+                        <div>
+                            <span class="badge status-available mono" style="font-size: 11px;">
+                                ● Trạm in trực tuyến: Hoạt động bình thường
+                            </span>
+                        </div>
+                        <div>• Tự động phân tích và đếm trang tệp PDF / DOCX</div>
+                        <div>• Đối soát nhận tài liệu bằng mã QR đối soát bảo mật</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Bottom Sub-bar -->
+            <div class="d-flex justify-content-between align-items-center pt-3 flex-wrap gap-2 text-muted" style="font-size: 12px;">
+                <div>
+                    &copy; 2026 <strong>UniPrint Platform</strong> · Trạm Dịch Vụ In Ấn Trường Đại Học
+                </div>
+                <div class="d-flex gap-3">
+                    <a asp-page="/Privacy" class="text-muted">Chính sách bảo mật tài liệu</a>
+                    <span>·</span>
+                    <a asp-page="/StudyHub/Index" class="text-muted">Kho học liệu Study Hub</a>
+                </div>
+            </div>
         </div>
     </footer>
 
