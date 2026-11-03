@@ -108,8 +108,12 @@
                     </div>
                 </div>
 
-                <div class="d-flex gap-2">
-                    <a asp-page="/Student/CreateOrder" class="btn btn-action">
+                <div class="d-flex gap-2 flex-wrap">
+                    <a asp-page="/Student/Orders" class="btn btn-action">
+                        <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><path class="bg-shape" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/><path class="stroke-shape" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                        Xem Đơn Hàng Của Tôi & Lấy Mã QR
+                    </a>
+                    <a asp-page="/Student/CreateOrder" class="btn btn-secondary">
                         <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><circle class="bg-shape" cx="12" cy="12" r="9"/><path class="stroke-shape" d="M12 8v8M8 12h8"/></svg>
                         Tạo Đơn Đặt In Khác
                     </a>
@@ -135,32 +139,53 @@
 
                     <form method="post" id="createOrderForm">
                         <div class="mb-3">
-                            <label class="form-label">Tài liệu cần in <span class="text-danger">*</span></label>
-                            @if (!string.IsNullOrEmpty(Model.SelectedDocumentName))
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label mb-0" for="documentId">Tài liệu cần in <span class="text-danger">*</span></label>
+                                <a asp-page="/Student/Documents" class="text-decoration-none small d-inline-flex align-items-center gap-1" style="font-size: 12.5px; font-weight: 600; color: var(--intent-action-base);">
+                                    <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><path class="stroke-shape" d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                                    Tải file mới / Kho tài liệu
+                                </a>
+                            </div>
+
+                            @if (Model.MyDocuments.Any())
                             {
-                                <div class="tonal-panel d-flex justify-content-between align-items-center py-2 px-3 mb-0" style="background-color: var(--intent-action-tint); border-color: var(--intent-action-border);">
+                                <div class="input-group">
+                                    <select asp-for="DocumentId" class="form-select mono" id="documentId" required>
+                                        <option value="">-- Chọn tài liệu từ kho cá nhân --</option>
+                                        @foreach (var doc in Model.MyDocuments)
+                                        {
+                                            <option value="@doc.Id" data-pages="@doc.PageCount" data-filename="@doc.FileName" selected="@(doc.Id == Model.DocumentId)">
+                                                @doc.FileName (@doc.PageCount trang)
+                                            </option>
+                                        }
+                                    </select>
+                                    <a asp-page="/Student/Documents" class="btn btn-secondary" title="Quản lý hoặc đổi sang tài liệu khác">
+                                        Đổi file khác
+                                    </a>
+                                </div>
+
+                                <div id="selectedDocInfoPanel" class="tonal-panel d-flex justify-content-between align-items-center py-2 px-3 mt-2" style="background-color: var(--intent-action-tint); border-color: var(--intent-action-border); @(Model.DocumentId.HasValue ? "" : "display: none !important;")">
                                     <div class="d-flex align-items-center gap-2">
                                         <svg class="icon-duotone icon-sm" style="color: var(--intent-action-base);" viewBox="0 0 24 24"><path class="bg-shape" d="M6 3h8l6 6v12H6z"/><path class="stroke-shape" d="M14 3v6h6M6 3h8l6 6v12a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2z"/></svg>
-                                        <strong style="font-size: 13.5px; color: var(--intent-action-base);">@Model.SelectedDocumentName</strong>
+                                        <span style="font-size: 13.5px; color: var(--intent-action-base);">
+                                            Tài liệu đang chọn: <strong id="selectedDocNameText">@(Model.SelectedDocumentName ?? "")</strong>
+                                        </span>
                                     </div>
-                                    <span class="badge status-available mono">@Model.PageCount trang</span>
+                                    <span class="badge status-available mono" id="selectedDocPagesBadge">@Model.PageCount trang</span>
                                 </div>
-                                <input type="hidden" asp-for="DocumentId" id="documentId" />
-                            }
-                            else if (Model.MyDocuments.Any())
-                            {
-                                <select asp-for="DocumentId" class="form-select mono" id="documentId" onchange="window.location.href = '/Student/CreateOrder?documentId=' + this.value;">
-                                    <option value="">-- Chọn tài liệu từ kho cá nhân --</option>
-                                    @foreach (var doc in Model.MyDocuments)
-                                    {
-                                        <option value="@doc.Id">@doc.FileName (@doc.PageCount trang)</option>
-                                    }
-                                </select>
                             }
                             else
                             {
-                                <div class="alert alert-warning py-2 mb-0" style="font-size: 13px;">
-                                    Bạn chưa có tài liệu nào. <a asp-page="/Student/Documents" class="fw-bold" style="color: var(--intent-alert-base);">Tải lên tài liệu tại đây</a> để tự động tính trang!
+                                <div class="alert alert-warning py-3 mb-0" style="font-size: 13px;">
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><circle class="bg-shape" cx="12" cy="12" r="9"/><path class="stroke-shape" d="M12 8v4M12 16h.01"/></svg>
+                                        <strong>Kho tài liệu cá nhân đang trống!</strong>
+                                    </div>
+                                    <p class="mb-2 text-muted">Bạn cần tải lên tệp PDF hoặc DOCX để hệ thống tự động trích xuất số trang in chuẩn theo quy tắc BR02.</p>
+                                    <a asp-page="/Student/Documents" class="btn btn-action btn-sm">
+                                        <svg class="icon-duotone icon-sm me-1" viewBox="0 0 24 24"><path class="stroke-shape" d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                                        Tải lên tài liệu ngay
+                                    </a>
                                 </div>
                             }
                         </div>
@@ -168,7 +193,7 @@
                         <div class="row g-3 mb-3">
                             <div class="col-md-6">
                                 <label class="form-label">Số trang in (Tự động đọc)</label>
-                                <input asp-for="PageCount" id="pageCount" class="form-control mono" type="number" min="1" readonly="@(!string.IsNullOrEmpty(Model.SelectedDocumentName))" />
+                                <input asp-for="PageCount" id="pageCount" class="form-control mono" type="number" min="1" readonly />
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Số bản in (Copies)</label>
@@ -273,11 +298,16 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const docIdEl = document.getElementById('documentId');
+            const pageCountEl = document.getElementById('pageCount');
             const copiesEl = document.getElementById('numberOfCopies');
             const colorEl = document.getElementById('isColor');
             const doubleSidedEl = document.getElementById('isDoubleSided');
             const bindingEl = document.getElementById('hasBinding');
             const stapleEl = document.getElementById('hasStaple');
+            const submitBtn = document.getElementById('submitBtn');
+            const selectedDocInfoPanel = document.getElementById('selectedDocInfoPanel');
+            const selectedDocNameText = document.getElementById('selectedDocNameText');
+            const selectedDocPagesBadge = document.getElementById('selectedDocPagesBadge');
 
             function updatePriceRealtime() {
                 const docId = docIdEl ? docIdEl.value : '';
@@ -306,6 +336,28 @@
                     .catch(err => console.error('Price calculation error:', err));
             }
 
+            function handleDocumentSelectionChange() {
+                if (!docIdEl) return;
+                const selectedOption = docIdEl.options[docIdEl.selectedIndex];
+                if (selectedOption && selectedOption.value) {
+                    const pages = parseInt(selectedOption.getAttribute('data-pages')) || 1;
+                    const filename = selectedOption.getAttribute('data-filename') || selectedOption.text;
+                    if (pageCountEl) pageCountEl.value = pages;
+                    if (selectedDocNameText) selectedDocNameText.innerText = filename;
+                    if (selectedDocPagesBadge) selectedDocPagesBadge.innerText = pages + ' trang';
+                    if (selectedDocInfoPanel) selectedDocInfoPanel.style.display = 'flex';
+                    if (submitBtn) submitBtn.disabled = false;
+                    updatePriceRealtime();
+                } else {
+                    if (selectedDocInfoPanel) selectedDocInfoPanel.style.display = 'none';
+                    if (submitBtn) submitBtn.disabled = true;
+                }
+            }
+
+            if (docIdEl) {
+                docIdEl.addEventListener('change', handleDocumentSelectionChange);
+            }
+
             const triggers = document.querySelectorAll('.option-trigger, #numberOfCopies');
             triggers.forEach(el => {
                 el.addEventListener('change', updatePriceRealtime);
@@ -313,7 +365,7 @@
             });
 
             if (docIdEl && docIdEl.value) {
-                updatePriceRealtime();
+                handleDocumentSelectionChange();
             }
         });
     </script>

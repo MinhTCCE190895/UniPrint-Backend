@@ -50,7 +50,7 @@
                                 </div>
                             </div>
                         </div>
-                        <a asp-page="/Student/Documents" class="btn btn-confirm btn-sm">
+                        <a asp-page="/Student/Orders" class="btn btn-confirm btn-sm">
                             Xem Mã QR Nhận Hàng →
                         </a>
                     </div>
@@ -66,7 +66,7 @@
                                 Đơn in <strong>#@activePrintingOrder.OrderCode</strong> (@activePrintingOrder.DocumentName) đang được xử lý in tại quầy...
                             </div>
                         </div>
-                        <a asp-page="/Student/Documents" class="btn btn-secondary btn-sm">
+                        <a asp-page="/Student/Orders" class="btn btn-secondary btn-sm">
                             Chi Tiết →
                         </a>
                     </div>
@@ -92,6 +92,10 @@
                         <a asp-page="/Student/CreateOrder" class="btn btn-action px-4 py-2" style="font-size: 14px; font-weight: 600;">
                             <svg class="icon-duotone icon-sm me-1" viewBox="0 0 24 24"><path class="bg-shape" d="M6 9h12v9H6z"/><path class="stroke-shape" d="M6 9V3h12v6M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v7H6z"/></svg>
                             Đặt In Tài Liệu Ngay →
+                        </a>
+                        <a asp-page="/Student/Orders" class="btn btn-secondary px-3 py-2" style="font-size: 13.5px;">
+                            <svg class="icon-duotone icon-sm me-1" viewBox="0 0 24 24"><path class="bg-shape" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/><path class="stroke-shape" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                            Đơn Hàng Của Tôi
                         </a>
                         <a asp-page="/Student/Documents" class="btn btn-secondary px-3 py-2" style="font-size: 13.5px;">
                             <svg class="icon-duotone icon-sm me-1" viewBox="0 0 24 24"><path class="bg-shape" d="M6 3h8l6 6v12H6z"/><path class="stroke-shape" d="M14 3v6h6M6 3h8l6 6v12a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2zM9 13h6M9 17h4"/></svg>
