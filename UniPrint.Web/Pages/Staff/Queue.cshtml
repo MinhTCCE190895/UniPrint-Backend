@@ -1,158 +1,400 @@
 @page
 @model UniPrint.Web.Pages.Staff.QueueModel
 @{
-    ViewData["Title"] = "Hàng Đợi In Ấn - Staff";
+    ViewData["Title"] = "Hàng Đợi In Ấn - Trạm Điều Phối Staff";
+
+    // [UI Presentation Only] Phân loại đơn hàng vào 3 cột luồng công việc Kanban
+    var pendingAndProcessingOrders = Model.Orders.Where(o => 
+        o.Status == UniPrint.DataAccess.Enums.PrintOrderStatus.Pending || 
+        o.Status == UniPrint.DataAccess.Enums.PrintOrderStatus.Processing).ToList();
+
+    var printingOrders = Model.Orders.Where(o => 
+        o.Status == UniPrint.DataAccess.Enums.PrintOrderStatus.Printing).ToList();
+
+    var readyOrders = Model.Orders.Where(o => 
+        o.Status == UniPrint.DataAccess.Enums.PrintOrderStatus.ReadyForPickup).ToList();
+
+    // [UI Presentation Only] Tổng số đơn đang lưu thông tại trạm
+    var totalOrders = Model.Orders.Count;
 }
 
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2><i class="bi bi-list-task"></i> HÀNG ĐỢI XỬ LÝ IN ẤN (STAFF QUEUE)</h2>
+<div class="container mt-2">
+    <!-- Header Section (Trạm Điều Phối & Hành Động Trạm) -->
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
         <div>
-            <span class="badge bg-warning text-dark fs-6 me-2">Đang chờ xử lý in: @Model.Orders.Count(o => o.Status == UniPrint.DataAccess.Enums.PrintOrderStatus.Pending || o.Status == UniPrint.DataAccess.Enums.PrintOrderStatus.Processing || o.Status == UniPrint.DataAccess.Enums.PrintOrderStatus.Printing)</span>
-            <span class="badge bg-success fs-6">Đã in xong (Chờ lấy): @Model.Orders.Count(o => o.Status == UniPrint.DataAccess.Enums.PrintOrderStatus.ReadyForPickup)</span>
+            <h2 class="mb-1 d-flex align-items-center gap-2" style="font-size: 22px; font-weight: 700;">
+                <svg class="icon-duotone icon-lg" style="color: var(--intent-action-base);" viewBox="0 0 24 24">
+                    <path class="bg-shape" d="M6 9h12v9H6z"/>
+                    <path class="stroke-shape" d="M6 9V3h12v6M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v7H6z"/>
+                </svg>
+                Trạm Điều Phối & Hàng Đợi In
+            </h2>
+            <div class="text-muted" style="font-size: 13px; font-weight: 500;">
+                Dây chuyền in ấn theo luồng thời gian thực · FIFO tiếp nhận, in máy và xuất - nhập kệ lưu trữ
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a asp-page="/Staff/Shelves" class="btn btn-secondary">
+                <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><path class="bg-shape" d="M4 6h16v12H4z"/><path class="stroke-shape" d="M3 6h18M3 12h18M3 18h18M4 6v12M20 6v12"/></svg>
+                Quản Lý Kệ (@Model.AvailableShelves.Count kệ khả dụng)
+            </a>
+            <a asp-page="/Pickup/ScanQR" class="btn btn-action">
+                <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><path class="bg-shape" d="M4 4h6v6H4zm10 0h6v6h-6zm0 10h6v6h-6zm-10 0h6v6H4z"/><path class="stroke-shape" d="M3 3h8v8H3zM13 3h8v8h-8zM13 13h8v8h-8zM3 13h8v8H3z"/></svg>
+                Quét QR Trả Hàng
+            </a>
         </div>
     </div>
-    <hr />
 
+    <!-- Alert Notifications (Preserved 100%) -->
     @if (!string.IsNullOrEmpty(Model.SuccessMessage))
     {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle me-2"></i>@Model.SuccessMessage
+        <div class="alert alert-success alert-dismissible fade show d-flex align-items-center justify-content-between mb-3" role="alert">
+            <div class="d-flex align-items-center gap-2">
+                <svg class="icon-duotone" viewBox="0 0 24 24"><circle class="bg-shape" cx="12" cy="12" r="9"/><path class="stroke-shape" d="M8 12l3 3 5-5"/></svg>
+                <span>@Model.SuccessMessage</span>
+            </div>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
 
     @if (!string.IsNullOrEmpty(Model.ErrorMessage))
     {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="bi bi-exclamation-triangle me-2"></i>@Model.ErrorMessage
+        <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center justify-content-between mb-3" role="alert">
+            <div class="d-flex align-items-center gap-2">
+                <svg class="icon-duotone" viewBox="0 0 24 24"><circle class="bg-shape" cx="12" cy="12" r="9"/><path class="stroke-shape" d="M12 8v4M12 16h.01"/></svg>
+                <span>@Model.ErrorMessage</span>
+            </div>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
 
-    <div class="table-responsive">
-        <table class="table table-bordered table-hover shadow-sm align-middle">
-            <thead class="table-dark">
-                <tr>
-                    <th>Mã Đơn</th>
-                    <th>Thời Gian Đặt (FIFO)</th>
-                    <th>Sinh Viên</th>
-                    <th>Tài Liệu</th>
-                    <th>Cấu Hình</th>
-                    <th>Tổng Tiền</th>
-                    <th>Trạng Thái</th>
-                    <th>Thao Tác</th>
-                </tr>
-            </thead>
-            <tbody>
-                @if (Model.Orders.Count == 0)
+    <!-- Quick Operational Ribbon (Thanh Điều Khiển Tổng Quan) -->
+    <div class="d-flex align-items-center justify-content-between p-3 mb-4 rounded-3" style="background-color: var(--surface-card); border: 1px solid var(--border-card); box-shadow: var(--shadow-sm); flex-wrap: wrap; gap: 12px;">
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+            <div class="d-flex align-items-center gap-2">
+                <span class="text-muted small" style="font-weight: 600;">Tổng đơn tại trạm:</span>
+                <span class="mono" style="font-weight: 700; color: var(--text-heading); font-size: 15px;">@totalOrders</span>
+            </div>
+            <span class="text-muted" style="opacity: 0.4;">|</span>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge status-neutral">1. Chờ in: @pendingAndProcessingOrders.Count</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge status-pending">2. Đang in máy: @printingOrders.Count</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge status-available">3. Đã lên kệ: @readyOrders.Count</span>
+            </div>
+        </div>
+        <div class="mono small text-muted">
+            Cập nhật theo thứ tự FIFO
+        </div>
+    </div>
+
+    <!-- Kanban Workflow Board (3 Cột Luồng Công Việc Trực Quan) -->
+    <div class="kanban-board">
+        <!-- CỘT 1: TIẾP NHẬN & CHỜ IN -->
+        <div class="kanban-column">
+            <div class="kanban-column-header">
+                <div>
+                    <h3 class="kanban-column-title">
+                        <svg class="icon-duotone icon-sm" style="color: var(--text-muted);" viewBox="0 0 24 24">
+                            <path class="bg-shape" d="M4 6h16v14H4z"/>
+                            <path class="stroke-shape" d="M6 2v4M18 2v4M4 6h16a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2zM4 11h16M8 15h8"/>
+                        </svg>
+                        1. Chờ Tiếp Nhận & In
+                    </h3>
+                    <div class="kanban-column-subtitle">Đơn mới gửi từ sinh viên, cần nạp vào máy</div>
+                </div>
+                <span class="badge status-neutral mono" style="font-size: 12px; font-weight: 700;">
+                    @pendingAndProcessingOrders.Count
+                </span>
+            </div>
+
+            <div class="kanban-card-list">
+                @if (pendingAndProcessingOrders.Count == 0)
                 {
-                    <tr>
-                        <td colspan="8" class="text-center py-4 text-muted">Hiện không có đơn nào đang chờ in.</td>
-                    </tr>
+                    <div class="kanban-empty-ticket">
+                        <svg class="icon-duotone icon-lg mb-2 text-muted" viewBox="0 0 24 24"><circle class="bg-shape" cx="12" cy="12" r="9"/><path class="stroke-shape" d="M8 12l3 3 5-5"/></svg>
+                        <div>Không có đơn nào đang chờ in.</div>
+                    </div>
                 }
-                @foreach (var o in Model.Orders)
+                @foreach (var o in pendingAndProcessingOrders)
                 {
-                    <tr>
-                        <td><code>@o.OrderCode</code></td>
-                        <td>
-                            <small class="text-muted"><i class="bi bi-clock"></i> @o.CreatedAt.ToLocalTime().ToString("HH:mm:ss dd/MM")</small>
-                        </td>
-                        <td>@o.StudentName</td>
-                        <td>@o.DocumentName</td>
-                        <td>
-                            @(o.IsColor ? "Màu" : "Trắng đen"), @(o.IsDoubleSided ? "2 mặt" : "1 mặt")
-                        </td>
-                        <td><strong>@o.TotalPrice.ToString("N0") VNĐ</strong></td>
-                        <td>
-                            @switch (o.Status)
-                            {
-                                case UniPrint.DataAccess.Enums.PrintOrderStatus.Pending:
-                                    <span class="badge bg-secondary">Chờ tiếp nhận</span>
-                                    break;
-                                case UniPrint.DataAccess.Enums.PrintOrderStatus.Processing:
-                                    <span class="badge bg-warning text-dark">Đã tiếp nhận</span>
-                                    break;
-                                case UniPrint.DataAccess.Enums.PrintOrderStatus.Printing:
-                                    <span class="badge bg-primary">Đang in</span>
-                                    break;
-                                case UniPrint.DataAccess.Enums.PrintOrderStatus.ReadyForPickup:
-                                    <span class="badge bg-success">Chờ nhận đồ</span>
-                                    break;
-                                default:
-                                    <span class="badge bg-info text-dark">@o.StatusText</span>
-                                    break;
-                            }
-                            @if (!string.IsNullOrEmpty(o.ShelfCode))
-                            {
-                                <div class="mt-1">
-                                    <span class="badge bg-light text-primary border border-primary">
-                                        <i class="bi bi-inboxes"></i> Kệ: @o.ShelfCode
-                                    </span>
+                    <div class="job-ticket-card">
+                        <!-- Header Phiếu In -->
+                        <div class="job-ticket-header">
+                            <div>
+                                <span class="mono" style="font-weight: 700; color: var(--intent-action-base); font-size: 13.5px;">
+                                    @o.OrderCode
+                                </span>
+                                <div class="mono small text-muted" style="font-size: 11px;">
+                                    FIFO: @o.CreatedAt.ToLocalTime().ToString("HH:mm:ss · dd/MM")
                                 </div>
-                            }
-                        </td>
-                        <td>
+                            </div>
+                            <div>
+                                @if (o.Status == UniPrint.DataAccess.Enums.PrintOrderStatus.Pending)
+                                {
+                                    <span class="badge status-neutral">Chờ tiếp nhận</span>
+                                }
+                                else
+                                {
+                                    <span class="badge status-pending">Đã tiếp nhận</span>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Thân Phiếu In -->
+                        <div class="job-ticket-body">
+                            <div style="font-weight: 600; font-size: 13.5px; color: var(--text-heading);">
+                                @o.StudentName
+                            </div>
+                            <div class="d-flex align-items-center gap-1 text-truncate" title="@o.DocumentName" style="font-size: 12.5px; color: var(--text-body);">
+                                <svg class="icon-duotone icon-sm flex-shrink-0" style="color: var(--text-muted);" viewBox="0 0 24 24"><path class="bg-shape" d="M6 3h8l6 6v12H6z"/><path class="stroke-shape" d="M14 3v6h6M6 3h8l6 6v12a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2zM9 13h6M9 17h4"/></svg>
+                                <span class="text-truncate">@o.DocumentName</span>
+                            </div>
+                        </div>
+
+                        <!-- Thông số in & Giá -->
+                        <div class="job-ticket-meta">
+                            <span class="badge status-neutral" style="font-size: 11px;">
+                                @(o.IsColor ? "In Màu" : "Trắng đen") · @(o.IsDoubleSided ? "2 Mặt" : "1 Mặt")
+                            </span>
+                            <span class="mono" style="font-weight: 700; color: var(--text-heading); font-size: 13px;">
+                                @o.TotalPrice.ToString("N0") đ
+                            </span>
+                        </div>
+
+                        <!-- Nút Thao Tác (Preserved 100% Handler & Parameters) -->
+                        <div class="job-ticket-actions">
                             @if (o.Status == UniPrint.DataAccess.Enums.PrintOrderStatus.Pending)
                             {
-                                <form method="post" asp-page-handler="UpdateStatus" asp-route-orderId="@o.Id" asp-route-newStatus="@UniPrint.DataAccess.Enums.PrintOrderStatus.Processing" class="d-inline">
-                                    <button type="submit" class="btn btn-sm btn-outline-warning">Tiếp nhận đơn</button>
+                                <form method="post" asp-page-handler="UpdateStatus" asp-route-orderId="@o.Id" asp-route-newStatus="@UniPrint.DataAccess.Enums.PrintOrderStatus.Processing" class="w-100 m-0">
+                                    <button type="submit" class="btn btn-secondary btn-sm w-100">
+                                        Tiếp nhận đơn
+                                    </button>
                                 </form>
                             }
                             else if (o.Status == UniPrint.DataAccess.Enums.PrintOrderStatus.Processing)
                             {
-                                <form method="post" asp-page-handler="UpdateStatus" asp-route-orderId="@o.Id" asp-route-newStatus="@UniPrint.DataAccess.Enums.PrintOrderStatus.Printing" class="d-inline">
-                                    <button type="submit" class="btn btn-sm btn-outline-primary">Bắt đầu in</button>
+                                <form method="post" asp-page-handler="UpdateStatus" asp-route-orderId="@o.Id" asp-route-newStatus="@UniPrint.DataAccess.Enums.PrintOrderStatus.Printing" class="w-100 m-0">
+                                    <button type="submit" class="btn btn-action btn-sm w-100">
+                                        <svg class="icon-duotone icon-sm me-1" viewBox="0 0 24 24"><path class="bg-shape" d="M6 9h12v9H6z"/><path class="stroke-shape" d="M6 9V3h12v6M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v7H6z"/></svg>
+                                        Bắt đầu in máy
+                                    </button>
                                 </form>
                             }
-                            else if (o.Status == UniPrint.DataAccess.Enums.PrintOrderStatus.Printing)
-                            {
-                                @if (Model.AvailableShelves.Count > 0)
-                                {
-                                    <form method="post" asp-page-handler="AssignShelf" asp-route-orderId="@o.Id" class="d-inline-flex align-items-center">
-                                        <select name="shelfId" class="form-select form-select-sm me-1" style="width: 140px;" required>
-                                            <option value="">-- Chọn Kệ --</option>
-                                            @foreach (var shelf in Model.AvailableShelves)
-                                            {
-                                                <option value="@shelf.Id">Kệ @shelf.ShelfCode (@(shelf.MaxCapacity - shelf.CurrentCount) chỗ)</option>
-                                            }
-                                        </select>
-                                        <button type="submit" class="btn btn-sm btn-success text-nowrap">
-                                            <i class="bi bi-box-arrow-in-down"></i> In xong & Xếp kệ
-                                        </button>
-                                    </form>
-                                }
-                                else
-                                {
-                                    <form method="post" asp-page-handler="UpdateStatus" asp-route-orderId="@o.Id" asp-route-newStatus="@UniPrint.DataAccess.Enums.PrintOrderStatus.ReadyForPickup" class="d-inline">
-                                        <button type="submit" class="btn btn-sm btn-success">Đã in xong</button>
-                                    </form>
-                                }
-                            }
-                            else if (o.Status == UniPrint.DataAccess.Enums.PrintOrderStatus.ReadyForPickup)
-                            {
-                                @if (string.IsNullOrEmpty(o.ShelfCode) && Model.AvailableShelves.Count > 0)
-                                {
-                                    <form method="post" asp-page-handler="AssignShelf" asp-route-orderId="@o.Id" class="d-inline-flex align-items-center">
-                                        <select name="shelfId" class="form-select form-select-sm me-1" style="width: 130px;" required>
-                                            <option value="">-- Chọn Kệ --</option>
-                                            @foreach (var shelf in Model.AvailableShelves)
-                                            {
-                                                <option value="@shelf.Id">Kệ @shelf.ShelfCode</option>
-                                            }
-                                        </select>
-                                        <button type="submit" class="btn btn-sm btn-primary text-nowrap">Xếp kệ</button>
-                                    </form>
-                                }
-                                else
-                                {
-                                    <span class="text-success small fw-semibold"><i class="bi bi-check2-circle"></i> Chờ sinh viên quét QR</span>
-                                }
-                            }
-                        </td>
-                    </tr>
+                        </div>
+                    </div>
                 }
-            </tbody>
-        </table>
+            </div>
+        </div>
+
+        <!-- CỘT 2: ĐANG CHẠY MÁY IN -->
+        <div class="kanban-column">
+            <div class="kanban-column-header">
+                <div>
+                    <h3 class="kanban-column-title">
+                        <svg class="icon-duotone icon-sm" style="color: var(--intent-alert-base);" viewBox="0 0 24 24">
+                            <path class="bg-shape" d="M6 9h12v9H6z"/>
+                            <path class="stroke-shape" d="M6 9V3h12v6M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v7H6z"/>
+                        </svg>
+                        2. Đang In Máy
+                    </h3>
+                    <div class="kanban-column-subtitle">Máy đang chạy, in xong chọn kệ cất giữ</div>
+                </div>
+                <span class="badge status-pending mono" style="font-size: 12px; font-weight: 700;">
+                    @printingOrders.Count
+                </span>
+            </div>
+
+            <div class="kanban-card-list">
+                @if (printingOrders.Count == 0)
+                {
+                    <div class="kanban-empty-ticket">
+                        <svg class="icon-duotone icon-lg mb-2 text-muted" viewBox="0 0 24 24"><path class="bg-shape" d="M6 9h12v9H6z"/><path class="stroke-shape" d="M6 9V3h12v6M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v7H6z"/></svg>
+                        <div>Các máy in đang rảnh. Hãy nạp đơn mới từ cột 1.</div>
+                    </div>
+                }
+                @foreach (var o in printingOrders)
+                {
+                    <div class="job-ticket-card">
+                        <!-- Header Phiếu In -->
+                        <div class="job-ticket-header">
+                            <div>
+                                <span class="mono" style="font-weight: 700; color: var(--intent-action-base); font-size: 13.5px;">
+                                    @o.OrderCode
+                                </span>
+                                <div class="mono small text-muted" style="font-size: 11px;">
+                                    FIFO: @o.CreatedAt.ToLocalTime().ToString("HH:mm:ss · dd/MM")
+                                </div>
+                            </div>
+                            <span class="badge status-pending">
+                                <svg class="icon-duotone icon-sm me-1" viewBox="0 0 24 24"><path class="bg-shape" d="M6 9h12v9H6z"/><path class="stroke-shape" d="M6 9V3h12v6M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v7H6z"/></svg>
+                                Đang in
+                            </span>
+                        </div>
+
+                        <!-- Thân Phiếu In -->
+                        <div class="job-ticket-body">
+                            <div style="font-weight: 600; font-size: 13.5px; color: var(--text-heading);">
+                                @o.StudentName
+                            </div>
+                            <div class="d-flex align-items-center gap-1 text-truncate" title="@o.DocumentName" style="font-size: 12.5px; color: var(--text-body);">
+                                <svg class="icon-duotone icon-sm flex-shrink-0" style="color: var(--text-muted);" viewBox="0 0 24 24"><path class="bg-shape" d="M6 3h8l6 6v12H6z"/><path class="stroke-shape" d="M14 3v6h6M6 3h8l6 6v12a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2zM9 13h6M9 17h4"/></svg>
+                                <span class="text-truncate">@o.DocumentName</span>
+                            </div>
+                        </div>
+
+                        <!-- Thông số in & Giá -->
+                        <div class="job-ticket-meta">
+                            <span class="badge status-neutral" style="font-size: 11px;">
+                                @(o.IsColor ? "In Màu" : "Trắng đen") · @(o.IsDoubleSided ? "2 Mặt" : "1 Mặt")
+                            </span>
+                            <span class="mono" style="font-weight: 700; color: var(--text-heading); font-size: 13px;">
+                                @o.TotalPrice.ToString("N0") đ
+                            </span>
+                        </div>
+
+                        <!-- Nút Thao Tác (Preserved 100% Handler & Parameters) -->
+                        <div class="job-ticket-actions">
+                            @if (Model.AvailableShelves.Count > 0)
+                            {
+                                <form method="post" asp-page-handler="AssignShelf" asp-route-orderId="@o.Id" class="w-100 m-0 d-flex flex-column gap-2">
+                                    <select name="shelfId" class="form-select form-select-sm mono" style="font-size: 12px;" required>
+                                        <option value="">-- Chọn ngăn kệ trống --</option>
+                                        @foreach (var shelf in Model.AvailableShelves)
+                                        {
+                                            <option value="@shelf.Id">Kệ @shelf.ShelfCode (Trống @(shelf.MaxCapacity - shelf.CurrentCount) chỗ)</option>
+                                        }
+                                    </select>
+                                    <button type="submit" class="btn btn-confirm btn-sm w-100">
+                                        <svg class="icon-duotone icon-sm me-1" viewBox="0 0 24 24"><circle class="bg-shape" cx="12" cy="12" r="9"/><path class="stroke-shape" d="M8 12l3 3 5-5"/></svg>
+                                        In xong & Gán kệ
+                                    </button>
+                                </form>
+                            }
+                            else
+                            {
+                                <form method="post" asp-page-handler="UpdateStatus" asp-route-orderId="@o.Id" asp-route-newStatus="@UniPrint.DataAccess.Enums.PrintOrderStatus.ReadyForPickup" class="w-100 m-0">
+                                    <button type="submit" class="btn btn-confirm btn-sm w-100">
+                                        <svg class="icon-duotone icon-sm me-1" viewBox="0 0 24 24"><circle class="bg-shape" cx="12" cy="12" r="9"/><path class="stroke-shape" d="M8 12l3 3 5-5"/></svg>
+                                        Đã in xong
+                                    </button>
+                                </form>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- CỘT 3: SẴN SÀNG NHẬN & LƯU KỆ -->
+        <div class="kanban-column">
+            <div class="kanban-column-header">
+                <div>
+                    <h3 class="kanban-column-title">
+                        <svg class="icon-duotone icon-sm" style="color: var(--intent-confirm-base);" viewBox="0 0 24 24">
+                            <circle class="bg-shape" cx="12" cy="12" r="9"/>
+                            <path class="stroke-shape" d="M8 12l3 3 5-5"/>
+                        </svg>
+                        3. Sẵn Sàng Trả (Đang Lưu Kệ)
+                    </h3>
+                    <div class="kanban-column-subtitle">Chờ sinh viên quét QR nhận tại quầy</div>
+                </div>
+                <span class="badge status-available mono" style="font-size: 12px; font-weight: 700;">
+                    @readyOrders.Count
+                </span>
+            </div>
+
+            <div class="kanban-card-list">
+                @if (readyOrders.Count == 0)
+                {
+                    <div class="kanban-empty-ticket">
+                        <svg class="icon-duotone icon-lg mb-2 text-muted" viewBox="0 0 24 24"><path class="bg-shape" d="M4 4h6v6H4zm10 0h6v6h-6zm0 10h6v6h-6zm-10 0h6v6H4z"/><path class="stroke-shape" d="M3 3h8v8H3zM13 3h8v8h-8zM13 13h8v8h-8zM3 13h8v8H3z"/></svg>
+                        <div>Hiện chưa có đơn nào đang chờ nhận trên kệ.</div>
+                    </div>
+                }
+                @foreach (var o in readyOrders)
+                {
+                    <div class="job-ticket-card" style="border-left: 3px solid var(--intent-confirm-base);">
+                        <!-- Header Phiếu In -->
+                        <div class="job-ticket-header">
+                            <div>
+                                <span class="mono" style="font-weight: 700; color: var(--intent-action-base); font-size: 13.5px;">
+                                    @o.OrderCode
+                                </span>
+                                <div class="mono small text-muted" style="font-size: 11px;">
+                                    FIFO: @o.CreatedAt.ToLocalTime().ToString("HH:mm:ss · dd/MM")
+                                </div>
+                            </div>
+                            <div>
+                                @if (!string.IsNullOrEmpty(o.ShelfCode))
+                                {
+                                    <div class="shelf-highlight-box mono">
+                                        <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><path class="bg-shape" d="M4 6h16v12H4z"/><path class="stroke-shape" d="M3 6h18M3 12h18M3 18h18M4 6v12M20 6v12"/></svg>
+                                        KỆ: @o.ShelfCode
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="badge status-pending">Chưa gán kệ</span>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Thân Phiếu In -->
+                        <div class="job-ticket-body">
+                            <div style="font-weight: 600; font-size: 13.5px; color: var(--text-heading);">
+                                @o.StudentName
+                            </div>
+                            <div class="d-flex align-items-center gap-1 text-truncate" title="@o.DocumentName" style="font-size: 12.5px; color: var(--text-body);">
+                                <svg class="icon-duotone icon-sm flex-shrink-0" style="color: var(--text-muted);" viewBox="0 0 24 24"><path class="bg-shape" d="M6 3h8l6 6v12H6z"/><path class="stroke-shape" d="M14 3v6h6M6 3h8l6 6v12a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2zM9 13h6M9 17h4"/></svg>
+                                <span class="text-truncate">@o.DocumentName</span>
+                            </div>
+                        </div>
+
+                        <!-- Thông số in & Giá -->
+                        <div class="job-ticket-meta">
+                            <span class="badge status-neutral" style="font-size: 11px;">
+                                @(o.IsColor ? "In Màu" : "Trắng đen") · @(o.IsDoubleSided ? "2 Mặt" : "1 Mặt")
+                            </span>
+                            <span class="mono" style="font-weight: 700; color: var(--text-heading); font-size: 13px;">
+                                @o.TotalPrice.ToString("N0") đ
+                            </span>
+                        </div>
+
+                        <!-- Thao Tác (Preserved 100% Handler & Parameters) -->
+                        <div class="job-ticket-actions">
+                            @if (string.IsNullOrEmpty(o.ShelfCode) && Model.AvailableShelves.Count > 0)
+                            {
+                                <form method="post" asp-page-handler="AssignShelf" asp-route-orderId="@o.Id" class="w-100 m-0 d-flex gap-1">
+                                    <select name="shelfId" class="form-select form-select-sm mono" style="font-size: 12px;" required>
+                                        <option value="">-- Kệ --</option>
+                                        @foreach (var shelf in Model.AvailableShelves)
+                                        {
+                                            <option value="@shelf.Id">Kệ @shelf.ShelfCode</option>
+                                        }
+                                    </select>
+                                    <button type="submit" class="btn btn-action btn-sm">Gán kệ</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <div class="d-flex align-items-center justify-content-between w-100">
+                                    <span class="badge status-available">
+                                        <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><circle class="bg-shape" cx="12" cy="12" r="9"/><path class="stroke-shape" d="M8 12l3 3 5-5"/></svg>
+                                        Chờ quét QR
+                                    </span>
+                                    <a asp-page="/Pickup/ScanQR" class="btn btn-subtle btn-sm mono" style="font-size: 11.5px; padding: 2px 6px !important;">
+                                        Mở máy quét &rarr;
+                                    </a>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
     </div>
 </div>

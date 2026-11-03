@@ -1,41 +1,74 @@
 @page
 @model UniPrint.Web.Pages.StudyHub.IndexModel
 @{
-    ViewData["Title"] = "Study Hub - Kho Tài Liệu Học Tập";
+    ViewData["Title"] = "Study Hub - Kho Học Liệu Sinh Viên";
 }
 
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2><i class="bi bi-book"></i> STUDY HUB - KHO TÀI LIỆU HỌC TẬP</h2>
-        <span class="badge bg-success fs-6">Đã kiểm duyệt: @Model.Materials.Count</span>
+<div class="container mt-2">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h2 class="mb-1 d-flex align-items-center gap-2">
+                <svg class="icon-duotone icon-lg" style="color: var(--intent-action-base);" viewBox="0 0 24 24">
+                    <path class="bg-shape" d="M4 19.5A2.5 2.5 0 016.5 17H20M4 4.5A2.5 2.5 0 016.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15z"/>
+                    <path class="stroke-shape" d="M4 19.5A2.5 2.5 0 016.5 17H20M4 4.5A2.5 2.5 0 016.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15z"/>
+                </svg>
+                STUDY HUB - KHO HỌC LIỆU SINH VIÊN
+            </h2>
+            <div class="text-muted" style="font-size: 13.5px; font-weight: 500;">
+                Kho chia sẻ tài liệu ôn thi, bài giảng và tóm tắt môn học do sinh viên đóng góp (Đã qua kiểm duyệt)
+            </div>
+        </div>
+        <span class="badge status-available">
+            <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><circle class="bg-shape" cx="12" cy="12" r="9"/><path class="stroke-shape" d="M8 12l3 3 5-5"/></svg>
+            Đã Kiểm Duyệt: @Model.Materials.Count
+        </span>
     </div>
-    <p class="text-muted">Kho chia sẻ tài liệu ôn thi, bài giảng và tóm tắt môn học do sinh viên đóng góp (Đã qua duyệt Admin).</p>
-    <hr />
 
-    <div class="row">
+    <!-- Materials Grid (Preserved 100%) -->
+    <div class="row g-4">
         @if (Model.Materials.Count == 0)
         {
-            <div class="col-12 text-center py-5 text-muted">
-                <h4>Chưa có tài liệu nào trong thư viện.</h4>
-                <p>Hãy là người đầu tiên chia sẻ tài liệu hữu ích cho cộng đồng sinh viên!</p>
+            <div class="col-12">
+                <div class="card p-5 text-center my-3">
+                    <svg class="icon-duotone mx-auto mb-2 text-muted" style="width: 44px; height: 44px;" viewBox="0 0 24 24">
+                        <path class="bg-shape" d="M4 19.5A2.5 2.5 0 016.5 17H20M4 4.5A2.5 2.5 0 016.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15z"/>
+                        <path class="stroke-shape" d="M4 19.5A2.5 2.5 0 016.5 17H20M4 4.5A2.5 2.5 0 016.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15z"/>
+                    </svg>
+                    <h5 class="text-muted" style="font-weight: 600;">Chưa có tài liệu nào trong thư viện</h5>
+                    <p class="text-muted small mb-0">Hãy là người đầu tiên chia sẻ tài liệu ôn tập hữu ích cho cộng đồng sinh viên!</p>
+                </div>
             </div>
         }
         @foreach (var m in Model.Materials)
         {
-            <div class="col-md-4 mb-4">
-                <div class="card h-100 shadow-sm border-0">
-                    <div class="card-body">
-                        <span class="badge bg-primary mb-2">@m.SubjectCode</span>
-                        <span class="badge bg-secondary mb-2">@m.CategoryName</span>
-                        <h5 class="card-title text-truncate">@m.Title</h5>
-                        <p class="card-text text-muted small">@m.Description</p>
-                        <div class="d-flex justify-content-between align-items-center mt-3 text-muted small">
-                            <span>⭐ @m.AverageRating.ToString("F1") / 5</span>
-                            <span>📥 @m.DownloadCount lượt tải</span>
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 p-3 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="d-flex gap-2 mb-2">
+                            <span class="badge status-neutral mono">@m.SubjectCode</span>
+                            <span class="badge status-neutral">@m.CategoryName</span>
                         </div>
+                        <h5 class="mb-2 text-truncate" style="font-weight: 700; color: var(--text-heading);" title="@m.Title">
+                            @m.Title
+                        </h5>
+                        <p class="text-muted small mb-3" style="line-height: 1.4;">
+                            @m.Description
+                        </p>
                     </div>
-                    <div class="card-footer bg-white border-0">
-                        <button class="btn btn-outline-primary btn-sm w-100">Xem Chi Tiết & Tải Về</button>
+
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-3 pt-2 border-top text-muted small" style="border-color: var(--border-subtle) !important;">
+                            <span class="mono" style="font-weight: 600; color: var(--intent-alert-base);">
+                                ★ @m.AverageRating.ToString("F1") / 5.0
+                            </span>
+                            <span class="mono" style="font-weight: 500;">
+                                @m.DownloadCount lượt tải
+                            </span>
+                        </div>
+                        <button type="button" class="btn btn-secondary w-100 btn-sm">
+                            Xem Chi Tiết & Tải Về
+                        </button>
                     </div>
                 </div>
             </div>

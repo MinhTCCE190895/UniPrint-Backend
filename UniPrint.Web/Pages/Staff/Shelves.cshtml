@@ -1,232 +1,316 @@
 @page
 @model UniPrint.Web.Pages.Staff.ShelvesModel
 @{
-    ViewData["Title"] = "Quản Lý Kệ Lưu Trữ - Staff";
+    ViewData["Title"] = "Quản Lý Kệ Lưu Trữ - Staff Station";
+
+    // [UI Presentation Only] Các biến đếm và tính toán tỷ lệ dưới đây CHỈ phục vụ hiển thị số liệu trực quan trên giao diện (Cards & Progress Bars).
+    // Tuyệt đối không can thiệp hay thay đổi logic nghiệp vụ trong UniPrint.Business / IShelfService.
     var totalShelves = Model.Shelves.Count;
     var availableShelves = Model.Shelves.Count(s => s.IsAvailable);
     var fullShelves = Model.Shelves.Count(s => !s.IsAvailable);
     var totalOrders = Model.Shelves.Sum(s => s.CurrentCount);
     var totalCapacity = Model.Shelves.Sum(s => s.MaxCapacity);
+    var stationRate = totalCapacity > 0 ? Math.Round((double)totalOrders / totalCapacity * 100, 1) : 0;
 }
 
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
+<div class="container mt-2">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
-            <h2 class="mb-0"><i class="bi bi-inboxes"></i> QUẢN LÝ KỆ LƯU TRỮ (SHELVES)</h2>
-            <small class="text-muted">Quản lý các kệ tài liệu (A1, A2, B1...) & kiểm soát sức chứa tối đa</small>
+            <h2 class="mb-1 d-flex align-items-center gap-2">
+                <svg class="icon-duotone icon-lg" style="color: var(--intent-action-base);" viewBox="0 0 24 24">
+                    <path class="bg-shape" d="M4 6h16v12H4z"/>
+                    <path class="stroke-shape" d="M3 6h18M3 12h18M3 18h18M4 6v12M20 6v12"/>
+                </svg>
+                QUẢN LÝ KỆ LƯU TRỮ
+            </h2>
+            <div class="text-muted" style="font-size: 13.5px; font-weight: 500;">
+                Sơ đồ vị trí kệ tài liệu, kiểm soát tải và phân bổ lưu trữ tại trạm in
+            </div>
         </div>
-        <div>
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createShelfModal">
-                <i class="bi bi-plus-circle"></i> Thêm Kệ Mới
-            </button>
-            <a asp-page="/Staff/Queue" class="btn btn-outline-secondary ms-2">
-                <i class="bi bi-arrow-left"></i> Về Hàng Đợi In
+        <div class="d-flex align-items-center gap-2">
+            <a asp-page="/Staff/Queue" class="btn btn-secondary">
+                <svg class="icon-duotone icon-sm" viewBox="0 0 24 24">
+                    <path class="bg-shape" d="M4 6h16v14H4z"/>
+                    <path class="stroke-shape" d="M6 2v4M18 2v4M4 6h16a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2z"/>
+                </svg>
+                Hàng Đợi In
+            </a>
+            <a asp-page="/Pickup/ScanQR" class="btn btn-secondary">
+                <svg class="icon-duotone icon-sm" viewBox="0 0 24 24">
+                    <path class="bg-shape" d="M4 4h6v6H4zm10 0h6v6h-6zm0 10h6v6h-6zm-10 0h6v6H4z"/>
+                    <path class="stroke-shape" d="M3 3h8v8H3zM13 3h8v8h-8zM13 13h8v8h-8zM3 13h8v8H3z"/>
+                </svg>
+                Quét QR Trả Hàng
             </a>
         </div>
     </div>
-    <hr />
 
+    <!-- Alert Notifications (Preserved 100%) -->
     @if (!string.IsNullOrEmpty(Model.SuccessMessage))
     {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle-fill me-2"></i> @Model.SuccessMessage
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div class="alert alert-success alert-dismissible fade show d-flex align-items-center justify-content-between mb-4" role="alert">
+            <div class="d-flex align-items-center gap-2">
+                <svg class="icon-duotone" viewBox="0 0 24 24"><circle class="bg-shape" cx="12" cy="12" r="9"/><path class="stroke-shape" d="M8 12l3 3 5-5"/></svg>
+                <span>@Model.SuccessMessage</span>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
 
     @if (!string.IsNullOrEmpty(Model.ErrorMessage))
     {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i> @Model.ErrorMessage
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center justify-content-between mb-4" role="alert">
+            <div class="d-flex align-items-center gap-2">
+                <svg class="icon-duotone" viewBox="0 0 24 24"><circle class="bg-shape" cx="12" cy="12" r="9"/><path class="stroke-shape" d="M12 8v4M12 16h.01"/></svg>
+                <span>@Model.ErrorMessage</span>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
 
-    <!-- Summary Stats Bar -->
+    <!-- Station KPI Overview Bar (Tonal Panels) -->
     <div class="row g-3 mb-4">
         <div class="col-md-3">
-            <div class="card shadow-sm border-0 bg-light">
-                <div class="card-body py-2 px-3">
-                    <span class="text-muted small">Tổng số kệ</span>
-                    <h4 class="mb-0 text-dark fw-bold">@totalShelves</h4>
+            <div class="tonal-panel">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-muted small" style="font-weight: 600;">Tổng số kệ</span>
+                    <svg class="icon-duotone icon-sm text-muted" viewBox="0 0 24 24"><path class="bg-shape" d="M4 6h16v12H4z"/><path class="stroke-shape" d="M3 6h18M3 12h18M3 18h18M4 6v12M20 6v12"/></svg>
                 </div>
+                <h3 class="mono mb-0 mt-2" style="font-size: 24px; font-weight: 700; color: var(--text-heading);">@totalShelves</h3>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card shadow-sm border-0 bg-light">
-                <div class="card-body py-2 px-3">
-                    <span class="text-muted small">Kệ còn chỗ</span>
-                    <h4 class="mb-0 text-success fw-bold">@availableShelves</h4>
+            <div class="tonal-panel">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-muted small" style="font-weight: 600;">Kệ còn chỗ</span>
+                    <span class="badge status-available">Sẵn sàng nhận</span>
                 </div>
+                <h3 class="mono mb-0 mt-2" style="font-size: 24px; font-weight: 700; color: var(--intent-confirm-base);">@availableShelves</h3>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card shadow-sm border-0 bg-light">
-                <div class="card-body py-2 px-3">
-                    <span class="text-muted small">Kệ đã đầy</span>
-                    <h4 class="mb-0 text-danger fw-bold">@fullShelves</h4>
+            <div class="tonal-panel">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-muted small" style="font-weight: 600;">Kệ đã đầy tải</span>
+                    <span class="badge status-depleted">Cần giải phóng</span>
                 </div>
+                <h3 class="mono mb-0 mt-2" style="font-size: 24px; font-weight: 700; color: var(--intent-danger-base);">@fullShelves</h3>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card shadow-sm border-0 bg-light">
-                <div class="card-body py-2 px-3">
-                    <span class="text-muted small">Tổng đơn đang lưu / Sức chứa</span>
-                    <h4 class="mb-0 text-primary fw-bold">@totalOrders / @totalCapacity</h4>
+            <div class="tonal-panel">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-muted small" style="font-weight: 600;">Tải toàn trạm</span>
+                    <span class="mono small" style="color: var(--intent-action-base); font-weight: 600;">@stationRate%</span>
                 </div>
+                <h3 class="mono mb-0 mt-2" style="font-size: 24px; font-weight: 700; color: var(--intent-action-base);">
+                    @totalOrders <span style="font-size: 15px; font-weight: 500; color: var(--text-muted);">/ @totalCapacity đơn</span>
+                </h3>
             </div>
         </div>
     </div>
 
-    <!-- Shelves Grid -->
-    @if (Model.Shelves.Count == 0)
-    {
-        <div class="alert alert-info text-center py-4">
-            <p class="mb-0">Chưa có kệ lưu trữ nào trong hệ thống. Hãy nhấn <strong>Thêm Kệ Mới</strong> để tạo kệ đầu tiên.</p>
-        </div>
-    }
-    else
-    {
-        <div class="row row-cols-1 row-cols-md-3 g-4">
-            @foreach (var s in Model.Shelves)
+    <!-- 2-Column Workstation Layout (70% Physical Rack Matrix - 30% Quick Creator & Tips) -->
+    <div class="row g-4">
+        <!-- Left Column (70%): Sơ đồ mặt cắt kệ thực tế -->
+        <div class="col-lg-8">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0" style="font-weight: 700; font-size: 16px;">
+                    Sơ Đồ Kệ Trạm In Vật Lý
+                </h5>
+                <span class="text-muted small">
+                    Hiển thị <strong>@totalShelves</strong> kệ đang hoạt động
+                </span>
+            </div>
+
+            @if (Model.Shelves.Count == 0)
             {
-                <div class="col">
-                    <div class="card h-100 shadow-sm border @(!s.IsAvailable ? "border-danger" : "border-secondary-subtle")">
-                        <div class="card-header d-flex justify-content-between align-items-center @(!s.IsAvailable ? "bg-danger text-white" : "bg-light")">
-                            <h5 class="card-title mb-0 fw-bold">Kệ @s.ShelfCode</h5>
-                            @if (s.IsAvailable)
-                            {
-                                <span class="badge bg-success">Còn chỗ</span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-warning text-dark">Đã đầy</span>
-                            }
-                        </div>
-                        <div class="card-body">
-                            <p class="card-text text-muted mb-2">
-                                <i class="bi bi-geo-alt"></i> <strong>Vị trí:</strong> @s.Location
-                            </p>
-                            
-                            <div class="d-flex justify-content-between small text-muted mb-1">
-                                <span>Sức chứa:</span>
-                                <strong>@s.CurrentCount / @s.MaxCapacity đơn (@s.OccupancyRate%)</strong>
-                            </div>
-                            <div class="progress mb-2" style="height: 10px;">
-                                <div class="progress-bar @(s.OccupancyRate >= 100 ? "bg-danger" : s.OccupancyRate >= 70 ? "bg-warning" : "bg-primary")" 
-                                     role="progressbar" 
-                                     style="width: @(Math.Min(100, s.OccupancyRate))%" 
-                                     aria-valuenow="@s.CurrentCount" 
-                                     aria-valuemin="0" 
-                                     aria-valuemax="@s.MaxCapacity">
-                                </div>
-                            </div>
-
-                            @if (!s.IsAvailable)
-                            {
-                                <div class="alert alert-danger py-1 px-2 small mb-0 mt-2" role="alert">
-                                    <i class="bi bi-exclamation-octagon"></i> Kệ đã đạt sức chứa tối đa. Không thể gán thêm đơn.
-                                </div>
-                            }
-                            else
-                            {
-                                <div class="text-success small mt-2">
-                                    <i class="bi bi-check2"></i> Còn trống @(s.MaxCapacity - s.CurrentCount) chỗ để lưu đơn in.
-                                </div>
-                            }
-                        </div>
-                        <div class="card-footer bg-white d-flex justify-content-end gap-2">
-                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editModal-@s.Id">
-                                Sửa Kệ
-                            </button>
-
-                            @if (s.CurrentCount > 0)
-                            {
-                                <button type="button" class="btn btn-sm btn-outline-secondary" disabled title="Không thể xóa kệ đang có đơn lưu trữ">
-                                    Xóa
-                                </button>
-                            }
-                            else
-                            {
-                                <form method="post" asp-page-handler="Delete" asp-route-id="@s.Id" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa kệ @s.ShelfCode không?');">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">Xóa</button>
-                                </form>
-                            }
-                        </div>
-                    </div>
+                <div class="card p-5 text-center my-3">
+                    <svg class="icon-duotone mx-auto mb-3" style="width: 44px; height: 44px; color: var(--text-muted);" viewBox="0 0 24 24">
+                        <path class="bg-shape" d="M4 6h16v12H4z"/>
+                        <path class="stroke-shape" d="M3 6h18M3 12h18M3 18h18M4 6v12M20 6v12"/>
+                    </svg>
+                    <p class="mb-1 text-muted" style="font-size: 15px; font-weight: 600;">Chưa có kệ lưu trữ nào trong hệ thống.</p>
+                    <span class="text-muted small">Điền thông tin vào khung bên phải để tạo kệ đầu tiên cho trạm in.</span>
                 </div>
-
-                <!-- Edit Shelf Modal -->
-                <div class="modal fade" id="editModal-@s.Id" tabindex="-1" aria-hidden="true">
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <form method="post" asp-page-handler="Update">
-                                <div class="modal-header">
-                                    <h5 class="modal-title">Cập Nhật Kệ @s.ShelfCode</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <input type="hidden" name="EditShelfId" value="@s.Id" />
-                                    
-                                    <div class="mb-3">
-                                        <label class="form-label">Mã Kệ <span class="text-danger">*</span></label>
-                                        <input type="text" name="UpdateInput.ShelfCode" class="form-control" value="@s.ShelfCode" required />
+            }
+            else
+            {
+                <div class="d-flex flex-column gap-3">
+                    @foreach (var s in Model.Shelves)
+                    {
+                        // [UI Presentation Only] Tính toán số chỗ trống phục vụ nhãn hiển thị trực quan
+                        var remaining = s.MaxCapacity - s.CurrentCount;
+                        <div class="card p-3" style="border-left: 4px solid @(!s.IsAvailable ? "var(--intent-danger-base)" : "var(--intent-action-base)");">
+                            <div class="d-flex justify-content-between align-items-start mb-2 flex-wrap gap-2">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="d-flex align-items-center justify-content-center" 
+                                         style="width: 46px; height: 46px; border-radius: var(--radius-md); background-color: @(!s.IsAvailable ? "var(--intent-danger-tint)" : "var(--intent-action-tint)");">
+                                        <span class="mono" style="font-weight: 700; font-size: 18px; color: @(!s.IsAvailable ? "var(--intent-danger-base)" : "var(--intent-action-base)");">
+                                            @s.ShelfCode
+                                        </span>
                                     </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Vị Trí Lưu Trữ</label>
-                                        <input type="text" name="UpdateInput.Location" class="form-control" value="@s.Location" />
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Sức Chứa Tối Đa (MaxCapacity) <span class="text-danger">*</span></label>
-                                        <input type="number" name="UpdateInput.MaxCapacity" class="form-control" value="@s.MaxCapacity" min="@Math.Max(1, s.CurrentCount)" required />
-                                        <div class="form-text text-muted">
-                                            Hiện tại kệ đang có <strong>@s.CurrentCount</strong> đơn. Sức chứa tối đa không được nhỏ hơn @s.CurrentCount.
+                                    <div>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <strong style="font-size: 15px; color: var(--text-heading);">Kệ @s.ShelfCode</strong>
+                                            @if (s.IsAvailable)
+                                            {
+                                                <span class="badge status-available">
+                                                    <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><circle class="bg-shape" cx="12" cy="12" r="9"/><path class="stroke-shape" d="M8 12l3 3 5-5"/></svg>
+                                                    Còn @remaining chỗ
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge status-depleted">
+                                                    <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><circle class="bg-shape" cx="12" cy="12" r="9"/><path class="stroke-shape" d="M12 8v4M12 16h.01"/></svg>
+                                                    Đã Đầy Tải
+                                                </span>
+                                            }
+                                        </div>
+                                        <div class="text-muted small mt-1" style="font-weight: 500;">
+                                            Vị trí: <strong>@s.Location</strong>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Hủy</button>
-                                    <button type="submit" class="btn btn-primary btn-sm">Lưu Thay Đổi</button>
+
+                                <!-- Action Buttons (Non-wrapping guarantee) -->
+                                <div class="d-flex align-items-center gap-2">
+                                    <button type="button" class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#editModal-@s.Id">
+                                        <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><path class="stroke-shape" d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                        Chỉnh Sửa
+                                    </button>
+
+                                    @if (s.CurrentCount > 0)
+                                    {
+                                        <button type="button" class="btn btn-secondary btn-sm opacity-50" disabled title="Không thể xóa kệ đang có đơn lưu trữ">
+                                            Xóa
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <form method="post" asp-page-handler="Delete" asp-route-id="@s.Id" class="d-inline m-0" onsubmit="return confirm('Bạn có chắc chắn muốn xóa kệ @s.ShelfCode không?');">
+                                            <button type="submit" class="btn btn-danger btn-sm">
+                                                Xóa
+                                            </button>
+                                        </form>
+                                    }
                                 </div>
-                            </form>
+                            </div>
+
+                            <!-- Visual Slot Progress & Occupancy -->
+                            <div class="mt-2 pt-2 border-top" style="border-color: var(--border-subtle) !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-1" style="font-size: 12px;">
+                                    <span class="text-muted">Mức độ lấp đầy ngăn kệ:</span>
+                                    <span class="mono" style="font-weight: 600; color: var(--text-heading);">
+                                        @s.CurrentCount / @s.MaxCapacity đơn (@s.OccupancyRate%)
+                                    </span>
+                                </div>
+                                <div class="progress" style="height: 7px;">
+                                    <div class="progress-bar @(s.OccupancyRate >= 100 ? "bg-danger" : s.OccupancyRate >= 70 ? "bg-warning" : "")" 
+                                         role="progressbar" 
+                                         style="width: @(Math.Min(100, s.OccupancyRate))%" 
+                                         aria-valuenow="@s.CurrentCount" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="@s.MaxCapacity">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
+
+                        <!-- Edit Shelf Modal (Preserved 100% bindings & handlers) -->
+                        <div class="modal fade" id="editModal-@s.Id" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content" style="border-radius: var(--radius-lg); border: 1px solid var(--border-card);">
+                                    <form method="post" asp-page-handler="Update">
+                                        <div class="modal-header" style="border-bottom: 1px solid var(--border-card);">
+                                            <h5 class="modal-title font-monospace" style="font-weight: 700;">Cập Nhật Kệ @s.ShelfCode</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <input type="hidden" name="EditShelfId" value="@s.Id" />
+                                            
+                                            <div class="mb-3">
+                                                <label class="form-label">Mã Kệ <span class="text-danger">*</span></label>
+                                                <input type="text" name="UpdateInput.ShelfCode" class="form-control mono" value="@s.ShelfCode" required />
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Vị Trí Lưu Trữ</label>
+                                                <input type="text" name="UpdateInput.Location" class="form-control" value="@s.Location" />
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Sức Chứa Tối Đa (MaxCapacity) <span class="text-danger">*</span></label>
+                                                <input type="number" name="UpdateInput.MaxCapacity" class="form-control mono" value="@s.MaxCapacity" min="@Math.Max(1, s.CurrentCount)" required />
+                                                <div class="form-text text-muted" style="font-size: 12px;">
+                                                    Hiện tại kệ đang có <strong>@s.CurrentCount</strong> đơn. Sức chứa tối đa không được nhỏ hơn @s.CurrentCount.
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer" style="border-top: 1px solid var(--border-card);">
+                                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Hủy</button>
+                                            <button type="submit" class="btn btn-action btn-sm">Lưu Thay Đổi</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    }
                 </div>
             }
         </div>
-    }
-</div>
 
-<!-- Create Shelf Modal -->
-<div class="modal fade" id="createShelfModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form method="post" asp-page-handler="Create">
-                <div class="modal-header">
-                    <h5 class="modal-title">Thêm Kệ Lưu Trữ Mới</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Mã Kệ <span class="text-danger">*</span></label>
-                        <input type="text" name="CreateInput.ShelfCode" class="form-control" placeholder="Ví dụ: A1, A2, B1, C1..." required />
-                        <div class="form-text">Mã kệ viết hoa, phân biệt duy nhất từng ngăn/kệ.</div>
+        <!-- Right Column (30%): Form Tạo Kệ Nhanh Ngay Tại Quầy & Hướng Dẫn -->
+        <div class="col-lg-4">
+            <div style="position: sticky; top: 76px;">
+                <!-- Quick Inline Shelf Creator Card (Preserved 100% OnPostCreateAsync binding) -->
+                <div class="card p-3 mb-3">
+                    <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom" style="border-color: var(--border-subtle) !important;">
+                        <svg class="icon-duotone" style="color: var(--intent-action-base);" viewBox="0 0 24 24">
+                            <circle class="bg-shape" cx="12" cy="12" r="9"/>
+                            <path class="stroke-shape" d="M12 8v8M8 12h8"/>
+                        </svg>
+                        <strong style="font-size: 15px; color: var(--text-heading);">Thêm Kệ Mới Nhanh</strong>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Vị Trí Lưu Trữ</label>
-                        <input type="text" name="CreateInput.Location" class="form-control" placeholder="Ví dụ: Tầng 1 - Kệ Trái" value="Tầng 1 - Kệ Trái" />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Sức Chứa Tối Đa (MaxCapacity) <span class="text-danger">*</span></label>
-                        <input type="number" name="CreateInput.MaxCapacity" class="form-control" value="20" min="1" required />
-                        <div class="form-text">Sức chứa mặc định theo quy định hệ thống là 20 đơn.</div>
-                    </div>
+
+                    <form method="post" asp-page-handler="Create">
+                        <div class="mb-3">
+                            <label class="form-label">Mã Kệ Mới <span class="text-danger">*</span></label>
+                            <input type="text" name="CreateInput.ShelfCode" class="form-control mono" placeholder="Ví dụ: A3, B2, C1..." required />
+                            <div class="form-text text-muted" style="font-size: 11.5px;">Mã viết hoa phân biệt duy nhất từng kệ</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Vị Trí Cụ Thể</label>
+                            <input type="text" name="CreateInput.Location" class="form-control" placeholder="Ví dụ: Tầng 1 - Kệ Trái" value="Tầng 1 - Kệ Trái" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Sức Chứa Tối Đa (Đơn) <span class="text-danger">*</span></label>
+                            <input type="number" name="CreateInput.MaxCapacity" class="form-control mono" value="20" min="1" required />
+                            <div class="form-text text-muted" style="font-size: 11.5px;">Mặc định chuẩn 20 đơn mỗi kệ</div>
+                        </div>
+
+                        <button type="submit" class="btn btn-action w-100 py-2">
+                            <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><circle class="bg-shape" cx="12" cy="12" r="9"/><path class="stroke-shape" d="M12 8v8M8 12h8"/></svg>
+                            Tạo Kệ Mới
+                        </button>
+                    </form>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-primary btn-sm">Tạo Kệ</button>
+
+                <!-- Ergonomic Station Notice -->
+                <div class="tonal-panel" style="font-size: 12.5px;">
+                    <div class="d-flex align-items-center gap-2 mb-2 font-monospace" style="font-weight: 700; color: var(--intent-action-base);">
+                        <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><circle class="bg-shape" cx="12" cy="12" r="9"/><path class="stroke-shape" d="M12 8v4M12 16h.01"/></svg>
+                        LƯU Ý VẬN HÀNH TRẠM IN
+                    </div>
+                    <ul class="mb-0 ps-3 text-muted d-flex flex-column gap-1">
+                        <li>Khi in xong đơn hàng, chọn kệ có trạng thái <strong class="text-success">Còn Chỗ</strong> để gán vị trí.</li>
+                        <li>Kệ đạt <strong class="text-danger">100%</strong> sẽ tự động khóa nhận đơn mới.</li>
+                        <li>Khi sinh viên quét mã QR nhận hàng, vị trí kệ sẽ được tự động giải phóng.</li>
+                    </ul>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 </div>

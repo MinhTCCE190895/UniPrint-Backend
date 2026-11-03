@@ -1,32 +1,173 @@
 @page
 @model UniPrint.Web.Pages.Pickup.ScanQRModel
 @{
-    ViewData["Title"] = "Quét Mã QR Nhận Tài Liệu";
+    ViewData["Title"] = "Quét Mã QR Nhận Tài Liệu - Trạm Staff";
 }
 
-<div class="row justify-content-center mt-4">
-    <div class="col-md-6">
-        <div class="card shadow-sm border-0">
-            <div class="card-header bg-dark text-white text-center py-3">
-                <h4 class="mb-0"><i class="bi bi-qr-code-scan"></i> QUÉT MÃ QR NHẬN TÀI LIỆU</h4>
+<div class="row justify-content-center mt-3">
+    <div class="col-md-7 col-lg-6">
+        <div class="card p-4">
+            <div class="d-flex align-items-center justify-content-center gap-2 mb-3 pb-2 border-bottom text-center" style="border-color: var(--border-subtle) !important;">
+                <svg class="icon-duotone icon-lg" style="color: var(--intent-action-base);" viewBox="0 0 24 24">
+                    <path class="bg-shape" d="M4 4h6v6H4zm10 0h6v6h-6zm0 10h6v6h-6zm-10 0h6v6H4z"/>
+                    <path class="stroke-shape" d="M3 3h8v8H3zM13 3h8v8h-8zM13 13h8v8h-8zM3 13h8v8H3z"/>
+                </svg>
+                <h4 class="mb-0" style="font-size: 17px; font-weight: 700; color: var(--text-heading);">
+                    QUÉT MÃ QR TRẢ TÀI LIỆU
+                </h4>
             </div>
-            <div class="card-body p-4">
-                @if (!string.IsNullOrEmpty(Model.Message))
-                {
-                    <div class="alert @(Model.IsSuccess ? "alert-success" : "alert-danger")">
-                        @Model.Message
-                    </div>
-                }
 
-                <form method="post">
-                    <div class="mb-3">
-                        <label class="form-label font-weight-bold">Nhập hoặc Quét Token QR</label>
-                        <input asp-for="QrToken" class="form-control form-control-lg text-center font-monospace" placeholder="QR-xxxxxxxxxxxxxxxx" required />
-                        <div class="form-text text-muted">Hệ thống sẽ tự động kiểm tra thời hạn, hoàn tất đơn và giải phóng vị trí trên kệ.</div>
+            <!-- Notification Messages (Preserved 100%) -->
+            @if (!string.IsNullOrEmpty(Model.Message))
+            {
+                <div class="alert @(Model.IsSuccess ? "alert-success" : "alert-danger") d-flex align-items-center gap-2 mb-4" role="alert">
+                    @if (Model.IsSuccess)
+                    {
+                        <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><circle class="bg-shape" cx="12" cy="12" r="9"/><path class="stroke-shape" d="M8 12l3 3 5-5"/></svg>
+                    }
+                    else
+                    {
+                        <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><circle class="bg-shape" cx="12" cy="12" r="9"/><path class="stroke-shape" d="M12 8v4M12 16h.01"/></svg>
+                    }
+                    <span>@Model.Message</span>
+                </div>
+            }
+
+            <!-- Camera Viewfinder Viewport (Khung Quét Camera Trực Tiếp) -->
+            <div class="mb-4">
+                <div id="camera-viewport-container" class="position-relative rounded-3 overflow-hidden text-center" style="background-color: var(--surface-subtle); border: 1px dashed var(--border-card); min-height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <!-- Html5Qrcode video render element -->
+                    <div id="qr-reader" style="width: 100%;"></div>
+
+                    <!-- Placeholder when camera is inactive -->
+                    <div id="camera-placeholder" class="p-4 text-center">
+                        <div class="d-inline-flex align-items-center justify-content-center rounded-2 mb-2" style="width: 44px; height: 44px; background-color: var(--surface-card); border: 1px solid var(--border-card); color: var(--intent-action-base);">
+                            <svg class="icon-duotone icon-lg" viewBox="0 0 24 24">
+                                <path class="stroke-shape" d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+                                <circle class="bg-shape" cx="12" cy="13" r="4"/>
+                            </svg>
+                        </div>
+                        <strong style="font-size: 14px; color: var(--text-heading);" class="d-block mb-1">
+                            Máy Quét Camera Trạm In
+                        </strong>
+                        <p class="text-muted small mb-3" style="max-width: 320px; line-height: 1.5; margin: 0 auto;">
+                            Bật máy ảnh để tự động nhận diện mã QR nhận tài liệu trên điện thoại của sinh viên.
+                        </p>
+                        <button type="button" id="btn-start-camera" class="btn btn-action btn-sm mt-2">
+                            <svg class="icon-duotone icon-sm me-1" viewBox="0 0 24 24"><path class="stroke-shape" d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle class="bg-shape" cx="12" cy="13" r="4"/></svg>
+                            Bật Camera Quét QR
+                        </button>
                     </div>
-                    <button type="submit" class="btn btn-primary w-100 py-2 fs-5">Xác Nhận Trả Tài Liệu</button>
-                </form>
+
+                    <!-- Camera Active Status Controls -->
+                    <div id="camera-controls" class="p-2 w-100 d-none justify-content-between align-items-center border-top" style="background-color: var(--surface-card);">
+                        <span class="badge status-available mono" style="font-size: 11px;">
+                            ● Đang quét qua camera...
+                        </span>
+                        <button type="button" id="btn-stop-camera" class="btn btn-subtle btn-sm">
+                            Tắt camera
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manual Input Form (Preserved 100% Core Handlers & Properties) -->
+            <form method="post" id="qr-token-form">
+                <div class="mb-3">
+                    <label class="form-label d-flex justify-content-between align-items-center" style="font-weight: 600;">
+                        <span>Mã Nhận Hàng (QR Token) <span class="text-danger">*</span></span>
+                        <span class="text-muted small" style="font-weight: 400; font-size: 11.5px;">Tự động điền khi quét</span>
+                    </label>
+                    <input asp-for="QrToken" id="QrTokenInput" class="form-control mono text-center py-2" style="font-size: 16px; font-weight: 600; letter-spacing: 0.5px;" placeholder="Ví dụ: QR-xxxxxxxxxxxxxxxx" required />
+                    <div class="form-text text-muted mt-2" style="font-size: 12px;">
+                        Hệ thống đối soát tự động kiểm tra thời hạn, chuyển trạng thái đơn sang Đã Nhận và tự động giải phóng vị trí trên kệ lưu trữ.
+                    </div>
+                </div>
+
+                <button type="submit" id="btn-submit-token" class="btn btn-action w-100 py-2">
+                    <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><path class="bg-shape" d="M4 4h6v6H4zm10 0h6v6h-6zm0 10h6v6h-6zm-10 0h6v6H4z"/><path class="stroke-shape" d="M3 3h8v8H3zM13 3h8v8h-8zM13 13h8v8h-8zM3 13h8v8H3z"/></svg>
+                    Xác Nhận Trả Tài Liệu
+                </button>
+            </form>
+
+            <div class="border-top mt-4 pt-3 text-center">
+                <a asp-page="/Staff/Queue" class="btn btn-secondary btn-sm">
+                    <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><path class="bg-shape" d="M4 6h16v14H4z"/><path class="stroke-shape" d="M6 2v4M18 2v4M4 6h16a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2zM4 11h16M8 15h8"/></svg>
+                    Quay Lại Hàng Đợi In
+                </a>
             </div>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script src="~/lib/html5-qrcode.min.js"></script>
+    <script>
+        let html5QrCode = null;
+
+        function onScanSuccess(decodedText, decodedResult) {
+            console.log("Mã QR đọc thành công:", decodedText);
+            
+            // Dừng camera sau khi quét trúng mã
+            if (html5QrCode) {
+                html5QrCode.stop().then(() => {
+                    document.getElementById('camera-controls').classList.add('d-none');
+                    document.getElementById('camera-placeholder').classList.remove('d-none');
+                }).catch(err => console.error("Lỗi khi dừng camera:", err));
+            }
+
+            // Trích xuất mã token nếu mã là URL hoặc chứa param
+            let token = decodedText.trim();
+            if (token.includes('token=')) {
+                const match = token.match(/token=([^&]+)/);
+                if (match) token = match[1];
+            }
+
+            // Điền vào ô input và tự động submit form
+            const tokenInput = document.getElementById('QrTokenInput');
+            tokenInput.value = token;
+            
+            // Tự động gửi form đối soát
+            document.getElementById('qr-token-form').submit();
+        }
+
+        function startCamera() {
+            document.getElementById('camera-placeholder').classList.add('d-none');
+            const controls = document.getElementById('camera-controls');
+            controls.classList.remove('d-none');
+            controls.classList.add('d-flex');
+
+            html5QrCode = new Html5Qrcode("qr-reader");
+            const config = { fps: 10, qrbox: { width: 220, height: 220 } };
+
+            html5QrCode.start(
+                { facingMode: "environment" },
+                config,
+                onScanSuccess,
+                (errorMessage) => {
+                    // Frame scan không có QR, tiếp tục quét
+                }
+            ).catch((err) => {
+                console.error("Lỗi mở camera:", err);
+                alert("Không thể khởi động camera. Vui lòng cho phép quyền truy cập máy ảnh hoặc nhập mã thủ công.");
+                document.getElementById('camera-placeholder').classList.remove('d-none');
+                controls.classList.add('d-none');
+                controls.classList.remove('d-flex');
+            });
+        }
+
+        function stopCamera() {
+            if (html5QrCode) {
+                html5QrCode.stop().then(() => {
+                    document.getElementById('camera-placeholder').classList.remove('d-none');
+                    const controls = document.getElementById('camera-controls');
+                    controls.classList.add('d-none');
+                    controls.classList.remove('d-flex');
+                }).catch(err => console.error("Lỗi dừng camera:", err));
+            }
+        }
+
+        document.getElementById('btn-start-camera').addEventListener('click', startCamera);
+        document.getElementById('btn-stop-camera').addEventListener('click', stopCamera);
+    </script>
+}

@@ -1,138 +1,176 @@
 @page
 @model UniPrint.Web.Pages.Student.DocumentsModel
 @{
-    ViewData["Title"] = "Quản Lý Tài Liệu";
+    ViewData["Title"] = "Quản Lý Tài Liệu - Sinh Viên";
 }
 
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
+<div class="container mt-2">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
-            <h2 class="mb-1"><i class="bi bi-folder2-open text-primary"></i> QUẢN LÝ TÀI LIỆU CÁ NHÂN</h2>
-            <p class="text-muted mb-0">Tải lên file PDF hoặc DOCX để hệ thống tự động đọc số trang và kích thước file.</p>
+            <h2 class="mb-1 d-flex align-items-center gap-2">
+                <svg class="icon-duotone icon-lg" style="color: var(--intent-action-base);" viewBox="0 0 24 24">
+                    <path class="bg-shape" d="M6 3h8l6 6v12H6z"/>
+                    <path class="stroke-shape" d="M14 3v6h6M6 3h8l6 6v12a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2zM9 13h6M9 17h4"/>
+                </svg>
+                QUẢN LÝ TÀI LIỆU CÁ NHÂN
+            </h2>
+            <div class="text-muted" style="font-size: 13.5px; font-weight: 500;">
+                Tải lên tệp PDF hoặc DOCX để hệ thống tự động đếm số trang và kiểm tra độ phân giải
+            </div>
         </div>
-        <a asp-page="/Student/CreateOrder" class="btn btn-primary">
-            <i class="bi bi-printer"></i> Đến Trang Đặt In
+        <a asp-page="/Student/CreateOrder" class="btn btn-action">
+            <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><path class="bg-shape" d="M6 9h12v9H6z"/><path class="stroke-shape" d="M6 9V3h12v6M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v7H6z"/></svg>
+            Đến Trang Đặt In
         </a>
     </div>
-    <hr />
 
+    <!-- Alert Notifications (Preserved 100%) -->
     @if (!string.IsNullOrEmpty(Model.SuccessMessage))
     {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle-fill me-2"></i> <strong>Thành công!</strong> @Model.SuccessMessage
+        <div class="alert alert-success alert-dismissible fade show d-flex align-items-center justify-content-between mb-4" role="alert">
+            <div class="d-flex align-items-center gap-2">
+                <svg class="icon-duotone" viewBox="0 0 24 24"><circle class="bg-shape" cx="12" cy="12" r="9"/><path class="stroke-shape" d="M8 12l3 3 5-5"/></svg>
+                <span>@Model.SuccessMessage</span>
+            </div>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
 
     @if (!string.IsNullOrEmpty(Model.ErrorMessage))
     {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i> <strong>Lỗi:</strong> @Model.ErrorMessage
+        <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center justify-content-between mb-4" role="alert">
+            <div class="d-flex align-items-center gap-2">
+                <svg class="icon-duotone" viewBox="0 0 24 24"><circle class="bg-shape" cx="12" cy="12" r="9"/><path class="stroke-shape" d="M12 8v4M12 16h.01"/></svg>
+                <span>@Model.ErrorMessage</span>
+            </div>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
 
-    <!-- Khu vực Upload File (Task 6) -->
-    <div class="card mb-4 shadow-sm border-0 bg-light">
-        <div class="card-body p-4">
-            <h5 class="card-title fw-bold text-dark mb-3">
-                <i class="bi bi-cloud-arrow-up text-primary me-2"></i> Tải Tài Liệu Mới (PDF / DOCX)
-            </h5>
-            <form method="post" asp-page-handler="Upload" enctype="multipart/form-data">
-                <div class="row g-3 align-items-center">
-                    <div class="col-md-9">
-                        <input asp-for="UploadedFile" type="file" class="form-control form-control-lg" accept=".pdf,.docx" required />
-                        <div class="form-text mt-1 text-muted">
-                            <i class="bi bi-info-circle"></i> Định dạng hỗ trợ: <strong>.pdf</strong>, <strong>.docx</strong> (Dung lượng tối đa: 50MB). Hệ thống sẽ tự động phân tích đọc số trang.
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <button type="submit" class="btn btn-success btn-lg w-100">
-                            <i class="bi bi-upload me-1"></i> Tải Lên Ngay
-                        </button>
+    <!-- Upload Zone (Preserved 100% OnPostUploadAsync binding) -->
+    <div class="card p-4 mb-4">
+        <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom" style="border-color: var(--border-subtle) !important;">
+            <svg class="icon-duotone" style="color: var(--intent-action-base);" viewBox="0 0 24 24">
+                <path class="stroke-shape" d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+            </svg>
+            <strong style="font-size: 15px; color: var(--text-heading);">Tải Lên Tài Liệu Mới</strong>
+        </div>
+
+        <form method="post" asp-page-handler="Upload" enctype="multipart/form-data">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-9">
+                    <input asp-for="UploadedFile" type="file" class="form-control" accept=".pdf,.docx" required />
+                    <div class="form-text text-muted mt-2" style="font-size: 12px;">
+                        Định dạng hỗ trợ: <strong>.pdf</strong>, <strong>.docx</strong> (Dung lượng tối đa 50MB). Hệ thống sẽ tự động đếm trang khi tải lên hoàn tất.
                     </div>
                 </div>
-            </form>
-        </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-action w-100 py-2">
+                        <svg class="icon-duotone icon-sm" viewBox="0 0 24 24">
+                            <path class="stroke-shape" d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                        </svg>
+                        Tải Lên Ngay
+                    </button>
+                </div>
+            </div>
+        </form>
     </div>
 
-    <!-- Danh Sách Tài Liệu Đã Tải Lên (Task 7) -->
-    <div class="card shadow-sm border-0">
-        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-            <h5 class="mb-0 fw-bold text-dark">
-                <i class="bi bi-files text-secondary me-2"></i> Danh Sách Tài Liệu Của Bạn
-            </h5>
-            <span class="badge bg-primary fs-6">@Model.Documents.Count tài liệu</span>
+    <!-- Uploaded Documents Repository Table (Preserved 100%) -->
+    <div class="table-container">
+        <div class="p-3 border-bottom d-flex justify-content-between align-items-center" style="background-color: var(--surface-card); border-color: var(--border-card) !important;">
+            <div class="d-flex align-items-center gap-2">
+                <svg class="icon-duotone icon-sm" style="color: var(--intent-action-base);" viewBox="0 0 24 24">
+                    <path class="bg-shape" d="M6 3h8l6 6v12H6z"/>
+                    <path class="stroke-shape" d="M14 3v6h6M6 3h8l6 6v12a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2zM9 13h6M9 17h4"/>
+                </svg>
+                <strong style="font-size: 14px; color: var(--text-heading);">Kho Tài Liệu Đã Tải Lên</strong>
+            </div>
+            <span class="badge status-neutral">@Model.Documents.Count tài liệu</span>
         </div>
-        <div class="card-body p-0">
-            @if (Model.Documents.Any())
-            {
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th scope="col" class="ps-4">Tên Tài Liệu</th>
-                                <th scope="col" class="text-center">Định Dạng</th>
-                                <th scope="col" class="text-center">Số Trang (Auto)</th>
-                                <th scope="col" class="text-center">Dung Lượng</th>
-                                <th scope="col" class="text-center">Thời Gian Tải Lên</th>
-                                <th scope="col" class="text-end pe-4">Thao Tác</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var doc in Model.Documents)
-                            {
-                                var isPdf = doc.FileExtension.Equals(".pdf", StringComparison.OrdinalIgnoreCase);
-                                var formattedSize = doc.FileSizeBytes >= 1048576
-                                    ? $"{doc.FileSizeBytes / (1024.0 * 1024.0):F2} MB"
-                                    : $"{doc.FileSizeBytes / 1024.0:F1} KB";
 
-                                <tr>
-                                    <td class="ps-4 fw-semibold text-break">
-                                        <i class="bi @(isPdf ? "bi-filetype-pdf text-danger" : "bi-filetype-docx text-primary") fs-5 me-2"></i>
-                                        @doc.FileName
-                                    </td>
-                                    <td class="text-center">
-                                        <span class="badge @(isPdf ? "bg-danger" : "bg-primary")">
-                                            @doc.FileExtension.ToUpperInvariant()
-                                        </span>
-                                    </td>
-                                    <td class="text-center">
-                                        <span class="badge bg-secondary-subtle text-dark border px-3 py-2 fs-6">
-                                            📄 @doc.PageCount trang
-                                        </span>
-                                    </td>
-                                    <td class="text-center text-muted">@formattedSize</td>
-                                    <td class="text-center text-muted small">
-                                        @doc.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
-                                    </td>
-                                    <td class="text-end pe-4">
-                                        <div class="d-inline-flex gap-2">
-                                            <a asp-page="/Student/CreateOrder" asp-route-documentId="@doc.Id" class="btn btn-outline-primary btn-sm">
-                                                <i class="bi bi-printer"></i> Đặt In
-                                            </a>
-                                            <form method="post" asp-page-handler="Delete" onsubmit="return confirm('Bạn có chắc chắn muốn xóa tài liệu này?');" class="d-inline">
-                                                <input type="hidden" name="documentId" value="@doc.Id" />
-                                                <button type="submit" class="btn btn-outline-danger btn-sm" title="Xóa tài liệu">
-                                                    <i class="bi bi-trash"></i> Xóa
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            }
-            else
-            {
-                <div class="text-center py-5">
-                    <div class="text-muted mb-3" style="font-size: 3rem;">📁</div>
-                    <h5 class="text-muted">Chưa có tài liệu nào được tải lên</h5>
-                    <p class="text-muted small">Hãy chọn file PDF hoặc DOCX ở trên và nhấn "Tải Lên Ngay" để bắt đầu đặt in.</p>
-                </div>
-            }
-        </div>
+        @if (Model.Documents.Any())
+        {
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-3">Tên Tệp Tài Liệu</th>
+                            <th class="text-center" style="width: 100px; white-space: nowrap;">Định Dạng</th>
+                            <th class="text-center" style="width: 110px; white-space: nowrap;">Số Trang</th>
+                            <th class="text-center" style="width: 120px; white-space: nowrap;">Dung Lượng</th>
+                            <th class="text-center" style="width: 150px; white-space: nowrap;">Thời Gian Tải Lên</th>
+                            <th class="text-end pe-3" style="width: 160px; white-space: nowrap;">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var doc in Model.Documents)
+                        {
+                            // [UI Presentation Only] Biến định dạng hiển thị dung lượng file và đuôi tệp cho giao diện
+                            var isPdf = doc.FileExtension.Equals(".pdf", StringComparison.OrdinalIgnoreCase);
+                            var formattedSize = doc.FileSizeBytes >= 1048576
+                                ? $"{doc.FileSizeBytes / (1024.0 * 1024.0):F2} MB"
+                                : $"{doc.FileSizeBytes / 1024.0:F1} KB";
+
+                            <tr>
+                                <td class="ps-3">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <svg class="icon-duotone icon-sm flex-shrink-0" style="color: @(isPdf ? "var(--intent-danger-base)" : "var(--intent-action-base)");" viewBox="0 0 24 24">
+                                            <path class="bg-shape" d="M6 3h8l6 6v12H6z"/>
+                                            <path class="stroke-shape" d="M14 3v6h6M6 3h8l6 6v12a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2z"/>
+                                        </svg>
+                                        <strong style="font-size: 13.5px; color: var(--text-heading); word-break: break-all;">
+                                            @doc.FileName
+                                        </strong>
+                                    </div>
+                                </td>
+                                <td class="text-center" style="white-space: nowrap;">
+                                    <span class="badge mono @(isPdf ? "status-depleted" : "status-neutral")">
+                                        @doc.FileExtension.ToUpperInvariant()
+                                    </span>
+                                </td>
+                                <td class="text-center" style="white-space: nowrap;">
+                                    <span class="badge status-available mono" style="font-size: 12px; white-space: nowrap !important;">
+                                        @doc.PageCount trang
+                                    </span>
+                                </td>
+                                <td class="text-center mono text-muted" style="font-size: 12.5px; white-space: nowrap;">
+                                    @formattedSize
+                                </td>
+                                <td class="text-center mono text-muted" style="font-size: 12px; white-space: nowrap;">
+                                    @doc.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                </td>
+                                <td class="text-end pe-3" style="white-space: nowrap;">
+                                    <div class="d-inline-flex gap-2 justify-content-end" style="white-space: nowrap;">
+                                        <a asp-page="/Student/CreateOrder" asp-route-documentId="@doc.Id" class="btn btn-action btn-sm">
+                                            <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><path class="bg-shape" d="M6 9h12v9H6z"/><path class="stroke-shape" d="M6 9V3h12v6M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v7H6z"/></svg>
+                                            Đặt In
+                                        </a>
+                                        <form method="post" asp-page-handler="Delete" onsubmit="return confirm('Bạn có chắc chắn muốn xóa tài liệu này?');" class="d-inline m-0">
+                                            <input type="hidden" name="documentId" value="@doc.Id" />
+                                            <button type="submit" class="btn btn-danger btn-sm" title="Xóa tài liệu">
+                                                Xóa
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <svg class="icon-duotone mx-auto mb-2 text-muted" style="width: 44px; height: 44px;" viewBox="0 0 24 24">
+                    <path class="bg-shape" d="M6 3h8l6 6v12H6z"/>
+                    <path class="stroke-shape" d="M14 3v6h6M6 3h8l6 6v12a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2zM9 13h6M9 17h4"/>
+                </svg>
+                <h6 class="text-muted" style="font-weight: 600;">Chưa có tài liệu nào trong kho của bạn</h6>
+                <p class="text-muted small mb-0">Hãy chọn tệp PDF hoặc DOCX ở trên và nhấn "Tải Lên Ngay" để bắt đầu đặt in.</p>
+            </div>
+        }
     </div>
 </div>

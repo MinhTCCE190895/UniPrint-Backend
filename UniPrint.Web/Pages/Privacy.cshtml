@@ -1,8 +1,84 @@
-﻿@page
+@page
 @model PrivacyModel
 @{
-    ViewData["Title"] = "Privacy Policy";
+    // [UI Presentation Only] - Tiêu đề trang chính sách bảo mật trạm in
+    ViewData["Title"] = "Chính sách Bảo mật Tài liệu";
 }
-<h1>@ViewData["Title"]</h1>
 
-<p>Use this page to detail your site's privacy policy.</p>
+<div class="row justify-content-center">
+    <div class="col-lg-9 col-xl-8">
+        <!-- Header Banner -->
+        <div class="card mb-4" style="background: linear-gradient(135deg, var(--intent-action-tint) 0%, var(--surface-card) 100%); border-left: 4px solid var(--intent-action-base);">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center gap-3">
+                    <span class="app-brand-badge" style="width: 44px; height: 44px; background-color: var(--intent-action-base);">
+                        <svg class="icon-duotone icon-lg" viewBox="0 0 24 24" style="color: #ffffff;">
+                            <rect class="bg-shape" x="4" y="4" width="16" height="16" rx="2" style="fill:#fff; opacity:0.25;"/>
+                            <path class="stroke-shape" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" style="stroke:#fff; fill:none;"/>
+                        </svg>
+                    </span>
+                    <div>
+                        <h2 class="mb-1" style="font-size: 20px; font-weight: 700; color: var(--text-heading);">Chính Sách Bảo Mật Tài Liệu & Quyền Riêng Tư</h2>
+                        <p class="text-muted small mb-0">Cam kết bảo vệ tuyệt đối học liệu, đồ án và thông tin cá nhân của sinh viên & giảng viên</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content Card -->
+        <div class="card">
+            <div class="card-body p-4 p-md-5">
+                <section class="mb-4">
+                    <h5 style="color: var(--text-heading); font-weight: 700; margin-bottom: 12px;">1. Mục Đích Thu Thập & Sử Dụng Tệp In</h5>
+                    <p class="text-muted" style="line-height: 1.6;">
+                        Nền tảng <strong>UniPrint</strong> chỉ tiếp nhận các tệp tài liệu (PDF, DOCX, PPTX) được sinh viên tải lên với mục đích duy nhất là chuyển tiếp vào hàng đợi máy in vật lý tại Trạm In Trung Tâm. Hệ thống cam kết không sử dụng nội dung tài liệu của bạn cho bất kỳ mục đích thương mại, huấn luyện mô hình hay phân tích dữ liệu nào khác.
+                    </p>
+                </section>
+
+                <hr style="border-color: var(--border-subtle); margin: 24px 0;" />
+
+                <section class="mb-4">
+                    <h5 style="color: var(--text-heading); font-weight: 700; margin-bottom: 12px;">2. Cơ Chế Tự Động Xóa File (Vòng Đời Tài Liệu)</h5>
+                    <p class="text-muted" style="line-height: 1.6;">
+                        Để đảm bảo tối đa quyền riêng tư và giải phóng dung lượng lưu trữ cục bộ:
+                    </p>
+                    <ul class="text-muted" style="line-height: 1.6; padding-left: 20px;">
+                        <li><strong>Tài liệu đã nhận tại kệ:</strong> File gốc trên hệ thống lưu trữ sẽ tự động bị tiêu hủy vĩnh viễn sau <strong>07 ngày</strong> kể từ khi sinh viên hoàn tất quét mã QR nhận đồ tại quầy.</li>
+                        <li><strong>Đơn in bị hủy:</strong> Toàn bộ dữ liệu đính kèm sẽ bị xóa ngay lập tức khỏi bộ nhớ tạm của trạm in.</li>
+                        <li><strong>Quyền chủ động:</strong> Sinh viên có thể chủ động xóa tài liệu trong mục <em>"Kho Tài Liệu Cá Nhân"</em> bất cứ lúc nào trước khi gửi lệnh in.</li>
+                    </ul>
+                </section>
+
+                <hr style="border-color: var(--border-subtle); margin: 24px 0;" />
+
+                <section class="mb-4">
+                    <h5 style="color: var(--text-heading); font-weight: 700; margin-bottom: 12px;">3. Bản Quyền Đồ Án & Nghiên Cứu Khoa Học</h5>
+                    <p class="text-muted" style="line-height: 1.6;">
+                        Các bài tập lớn, đồ án tốt nghiệp, đề tài nghiên cứu khoa học và bài báo chuyên ngành là tài sản trí tuệ riêng của tác giả và nhà trường. Cán bộ vận hành trạm in bị nghiêm cấm sao chép, trích xuất hoặc phát tán bản in ra bên ngoài khu vực phục vụ của trường.
+                    </p>
+                </section>
+
+                <hr style="border-color: var(--border-subtle); margin: 24px 0;" />
+
+                <section class="mb-4">
+                    <h5 style="color: var(--text-heading); font-weight: 700; margin-bottom: 12px;">4. An Toàn Thông Tin & Thanh Toán Số</h5>
+                    <p class="text-muted" style="line-height: 1.6;">
+                        Mọi giao dịch thanh toán qua cổng quét mã VietQR và PayOS đều được mã hóa bằng chuẩn HTTPS/TLS 1.3. Nền tảng không lưu trữ thông tin thẻ tín dụng hoặc mật khẩu ngân hàng của người dùng.
+                    </p>
+                </section>
+
+                <div class="p-3 rounded" style="background-color: var(--surface-subtle); border: 1px solid var(--border-card);">
+                    <div class="d-flex align-items-center gap-2">
+                        <svg class="icon-duotone text-muted" viewBox="0 0 24 24">
+                            <circle class="bg-shape" cx="12" cy="12" r="10" />
+                            <path class="stroke-shape" d="M12 16v-4M12 8h.01" />
+                        </svg>
+                        <span class="small text-muted">
+                            Mọi thắc mắc về quyền bảo mật dữ liệu học tập, vui lòng liên hệ bộ phận hỗ trợ kỹ thuật tại <strong>uniprint-support@uniprint.edu.vn</strong> hoặc Hotline <strong>(028) 7300 5588 (Ext: 104)</strong>.
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
