@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using UniPrint.Business.DTOs;
@@ -11,10 +12,44 @@ namespace UniPrint.API.Controllers;
 public class PriceController : ControllerBase
 {
     private readonly IPriceCalculatorService _priceCalculatorService;
+    private readonly IPriceConfigService _priceConfigService;
 
-    public PriceController(IPriceCalculatorService priceCalculatorService)
+    public PriceController(IPriceCalculatorService priceCalculatorService, IPriceConfigService priceConfigService)
     {
         _priceCalculatorService = priceCalculatorService;
+        _priceConfigService = priceConfigService;
+    }
+
+    /// <summary>Task 20: Bảng giá đang áp dụng (công khai để app hiển thị đơn giá).</summary>
+    [AllowAnonymous]
+    [HttpGet("config")]
+    public async Task<IActionResult> GetConfig(CancellationToken ct)
+    {
+        var result = await _priceConfigService.GetActiveConfigAsync(ct);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Task 20: Admin cập nhật bảng giá (giá trang màu, đen trắng, chiết khấu 2 mặt, gáy/ghim).
+    /// Tạo phiên bản bảng giá mới; đơn đã tạo giữ nguyên giá đã chốt (BR02).
+    /// </summary>
+    [HttpPut("config")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> UpdateConfig([FromBody] UpdatePriceConfigDto request, CancellationToken ct)
+    {
+        var adminId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var result = await _priceConfigService.UpdatePriceConfigAsync(adminId, request, ct);
+        if (!result.Success) return BadRequest(result);
+        return Ok(result);
+    }
+
+    /// <summary>Task 20: Lịch sử các phiên bản bảng giá (mới nhất trước).</summary>
+    [HttpGet("config/history")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetConfigHistory([FromQuery] int take = 10, CancellationToken ct = default)
+    {
+        var result = await _priceConfigService.GetHistoryAsync(take, ct);
+        return Ok(result);
     }
 
     /// <summary>

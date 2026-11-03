@@ -22,6 +22,11 @@ builder.Services.AddScoped<IPriceCalculatorService, PriceCalculatorService>();
 builder.Services.AddScoped<IPrintOrderService, PrintOrderService>();
 builder.Services.AddScoped<IShelfService, ShelfService>();
 builder.Services.AddScoped<IStudyHubService, StudyHubService>();
+// Task 18-20: Thanh toán, theo dõi đơn, cấu hình bảng giá
+builder.Services.AddSingleton(UniPrint.Business.Common.VietQrSettings.FromConfiguration(builder.Configuration));
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IOrderTrackingService, OrderTrackingService>();
+builder.Services.AddScoped<IPriceConfigService, PriceConfigService>();
 
 // 3. Cookie Authentication for Razor Pages
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

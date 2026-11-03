@@ -161,6 +161,21 @@
                                     Quét QR Nhận Hàng
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a class="@NavClass("/Pickup/Payments")" asp-page="/Pickup/Payments">
+                                    <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><path class="bg-shape" d="M3 10h18v10H3z"/><path class="stroke-shape" d="M3 6h18v14H3zM3 10h18M7 15h3"/></svg>
+                                    Thanh Toán
+                                </a>
+                            </li>
+                        }
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <li class="nav-item">
+                                <a class="@NavClass("/Admin/PriceConfig")" asp-page="/Admin/PriceConfig">
+                                    <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><path class="bg-shape" d="M12 2a10 10 0 100 20 10 10 0 000-20z"/><path class="stroke-shape" d="M12 6v12M15 9.5a2.5 2.5 0 00-2.5-2.5h-1a2.5 2.5 0 000 5h1a2.5 2.5 0 010 5h-1A2.5 2.5 0 018 14.5"/></svg>
+                                    Bảng Giá
+                                </a>
+                            </li>
                         }
                         <li class="nav-item">
                             <a class="@NavClassHighlight("/StudyHub/Index")" asp-page="/StudyHub/Index">

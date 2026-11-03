@@ -23,7 +23,8 @@ public class PriceCalculatorService : IPriceCalculatorService
     {
         var configRepo = _unitOfWork.Repository<PriceConfig>();
         var activeConfigs = await configRepo.FindAsync(c => c.IsActive, ct);
-        var config = activeConfigs.FirstOrDefault() ?? new PriceConfig();
+        // Task 20: luôn lấy phiên bản bảng giá mới nhất đang áp dụng.
+        var config = activeConfigs.OrderByDescending(c => c.CreatedAt).FirstOrDefault() ?? new PriceConfig();
 
         decimal basePagePrice = request.IsColor ? config.PricePerColorPage : config.PricePerBWPage;
 

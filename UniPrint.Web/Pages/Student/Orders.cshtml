@@ -146,7 +146,7 @@
                             <th class="text-center" style="width: 140px;">Quy Cách In</th>
                             <th class="text-end" style="width: 150px;">Tổng Tiền</th>
                             <th class="text-center" style="width: 170px;">Trạng Thái & Kệ</th>
-                            <th class="text-end pe-3" style="width: 190px;">Mã QR / Thao Tác</th>
+                            <th class="text-end pe-3" style="width: 220px;">Thao Tác / QR</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -249,6 +249,10 @@
                                 <!-- Mã QR / Thao Tác -->
                                 <td class="text-end pe-3">
                                     <div class="d-inline-flex gap-2 justify-content-end align-items-center">
+                                        <a asp-page="/Orders/Tracking" asp-route-id="@order.Id" class="btn btn-secondary btn-sm" title="Theo dõi chi tiết & thanh toán VietQR">
+                                            Chi Tiết
+                                        </a>
+
                                         @if (!isCancelled && !string.IsNullOrEmpty(order.QrToken))
                                         {
                                             <button type="button" class="btn @(isReady ? "btn-confirm" : "btn-action") btn-sm"
@@ -310,26 +314,25 @@
         <div class="modal-content" style="border-radius: var(--radius-lg); border: 1px solid var(--border-card);">
             <div class="modal-header py-3" style="background-color: var(--surface-subtle); border-bottom: 1px solid var(--border-subtle);">
                 <div class="d-flex align-items-center gap-2">
-                    <svg class="icon-duotone icon-md" style="color: var(--intent-action-base);" viewBox="0 0 24 24">
+                    <svg class="icon-duotone icon-sm" style="color: var(--intent-action-base);" viewBox="0 0 24 24">
                         <path class="bg-shape" d="M4 4h6v6H4zm10 0h6v6h-6zm0 10h6v6h-6zm-10 0h6v6H4z"/>
                         <path class="stroke-shape" d="M3 3h8v8H3zM13 3h8v8h-8zM13 13h8v8h-8zM3 13h8v8H3z"/>
                     </svg>
-                    <h5 class="modal-title mb-0" id="qrModalLabel" style="font-weight: 700; font-size: 16px; color: var(--text-heading);">
-                        MÃ QR NHẬN TÀI LIỆU TẠI QUẦY
-                    </h5>
+                    <h5 class="modal-title mb-0" id="qrModalLabel" style="font-weight: 700; font-size: 16px;">Mã QR Nhận Tài Liệu Tại Quầy</h5>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4 text-center">
-                <!-- QR Image Display -->
-                <div class="p-3 d-inline-block rounded-3 mb-3" style="background: #ffffff; border: 2px dashed var(--border-card);">
-                    <img id="modalQrImg" src="" alt="Mã QR Nhận Tài Liệu" style="width: 220px; height: 220px; display: block; object-fit: contain;" />
+                <!-- QR Image Viewport -->
+                <div class="mb-3 d-inline-block p-3 rounded-3" style="background-color: #ffffff; border: 1px solid var(--border-card); box-shadow: var(--shadow-sm);">
+                    <img id="modalQrImg" src="" alt="Mã QR Nhận Hàng" style="width: 220px; height: 220px; display: block;" />
                 </div>
 
+                <!-- Pickup Token Code Pill -->
                 <div class="mb-3">
-                    <div class="text-muted small mb-1" style="font-size: 12px;">Mã đối soát nhận tài liệu (Pickup Token):</div>
-                    <div class="d-flex align-items-center justify-content-center gap-2">
-                        <span id="modalQrToken" class="mono font-monospace fw-bold px-3 py-1 rounded" style="font-size: 18px; background-color: var(--surface-subtle); color: var(--intent-action-base); border: 1px solid var(--border-card);">
+                    <div class="text-muted small mb-1" style="font-weight: 500;">Mã Nhận Hàng (Token):</div>
+                    <div class="d-inline-flex align-items-center gap-2">
+                        <span id="modalQrToken" class="mono px-3 py-1 rounded-2" style="font-size: 15px; font-weight: 700; background-color: var(--surface-subtle); color: var(--intent-action-base); border: 1px solid var(--border-card);">
                             PICKUP-...
                         </span>
                         <button type="button" class="btn btn-secondary btn-sm" id="btnCopyToken" title="Sao chép mã">
@@ -413,4 +416,3 @@
         });
     </script>
 }
-

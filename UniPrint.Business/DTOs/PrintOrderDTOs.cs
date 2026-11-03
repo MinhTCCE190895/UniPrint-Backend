@@ -67,6 +67,7 @@ public class PrintOrderResponseDto
     public string? QrToken { get; set; }
     public DateTimeOffset? QrExpiresAt { get; set; }
     public PaymentStatus PaymentStatus { get; set; }
+    public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.Cash;
     public DateTime CreatedAt { get; set; }
 }
 

@@ -13,11 +13,16 @@ public class PrintOrdersController : ControllerBase
 {
     private readonly IPrintOrderService _orderService;
     private readonly IPriceCalculatorService _priceCalculator;
+    private readonly IOrderTrackingService _trackingService;
 
-    public PrintOrdersController(IPrintOrderService orderService, IPriceCalculatorService priceCalculator)
+    public PrintOrdersController(
+        IPrintOrderService orderService,
+        IPriceCalculatorService priceCalculator,
+        IOrderTrackingService trackingService)
     {
         _orderService = orderService;
         _priceCalculator = priceCalculator;
+        _trackingService = trackingService;
     }
 
     [AllowAnonymous]
@@ -66,6 +71,19 @@ public class PrintOrdersController : ControllerBase
                 return NotFound();
         }
         var result = await _orderService.GetOrderByIdAsync(id);
+        if (!result.Success) return NotFound(result);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Task 19: Chi tiết theo dõi đơn — tiến trình, vị trí kệ nhận hàng, mã QR nhận và hóa đơn thanh toán.
+    /// Sinh viên chỉ xem được đơn của mình; Staff/Admin xem mọi đơn.
+    /// </summary>
+    [HttpGet("{id:guid}/tracking")]
+    public async Task<IActionResult> GetOrderTracking(Guid id, CancellationToken ct)
+    {
+        var isStaffOrAdmin = User.IsInRole("Staff") || User.IsInRole("Admin");
+        var result = await _trackingService.GetOrderTrackingAsync(id, GetCurrentUserId(), isStaffOrAdmin, ct);
         if (!result.Success) return NotFound(result);
         return Ok(result);
     }

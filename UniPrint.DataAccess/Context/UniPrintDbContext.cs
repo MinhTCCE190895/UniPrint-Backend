@@ -32,6 +32,8 @@ public class UniPrintDbContext : DbContext
         modelBuilder.Entity<PickupQR>().Property(q => q.IsUsed).IsConcurrencyToken();
         modelBuilder.Entity<PrintOrder>().Property(o => o.Status).IsConcurrencyToken();
         modelBuilder.Entity<Shelf>().Property(s => s.CurrentCount).IsConcurrencyToken();
+        // Task 18: chặn xác nhận thanh toán 2 lần cùng lúc (không thêm cột mới).
+        modelBuilder.Entity<Payment>().Property(p => p.Status).IsConcurrencyToken();
 
         // Configure User
         modelBuilder.Entity<User>(entity =>

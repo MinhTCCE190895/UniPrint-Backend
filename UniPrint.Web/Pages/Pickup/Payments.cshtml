@@ -1,0 +1,87 @@
+@page
+@model UniPrint.Web.Pages.Pickup.PaymentsModel
+@using UniPrint.DataAccess.Enums
+@{
+    ViewData["Title"] = "Thanh Toán Đơn In";
+    var vnd = System.Globalization.CultureInfo.GetCultureInfo("vi-VN");
+    var cashStatuses = new[] { PrintOrderStatus.ShelfAssigned, PrintOrderStatus.ReadyForPickup, PrintOrderStatus.Completed };
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+    <div>
+        <h3 class="fw-bold mb-0">💳 Thanh Toán Đơn In</h3>
+        <div class="text-muted small">Thu tiền mặt khi giao tài liệu hoặc xác nhận đã nhận chuyển khoản VietQR.</div>
+    </div>
+    <form method="get" class="d-flex gap-2">
+        <input asp-for="Keyword" class="form-control" placeholder="Mã đơn hoặc tên sinh viên" />
+        <button class="btn btn-outline-primary" type="submit">Tìm</button>
+    </form>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.Message))
+{
+    <div class="alert @(Model.IsSuccess ? "alert-success" : "alert-danger")">@Model.Message</div>
+}
+
+@if (!Model.UnpaidPayments.Any())
+{
+    <div class="card border-0 shadow-sm">
+        <div class="card-body text-center text-muted py-5">Không có hóa đơn nào đang chờ thanh toán.</div>
+    </div>
+}
+else
+{
+    <div class="card border-0 shadow-sm">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Mã đơn</th>
+                        <th>Sinh viên</th>
+                        <th>Trạng thái đơn</th>
+                        <th>Phương thức</th>
+                        <th class="text-end">Số tiền</th>
+                        <th style="min-width: 320px">Xác nhận</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in Model.UnpaidPayments)
+                    {
+                        var canCollectCash = cashStatuses.Contains(p.OrderStatus);
+                        <tr>
+                            <td class="fw-semibold font-monospace">
+                                <a asp-page="/Orders/Tracking" asp-route-id="@p.OrderId" class="text-decoration-none">@p.OrderCode</a>
+                            </td>
+                            <td>@p.StudentName</td>
+                            <td><span class="badge bg-secondary">@p.OrderStatus</span></td>
+                            <td>
+                                <span class="badge @(p.Method == PaymentMethod.VietQR_PayOS ? "bg-info text-dark" : "bg-warning text-dark")">@p.MethodText</span>
+                            </td>
+                            <td class="text-end fw-bold">@p.Amount.ToString("N0", vnd) đ</td>
+                            <td>
+                                <div class="d-flex flex-column gap-2">
+                                    <form method="post" asp-page-handler="Confirm" class="d-flex gap-2">
+                                        <input type="hidden" name="orderId" value="@p.OrderId" />
+                                        <input type="hidden" name="method" value="@((int)PaymentMethod.Cash)" />
+                                        <input type="hidden" name="keyword" value="@Model.Keyword" />
+                                        <button type="submit" class="btn btn-sm btn-success" disabled="@(!canCollectCash)"
+                                                title="@(canCollectCash ? "Xác nhận đã thu đủ tiền mặt" : "Chỉ thu tiền mặt khi đơn đã in xong")">
+                                            Đã thu tiền mặt
+                                        </button>
+                                    </form>
+                                    <form method="post" asp-page-handler="Confirm" class="d-flex gap-2">
+                                        <input type="hidden" name="orderId" value="@p.OrderId" />
+                                        <input type="hidden" name="method" value="@((int)PaymentMethod.VietQR_PayOS)" />
+                                        <input type="hidden" name="keyword" value="@Model.Keyword" />
+                                        <input name="transactionCode" class="form-control form-control-sm" placeholder="Mã giao dịch ngân hàng" maxlength="50" required />
+                                        <button type="submit" class="btn btn-sm btn-primary text-nowrap">Đã nhận CK</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

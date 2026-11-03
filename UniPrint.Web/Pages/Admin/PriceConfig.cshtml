@@ -1,0 +1,157 @@
+@page
+@model UniPrint.Web.Pages.Admin.PriceConfigModel
+@{
+    ViewData["Title"] = "Cấu Hình Bảng Giá";
+    var vnd = System.Globalization.CultureInfo.GetCultureInfo("vi-VN");
+    string Local(DateTime utc) => DateTime.SpecifyKind(utc, DateTimeKind.Utc).ToLocalTime().ToString("HH:mm dd/MM/yyyy");
+}
+
+<div class="mb-3">
+    <h3 class="fw-bold mb-0">🏷️ Cấu Hình Bảng Giá In Ấn</h3>
+    <div class="text-muted small">Giá mới áp dụng cho các đơn tạo sau khi lưu. Đơn đã tạo giữ nguyên giá đã chốt (BR02).</div>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.SuccessMessage))
+{
+    <div class="alert alert-success">@Model.SuccessMessage</div>
+}
+@if (Model.Errors.Any())
+{
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+            @foreach (var e in Model.Errors)
+            {
+                <li>@e</li>
+            }
+        </ul>
+    </div>
+}
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <form method="post" id="price-form">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="Input.PricePerBWPage" class="form-label"></label>
+                            <div class="input-group">
+                                <input asp-for="Input.PricePerBWPage" type="number" step="any" min="1" class="form-control" data-price="bw" />
+                                <span class="input-group-text">đ</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Input.PricePerColorPage" class="form-label"></label>
+                            <div class="input-group">
+                                <input asp-for="Input.PricePerColorPage" type="number" step="any" min="1" class="form-control" data-price="color" />
+                                <span class="input-group-text">đ</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="Input.DoubleSidedDiscountPercent" class="form-label"></label>
+                            <div class="input-group">
+                                <input asp-for="Input.DoubleSidedDiscountPercent" type="number" step="any" min="0" max="99.99" class="form-control" data-price="discount" />
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="Input.BindingPrice" class="form-label"></label>
+                            <div class="input-group">
+                                <input asp-for="Input.BindingPrice" type="number" step="any" min="0" class="form-control" data-price="binding" />
+                                <span class="input-group-text">đ</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="Input.StaplePrice" class="form-label"></label>
+                            <div class="input-group">
+                                <input asp-for="Input.StaplePrice" type="number" step="any" min="0" class="form-control" data-price="staple" />
+                                <span class="input-group-text">đ</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-4 px-4">Lưu bảng giá</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm bg-light">
+            <div class="card-body">
+                <h6 class="fw-bold">Xem trước: tài liệu 10 trang, 1 bản</h6>
+                <table class="table table-sm mb-0 small">
+                    <tr><td>Đen trắng, 1 mặt</td><td class="text-end" id="pv-bw"></td></tr>
+                    <tr><td>Đen trắng, 2 mặt</td><td class="text-end" id="pv-bw2"></td></tr>
+                    <tr><td>Màu, 1 mặt</td><td class="text-end" id="pv-color"></td></tr>
+                    <tr><td>Màu, 2 mặt + đóng gáy</td><td class="text-end" id="pv-color2"></td></tr>
+                    <tr><td>Đen trắng, 1 mặt + bấm ghim</td><td class="text-end" id="pv-staple"></td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mt-4">
+    <div class="card-header bg-white fw-bold">Lịch sử bảng giá</div>
+    <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Thời điểm</th>
+                    <th class="text-end">Đen trắng</th>
+                    <th class="text-end">Màu</th>
+                    <th class="text-end">Giảm 2 mặt</th>
+                    <th class="text-end">Gáy</th>
+                    <th class="text-end">Ghim</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var h in Model.History)
+                {
+                    <tr class="@(h.IsActive ? "table-success" : "")">
+                        <td>@Local(h.CreatedAt)</td>
+                        <td class="text-end">@h.PricePerBWPage.ToString("N0", vnd)</td>
+                        <td class="text-end">@h.PricePerColorPage.ToString("N0", vnd)</td>
+                        <td class="text-end">@h.DoubleSidedDiscountPercent.ToString("0.##", vnd)%</td>
+                        <td class="text-end">@h.BindingPrice.ToString("N0", vnd)</td>
+                        <td class="text-end">@h.StaplePrice.ToString("N0", vnd)</td>
+                        <td>@(h.IsActive ? "Đang áp dụng" : "")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            var form = document.getElementById('price-form');
+            var fmt = new Intl.NumberFormat('vi-VN');
+            function val(name) {
+                var el = form.querySelector('[data-price="' + name + '"]');
+                var n = parseFloat((el.value || '0').replace(',', '.'));
+                return isNaN(n) ? 0 : n;
+            }
+            // Cùng công thức với PriceCalculatorService (Task 8).
+            function price(isColor, doubleSided, binding, staple) {
+                var unit = isColor ? val('color') : val('bw');
+                if (doubleSided) unit -= unit * val('discount') / 100;
+                var total = unit * 10;
+                if (binding) total += val('binding');
+                if (staple) total += val('staple');
+                return fmt.format(Math.round(total)) + ' đ';
+            }
+            function render() {
+                document.getElementById('pv-bw').textContent = price(false, false, false, false);
+                document.getElementById('pv-bw2').textContent = price(false, true, false, false);
+                document.getElementById('pv-color').textContent = price(true, false, false, false);
+                document.getElementById('pv-color2').textContent = price(true, true, true, false);
+                document.getElementById('pv-staple').textContent = price(false, false, false, true);
+            }
+            form.addEventListener('input', render);
+            render();
+        })();
+    </script>
+}
