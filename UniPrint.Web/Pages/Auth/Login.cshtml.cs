@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
@@ -62,12 +62,7 @@ public class LoginModel : PageModel
             return LocalRedirect(returnUrl);
         }
 
-        // Điều hướng thông minh theo vai trò
-        if (result.Data.Role == UserRole.Staff || result.Data.Role == UserRole.Admin)
-        {
-            return RedirectToPage("/Staff/Queue");
-        }
-
-        return RedirectToPage("/Student/CreateOrder");
+        // Tự động chuyển hướng về Trang Chủ (Home Hub) sau khi đăng nhập
+        return RedirectToPage("/Index");
     }
 }
