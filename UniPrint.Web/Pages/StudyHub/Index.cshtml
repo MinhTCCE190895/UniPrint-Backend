@@ -1,77 +1,424 @@
+
 @page
 @model UniPrint.Web.Pages.StudyHub.IndexModel
+@using UniPrint.DataAccess.Enums
+
 @{
     ViewData["Title"] = "Study Hub - Kho Học Liệu Sinh Viên";
 }
 
 <div class="container mt-2">
-    <!-- Header Section -->
+
+    <!-- SUCCESS MESSAGE -->
+    @if (TempData["SuccessMessage"] is string successMessage)
+    {
+        <div class="alert alert-success">
+            @successMessage
+        </div>
+    }
+
+    <!-- STUDENT UPLOAD -->
+    @if (User.Identity?.IsAuthenticated == true &&
+         User.IsInRole("Student"))
+    {
+        <div class="d-flex justify-content-end mb-3">
+            <a asp-page="/StudyHub/Upload"
+               class="btn btn-primary">
+                + Đăng Tải Tài Liệu
+            </a>
+        </div>
+    }
+
+    <!-- ADMIN MANAGEMENT -->
+    @if (User.IsInRole("Admin"))
+    {
+        <div class="mb-4">
+            <a asp-page="/Admin/StudyMaterials"
+               class="btn btn-primary">
+                Quản lý & Duyệt tài liệu
+            </a>
+        </div>
+    }
+
+    <!-- HEADER -->
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
-            <h2 class="mb-1 d-flex align-items-center gap-2">
-                <svg class="icon-duotone icon-lg" style="color: var(--intent-action-base);" viewBox="0 0 24 24">
-                    <path class="bg-shape" d="M4 19.5A2.5 2.5 0 016.5 17H20M4 4.5A2.5 2.5 0 016.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15z"/>
-                    <path class="stroke-shape" d="M4 19.5A2.5 2.5 0 016.5 17H20M4 4.5A2.5 2.5 0 016.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15z"/>
-                </svg>
+            <h2 class="mb-1">
                 STUDY HUB - KHO HỌC LIỆU SINH VIÊN
             </h2>
-            <div class="text-muted" style="font-size: 13.5px; font-weight: 500;">
-                Kho chia sẻ tài liệu ôn thi, bài giảng và tóm tắt môn học do sinh viên đóng góp (Đã qua kiểm duyệt)
+
+            <div class="text-muted">
+                Kho chia sẻ tài liệu ôn thi, bài giảng và
+                tóm tắt môn học do sinh viên đóng góp
+                (Đã qua kiểm duyệt)
             </div>
         </div>
-        <span class="badge status-available">
-            <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><circle class="bg-shape" cx="12" cy="12" r="9"/><path class="stroke-shape" d="M8 12l3 3 5-5"/></svg>
+
+        <span class="badge bg-success">
             Đã Kiểm Duyệt: @Model.Materials.Count
         </span>
     </div>
+    
+<!-- ========================================= -->
+<!-- TÀI LIỆU CỦA TÔI - COLLAPSIBLE -->
+<!-- ========================================= -->
 
-    <!-- Materials Grid (Preserved 100%) -->
+@if (User.IsInRole("Student"))
+{
+    <div class="card shadow-sm border-0 mb-4">
+
+        <div class="card-body p-3">
+
+            <!-- THANH TIÊU ĐỀ -->
+            <div class="d-flex justify-content-between
+                        align-items-center gap-3">
+
+                <div>
+                    <h5 class="fw-bold mb-1">
+                        Tài liệu của tôi
+                    </h5>
+
+                    <small class="text-muted">
+                        Đã đăng @Model.MyMaterials.Count tài liệu
+                    </small>
+                </div>
+
+                <button class="btn btn-outline-primary btn-sm"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#myMaterialsCollapse"
+                        aria-expanded="false"
+                        aria-controls="myMaterialsCollapse">
+
+                    Xem tài liệu đã đăng
+                </button>
+
+            </div>
+
+            <!-- DANH SÁCH THU GỌN -->
+            <div class="collapse mt-3"
+                 id="myMaterialsCollapse">
+
+                <hr />
+
+                @if (Model.MyMaterials.Count == 0)
+                {
+                    <div class="alert alert-light border mb-0">
+                        Bạn chưa đăng tải tài liệu nào.
+                    </div>
+                }
+                else
+                {
+                    <div class="accordion"
+                         id="myMaterialsAccordion">
+
+                        @foreach (var m in Model.MyMaterials)
+                        {
+                            var collapseId = "material-" + m.Id;
+
+                            <div class="accordion-item mb-2
+                                        border rounded">
+
+                                <!-- TÊN + TRẠNG THÁI -->
+                                <h2 class="accordion-header">
+
+                                    <button class="accordion-button
+                                                   collapsed"
+                                            type="button"
+                                            data-bs-toggle="collapse"
+                                            data-bs-target="#@collapseId"
+                                            aria-expanded="false"
+                                            aria-controls="@collapseId">
+
+                                        <span class="d-flex
+                                                     justify-content-between
+                                                     align-items-center
+                                                     gap-2 w-100 me-2">
+
+                                            <span class="fw-semibold">
+                                                @m.Title
+                                            </span>
+
+                                            @if (m.Status == MaterialStatus.Pending)
+                                            {
+                                                <span class="badge
+                                                             bg-warning
+                                                             text-dark">
+                                                    Chờ duyệt
+                                                </span>
+                                            }
+                                            else if (m.Status == MaterialStatus.Approved)
+                                            {
+                                                <span class="badge
+                                                             bg-success">
+                                                    Đã duyệt
+                                                </span>
+                                            }
+                                            else if (m.Status == MaterialStatus.Rejected)
+                                            {
+                                                <span class="badge
+                                                             bg-danger">
+                                                    Bị từ chối
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge
+                                                             bg-secondary">
+                                                    @m.Status
+                                                </span>
+                                            }
+
+                                        </span>
+
+                                    </button>
+                                </h2>
+
+                                <!-- CHI TIẾT TÀI LIỆU -->
+                                <div id="@collapseId"
+                                     class="accordion-collapse collapse"
+                                     data-bs-parent="#myMaterialsAccordion">
+
+                                    <div class="accordion-body">
+
+                                        <p class="mb-2">
+                                            <strong>Mô tả:</strong>
+                                            @m.Description
+                                        </p>
+
+                                        <p class="mb-2">
+                                            <strong>Môn học:</strong>
+                                            @m.SubjectCode -
+                                            @m.SubjectName
+                                        </p>
+
+                                        <p class="mb-2">
+                                            <strong>Danh mục:</strong>
+                                            @m.CategoryName
+                                        </p>
+
+                                        <p class="mb-2">
+                                            <strong>Ngày đăng:</strong>
+                                            @m.CreatedAt.ToString(
+                                                "dd/MM/yyyy HH:mm")
+                                        </p>
+
+                                        <p class="mb-0">
+                                            <strong>Trạng thái:</strong>
+
+                                            @if (m.Status == MaterialStatus.Pending)
+                                            {
+                                                <span class="text-warning">
+                                                    Đang chờ Admin phê duyệt.
+                                                </span>
+                                            }
+                                            else if (m.Status == MaterialStatus.Approved)
+                                            {
+                                                <span class="text-success">
+                                                    Tài liệu đã được phê duyệt.
+                                                </span>
+                                            }
+                                            else if (m.Status == MaterialStatus.Rejected)
+                                            {
+                                                <span class="text-danger">
+                                                    Tài liệu đã bị từ chối.
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span>@m.Status</span>
+                                            }
+
+                                        </p>
+
+                                    </div>
+                                </div>
+
+                            </div>
+                        }
+
+                    </div>
+                }
+
+            </div>
+
+        </div>
+    </div>
+}
+
+    <!-- ========================================= -->
+    <!-- SEARCH & FILTER MATERIALS -->
+    <!-- ========================================= -->
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body p-4">
+
+            <h4 class="fw-bold mb-3">
+                Tìm kiếm & Lọc tài liệu
+            </h4>
+
+            <form method="get">
+
+                <div class="row g-3">
+
+                    <!-- SEARCH -->
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">
+                            Từ khóa tìm kiếm
+                        </label>
+
+                        <input type="text"
+                               name="Search"
+                               value="@Model.Search"
+                               class="form-control"
+                               placeholder="Nhập tên tài liệu..." />
+                    </div>
+
+                    <!-- SUBJECT FILTER -->
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">
+                            Môn học
+                        </label>
+
+                        <select name="SubjectId"
+                                class="form-select"
+                                asp-items="Model.SubjectOptions">
+
+                            <option value="">
+                                -- Tất cả môn học --
+                            </option>
+
+                        </select>
+                    </div>
+
+                    <!-- CATEGORY FILTER -->
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">
+                            Thể loại tài liệu
+                        </label>
+
+                        <select name="CategoryId"
+                                class="form-select"
+                                asp-items="Model.CategoryOptions">
+
+                            <option value="">
+                                -- Tất cả thể loại --
+                            </option>
+
+                        </select>
+                    </div>
+
+                    <!-- BUTTONS -->
+                    <div class="col-12 d-flex gap-2">
+
+                        <button type="submit"
+                                class="btn btn-primary">
+                            Tìm kiếm & Lọc
+                        </button>
+
+                        <a asp-page="/StudyHub/Index"
+                           class="btn btn-outline-secondary">
+                            Xóa bộ lọc
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+    <!-- ========================================= -->
+    <!-- APPROVED MATERIALS -->
+    <!-- ========================================= -->
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="fw-bold mb-0">
+            Thư viện tài liệu đã kiểm duyệt
+        </h4>
+
+        <span class="text-muted small">
+            Tìm thấy @Model.Materials.Count tài liệu
+        </span>
+    </div>
+
     <div class="row g-4">
+
         @if (Model.Materials.Count == 0)
         {
             <div class="col-12">
                 <div class="card p-5 text-center my-3">
-                    <svg class="icon-duotone mx-auto mb-2 text-muted" style="width: 44px; height: 44px;" viewBox="0 0 24 24">
-                        <path class="bg-shape" d="M4 19.5A2.5 2.5 0 016.5 17H20M4 4.5A2.5 2.5 0 016.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15z"/>
-                        <path class="stroke-shape" d="M4 19.5A2.5 2.5 0 016.5 17H20M4 4.5A2.5 2.5 0 016.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15z"/>
-                    </svg>
-                    <h5 class="text-muted" style="font-weight: 600;">Chưa có tài liệu nào trong thư viện</h5>
-                    <p class="text-muted small mb-0">Hãy là người đầu tiên chia sẻ tài liệu ôn tập hữu ích cho cộng đồng sinh viên!</p>
+
+                    <h5 class="text-muted">
+                        Không tìm thấy tài liệu phù hợp
+                    </h5>
+
+                    <p class="text-muted small mb-0">
+                        Vui lòng thử từ khóa hoặc bộ lọc khác.
+                    </p>
+
                 </div>
             </div>
         }
+
         @foreach (var m in Model.Materials)
         {
             <div class="col-md-6 col-lg-4">
+
                 <div class="card h-100 p-3 d-flex flex-column justify-content-between">
+
                     <div>
                         <div class="d-flex gap-2 mb-2">
-                            <span class="badge status-neutral mono">@m.SubjectCode</span>
-                            <span class="badge status-neutral">@m.CategoryName</span>
+
+                            <span class="badge bg-light text-dark border">
+                                @m.SubjectCode
+                            </span>
+
+                            <span class="badge bg-light text-dark border">
+                                @m.CategoryName
+                            </span>
+
                         </div>
-                        <h5 class="mb-2 text-truncate" style="font-weight: 700; color: var(--text-heading);" title="@m.Title">
+
+                        <h5 class="mb-2 text-truncate fw-bold"
+                            title="@m.Title">
                             @m.Title
                         </h5>
-                        <p class="text-muted small mb-3" style="line-height: 1.4;">
+
+                        <p class="text-muted small mb-3">
                             @m.Description
                         </p>
                     </div>
 
                     <div>
-                        <div class="d-flex justify-content-between align-items-center mb-3 pt-2 border-top text-muted small" style="border-color: var(--border-subtle) !important;">
-                            <span class="mono" style="font-weight: 600; color: var(--intent-alert-base);">
+
+                        <div class="d-flex justify-content-between align-items-center mb-3 pt-2 border-top text-muted small">
+
+                            <span>
                                 ★ @m.AverageRating.ToString("F1") / 5.0
                             </span>
-                            <span class="mono" style="font-weight: 500;">
+
+                            <span>
                                 @m.DownloadCount lượt tải
                             </span>
+
                         </div>
-                        <button type="button" class="btn btn-secondary w-100 btn-sm">
-                            Xem Chi Tiết & Tải Về
-                        </button>
+
+                       <a asp-page="/StudyHub/Details"
+   asp-route-id="@m.Id"
+   class="btn btn-secondary w-100 btn-sm">
+    Xem Chi Tiết & Tải Về
+</a>
+
                     </div>
+
                 </div>
+
             </div>
         }
+
     </div>
+
 </div>
