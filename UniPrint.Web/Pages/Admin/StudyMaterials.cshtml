@@ -1,0 +1,135 @@
+﻿
+@page
+@model UniPrint.Web.Pages.Admin.StudyMaterialsModel
+
+@{
+    ViewData["Title"] = "Duyệt tài liệu Study Hub";
+}
+
+<div class="container mt-4">
+
+    <h3 class="fw-bold">
+        Quản lý tài liệu Study Hub
+    </h3>
+
+    <p class="text-muted">
+        Duyệt hoặc từ chối tài liệu do sinh viên đăng tải.
+    </p>
+
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success">
+            @Model.SuccessMessage
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger">
+            @Model.ErrorMessage
+        </div>
+    }
+
+    <div class="card shadow-sm">
+
+        <div class="card-header bg-white fw-bold
+                    d-flex justify-content-between">
+            <span>Danh sách tài liệu chờ duyệt</span>
+
+            <span class="badge bg-warning text-dark">
+                @Model.PendingMaterials.Count tài liệu
+            </span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+
+                <thead>
+                    <tr>
+                        <th>Tên tài liệu</th>
+                        <th>Môn học</th>
+                        <th>Danh mục</th>
+                        <th>Người đăng</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    @if (Model.PendingMaterials.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="6"
+                                class="text-center text-muted py-4">
+                                Không có tài liệu nào đang chờ duyệt.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var m in Model.PendingMaterials)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@m.Title</strong>
+
+                                    <div class="small text-muted">
+                                        @m.Description
+                                    </div>
+                                </td>
+
+                                <td>@m.SubjectCode</td>
+
+                                <td>@m.CategoryName</td>
+
+                                <td>@m.UploaderName</td>
+
+                                <td>
+                                    <span class="badge bg-warning text-dark">
+                                        Pending
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <div class="d-flex gap-2">
+
+                                        <form method="post"
+                                              asp-page-handler="Approve">
+
+                                            <input type="hidden"
+                                                   name="id"
+                                                   value="@m.Id" />
+
+                                            <button type="submit"
+                                                    class="btn btn-success btn-sm"
+                                                    onclick="return confirm('Bạn có chắc muốn duyệt tài liệu này?')">
+                                                Duyệt
+                                            </button>
+                                        </form>
+
+                                        <form method="post"
+                                              asp-page-handler="Reject">
+
+                                            <input type="hidden"
+                                                   name="id"
+                                                   value="@m.Id" />
+
+                                            <button type="submit"
+                                                    class="btn btn-danger btn-sm"
+                                                    onclick="return confirm('Bạn có chắc muốn từ chối tài liệu này?')">
+                                                Từ chối
+                                            </button>
+                                        </form>
+
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
