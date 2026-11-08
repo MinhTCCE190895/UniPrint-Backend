@@ -12,6 +12,7 @@ public interface IShelfService
     Task<ApiResponse<List<ShelfResponseDto>>> GetAllShelvesAsync(CancellationToken ct = default);
     Task<ApiResponse<List<ShelfResponseDto>>> GetAvailableShelvesAsync(CancellationToken ct = default);
     Task<ApiResponse<ShelfDetailDto>> GetShelfByIdAsync(Guid shelfId, CancellationToken ct = default);
+    Task<ApiResponse<ShelfInventoryResponseDto>> GetShelfInventoryAsync(CancellationToken ct = default);
     Task<ApiResponse<ShelfResponseDto>> CreateShelfAsync(CreateShelfDto dto, CancellationToken ct = default);
     Task<ApiResponse<ShelfResponseDto>> UpdateShelfAsync(Guid shelfId, UpdateShelfDto dto, CancellationToken ct = default);
     Task<ApiResponse<bool>> DeleteShelfAsync(Guid shelfId, CancellationToken ct = default);
@@ -111,6 +112,77 @@ public class ShelfService : IShelfService
         };
 
         return ApiResponse<ShelfDetailDto>.Ok(detail);
+    }
+
+    public async Task<ApiResponse<ShelfInventoryResponseDto>> GetShelfInventoryAsync(CancellationToken ct = default)
+    {
+        var shelves = await _unitOfWork.Repository<Shelf>().Query()
+            .AsNoTracking()
+            .OrderBy(s => s.ShelfCode)
+            .ToListAsync(ct);
+
+        var activeOrders = await _unitOfWork.Repository<PrintOrder>().Query()
+            .AsNoTracking()
+            .Include(o => o.Student)
+            .Include(o => o.Document)
+            .Include(o => o.PrintOption)
+            .Include(o => o.Payment)
+            .Where(o => o.ShelfId != null && o.Status != PrintOrderStatus.Completed && o.Status != PrintOrderStatus.Cancelled)
+            .OrderBy(o => o.CreatedAt)
+            .ToListAsync(ct);
+
+        var ordersByShelf = activeOrders
+            .GroupBy(o => o.ShelfId!.Value)
+            .ToDictionary(g => g.Key, g => g.Select(o => new ShelfInventoryOrderDto
+            {
+                OrderId = o.Id,
+                OrderCode = o.OrderCode,
+                StudentName = o.Student != null ? o.Student.FullName : "N/A",
+                DocumentName = o.Document != null ? o.Document.FileName : "N/A",
+                NumberOfCopies = o.PrintOption != null ? o.PrintOption.NumberOfCopies : 1,
+                IsColor = o.PrintOption != null && o.PrintOption.IsColor,
+                IsDoubleSided = o.PrintOption != null && o.PrintOption.IsDoubleSided,
+                TotalPrice = o.PrintOption != null ? o.PrintOption.TotalPrice : 0,
+                Status = o.Status.ToString(),
+                IsPaid = o.Payment != null && o.Payment.Status == PaymentStatus.Paid,
+                CreatedAt = o.CreatedAt
+            }).ToList());
+
+        var items = shelves.Select(s => new ShelfInventoryItemDto
+        {
+            Id = s.Id,
+            ShelfCode = s.ShelfCode,
+            Location = s.Location,
+            MaxCapacity = s.MaxCapacity,
+            CurrentCount = s.CurrentCount,
+            CreatedAt = s.CreatedAt,
+            StoredOrders = ordersByShelf.TryGetValue(s.Id, out var list) ? list : new List<ShelfInventoryOrderDto>()
+        }).ToList();
+
+        var totalShelves = shelves.Count;
+        var totalCapacity = shelves.Sum(s => s.MaxCapacity);
+        var totalStoredOrders = shelves.Sum(s => s.CurrentCount);
+        var availableShelvesCount = shelves.Count(s => s.CurrentCount < s.MaxCapacity);
+        var fullShelvesCount = shelves.Count(s => s.CurrentCount >= s.MaxCapacity);
+        var overallOccupancyRate = totalCapacity > 0 ? Math.Round((double)totalStoredOrders / totalCapacity * 100, 1) : 0;
+
+        var summary = new ShelfInventorySummaryDto
+        {
+            TotalShelves = totalShelves,
+            TotalCapacity = totalCapacity,
+            TotalStoredOrders = totalStoredOrders,
+            AvailableShelvesCount = availableShelvesCount,
+            FullShelvesCount = fullShelvesCount,
+            OverallOccupancyRate = overallOccupancyRate
+        };
+
+        var response = new ShelfInventoryResponseDto
+        {
+            Summary = summary,
+            Shelves = items
+        };
+
+        return ApiResponse<ShelfInventoryResponseDto>.Ok(response);
     }
 
     public async Task<ApiResponse<ShelfResponseDto>> CreateShelfAsync(CreateShelfDto dto, CancellationToken ct = default)

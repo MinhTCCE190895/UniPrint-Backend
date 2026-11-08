@@ -31,6 +31,13 @@ public class ShelvesController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("inventory")]
+    public async Task<IActionResult> GetInventory(CancellationToken ct)
+    {
+        var result = await _shelfService.GetShelfInventoryAsync(ct);
+        return Ok(result);
+    }
+
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
     {
