@@ -1,28 +1,21 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using UniPrint.Business.Common;
 using UniPrint.Business.DTOs;
-using UniPrint.Business.Services;
 using UniPrint.DataAccess.Enums;
+using UniPrint.Web.Services;
 
 namespace UniPrint.Web.Pages.Student;
 
 [Authorize(Roles = "Student")]
 public class CreateOrderModel : PageModel
 {
-    private readonly IPriceCalculatorService _priceCalculator;
-    private readonly IPrintOrderService _orderService;
-    private readonly IDocumentService _documentService;
+    private readonly WebApiClient _api;
 
-    public CreateOrderModel(
-        IPriceCalculatorService priceCalculator,
-        IPrintOrderService orderService,
-        IDocumentService documentService)
+    public CreateOrderModel(WebApiClient api)
     {
-        _priceCalculator = priceCalculator;
-        _orderService = orderService;
-        _documentService = documentService;
+        _api = api;
     }
 
     public List<DocumentResponseDto> MyDocuments { get; set; } = new();
@@ -67,15 +60,8 @@ public class CreateOrderModel : PageModel
 
     public async Task<IActionResult> OnGetAsync()
     {
-        var studentIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!Guid.TryParse(studentIdStr, out var studentId))
-        {
-            return RedirectToPage("/Auth/Login");
-        }
+        await LoadDocumentsAsync();
 
-        await LoadDocumentsAsync(studentId);
-
-        // Hỗ trợ truy cập trực tiếp: nếu không có documentId trên query string, tự động chọn tài liệu đầu tiên trong kho
         if (!DocumentId.HasValue && MyDocuments.Any())
         {
             DocumentId = MyDocuments.First().Id;
@@ -105,16 +91,10 @@ public class CreateOrderModel : PageModel
 
     public async Task<IActionResult> OnGetCalculatePriceAsync(Guid documentId, int copies, bool isColor, bool isDoubleSided, bool hasBinding, bool hasStaple)
     {
-        var studentIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!Guid.TryParse(studentIdStr, out var studentId))
-        {
-            return Unauthorized();
-        }
+        var docRes = await _api.GetAsync<ApiResponse<DocumentResponseDto>>($"api/documents/{documentId}");
+        int pageCount = docRes != null && docRes.Success && docRes.Data != null ? docRes.Data.PageCount : 1;
 
-        var docResult = await _documentService.GetDocumentByIdAsync(documentId, studentId);
-        int pageCount = docResult.Success && docResult.Data != null ? docResult.Data.PageCount : 1;
-
-        var priceResult = await _priceCalculator.CalculatePriceAsync(new CalculatePriceRequestDto
+        var priceResult = await _api.PostAsync<ApiResponse<PriceCalculationResultDto>>("api/price/calculate", new CalculatePriceRequestDto
         {
             PageCount = pageCount,
             NumberOfCopies = copies > 0 ? copies : 1,
@@ -129,13 +109,7 @@ public class CreateOrderModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
-        var studentIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!Guid.TryParse(studentIdStr, out var studentId))
-        {
-            return RedirectToPage("/Auth/Login");
-        }
-
-        await LoadDocumentsAsync(studentId);
+        await LoadDocumentsAsync();
 
         if (!DocumentId.HasValue || DocumentId.Value == Guid.Empty)
         {
@@ -169,10 +143,10 @@ public class CreateOrderModel : PageModel
             Notes = Notes
         };
 
-        var result = await _orderService.CreateOrderAsync(studentId, request);
-        if (!result.Success || result.Data == null)
+        var result = await _api.PostAsync<ApiResponse<PrintOrderResponseDto>>("api/printorders", request);
+        if (result == null || !result.Success || result.Data == null)
         {
-            ErrorMessage = result.Message ?? "Tạo đơn đặt in thất bại.";
+            ErrorMessage = result?.Message ?? "Tạo đơn đặt in thất bại.";
             await CalculatePriceAsync();
             return Page();
         }
@@ -182,10 +156,10 @@ public class CreateOrderModel : PageModel
         return Page();
     }
 
-    private async Task LoadDocumentsAsync(Guid studentId)
+    private async Task LoadDocumentsAsync()
     {
-        var docsResult = await _documentService.GetMyDocumentsAsync(studentId);
-        if (docsResult.Success && docsResult.Data != null)
+        var docsResult = await _api.GetAsync<ApiResponse<List<DocumentResponseDto>>>("api/documents/my-documents");
+        if (docsResult != null && docsResult.Success && docsResult.Data != null)
         {
             MyDocuments = docsResult.Data;
         }
@@ -195,7 +169,7 @@ public class CreateOrderModel : PageModel
     {
         if (PageCount > 0)
         {
-            var priceResult = await _priceCalculator.CalculatePriceAsync(new CalculatePriceRequestDto
+            var priceResult = await _api.PostAsync<ApiResponse<PriceCalculationResultDto>>("api/price/calculate", new CalculatePriceRequestDto
             {
                 PageCount = PageCount,
                 NumberOfCopies = NumberOfCopies > 0 ? NumberOfCopies : 1,
@@ -205,7 +179,7 @@ public class CreateOrderModel : PageModel
                 HasStaple = HasStaple
             });
 
-            if (priceResult.Success)
+            if (priceResult != null && priceResult.Success)
             {
                 EstimatedPrice = priceResult.Data;
             }

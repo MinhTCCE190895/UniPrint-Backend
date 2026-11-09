@@ -2,23 +2,24 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using UniPrint.Business.Common;
 using UniPrint.Business.DTOs;
-using UniPrint.Business.Services;
 using UniPrint.DataAccess.Enums;
+using UniPrint.Web.Services;
 
 namespace UniPrint.Web.Pages.Admin;
 
 /// <summary>
-/// Task 5: Admin quản lý người dùng - Xem danh sách, tìm kiếm, phân quyền Role, khóa/mở khóa tài khoản.
+/// Task 5: Admin quản lý người dùng - Xem danh sách, tìm kiếm, phân quyền Role, khóa/mở khóa tài khoản qua REST API.
 /// </summary>
 [Authorize(Roles = "Admin")]
 public class UsersModel : PageModel
 {
-    private readonly IUserService _userService;
+    private readonly WebApiClient _api;
 
-    public UsersModel(IUserService userService)
+    public UsersModel(WebApiClient api)
     {
-        _userService = userService;
+        _api = api;
     }
 
     [BindProperty(SupportsGet = true)]
@@ -54,27 +55,38 @@ public class UsersModel : PageModel
             CurrentAdminId = adminId;
         }
 
-        var result = await _userService.GetUsersAsync(SearchTerm, RoleFilter, StatusFilter);
-        Users = result.Data ?? new List<UserDto>();
+        var url = "api/users";
+        var queryParams = new List<string>();
+        if (!string.IsNullOrWhiteSpace(SearchTerm))
+            queryParams.Add($"search={Uri.EscapeDataString(SearchTerm)}");
+        if (RoleFilter.HasValue)
+            queryParams.Add($"role={RoleFilter.Value}");
+        if (StatusFilter.HasValue)
+            queryParams.Add($"isActive={StatusFilter.Value.ToString().ToLower()}");
+
+        if (queryParams.Any())
+            url += "?" + string.Join("&", queryParams);
+
+        var result = await _api.GetAsync<ApiResponse<List<UserDto>>>(url);
+        Users = result?.Data ?? new List<UserDto>();
 
         return Page();
     }
 
     public async Task<IActionResult> OnPostUpdateRoleAsync(Guid userId, UserRole newRole)
     {
-        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var adminId))
+        var result = await _api.PutAsync<ApiResponse<UserDto>>($"api/users/{userId}/role", new UpdateUserRoleDto
         {
-            return Challenge();
-        }
+            Role = newRole
+        });
 
-        var result = await _userService.UpdateUserRoleAsync(adminId, userId, new UpdateUserRoleDto { Role = newRole });
-        if (result.Success)
+        if (result != null && result.Success)
         {
             SuccessMessage = result.Message;
         }
         else
         {
-            ErrorMessage = result.Message;
+            ErrorMessage = result?.Message ?? "Cập nhật quyền thất bại.";
         }
 
         return RedirectToPage(new { SearchTerm, RoleFilter, StatusFilter });
@@ -82,22 +94,20 @@ public class UsersModel : PageModel
 
     public async Task<IActionResult> OnPostToggleStatusAsync(Guid userId, bool? isActive = null)
     {
-        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var adminId))
+        var result = await _api.PutAsync<ApiResponse<UserDto>>($"api/users/{userId}/status", new ToggleUserStatusDto
         {
-            return Challenge();
-        }
+            IsActive = isActive
+        });
 
-        var result = await _userService.ToggleUserStatusAsync(adminId, userId, new ToggleUserStatusDto { IsActive = isActive });
-        if (result.Success)
+        if (result != null && result.Success)
         {
             SuccessMessage = result.Message;
         }
         else
         {
-            ErrorMessage = result.Message;
+            ErrorMessage = result?.Message ?? "Cập nhật trạng thái thất bại.";
         }
 
         return RedirectToPage(new { SearchTerm, RoleFilter, StatusFilter });
     }
 }
-

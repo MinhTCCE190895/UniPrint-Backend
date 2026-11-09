@@ -1,23 +1,23 @@
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using UniPrint.Business.Common;
 using UniPrint.Business.DTOs;
-using UniPrint.Business.Services;
+using UniPrint.Web.Services;
 
 namespace UniPrint.Web.Pages.Admin;
 
-/// <summary>Task 20: Admin cập nhật bảng giá in ấn hệ thống.</summary>
+/// <summary>Task 20: Admin cập nhật bảng giá in ấn hệ thống qua REST API.</summary>
 [Authorize(Roles = "Admin")]
 public class PriceConfigModel : PageModel
 {
-    private readonly IPriceConfigService _priceConfigService;
+    private readonly WebApiClient _api;
 
-    public PriceConfigModel(IPriceConfigService priceConfigService)
+    public PriceConfigModel(WebApiClient api)
     {
-        _priceConfigService = priceConfigService;
+        _api = api;
     }
 
     [BindProperty]
@@ -49,38 +49,39 @@ public class PriceConfigModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
-        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var adminId))
-            return Challenge();
-
-        // Ô number gửi dấu chấm thập phân; parse bằng InvariantCulture để không phụ thuộc culture vi-VN của máy chủ.
-        var parsed = new[]
+        var fields = new[]
         {
-            (Input.PricePerBWPage, "Giá in đen trắng"),
-            (Input.PricePerColorPage, "Giá in màu"),
-            (Input.DoubleSidedDiscountPercent, "Chiết khấu in 2 mặt"),
-            (Input.BindingPrice, "Phí đóng gáy"),
-            (Input.StaplePrice, "Phí bấm ghim")
-        }.Select(f => (Value: TryParse(f.Item1), Label: f.Item2)).ToList();
+            (Name: "Giá in đen trắng", Value: TryParse(Input.PricePerBWPage)),
+            (Name: "Giá in màu", Value: TryParse(Input.PricePerColorPage)),
+            (Name: "Chiết khấu in 2 mặt", Value: TryParse(Input.DoubleSidedDiscountPercent)),
+            (Name: "Phí đóng gáy", Value: TryParse(Input.BindingPrice)),
+            (Name: "Phí bấm ghim", Value: TryParse(Input.StaplePrice))
+        };
 
-        Errors = parsed.Where(p => p.Value == null).Select(p => $"{p.Label} không phải là số hợp lệ.").ToList();
+        foreach (var f in fields)
+        {
+            if (f.Value == null)
+                Errors.Add($"{f.Name} không hợp lệ (phải là số).");
+        }
+
         if (Errors.Count > 0)
         {
             await LoadAsync();
             return Page();
         }
 
-        var result = await _priceConfigService.UpdatePriceConfigAsync(adminId, new UpdatePriceConfigDto
+        var result = await _api.PutAsync<ApiResponse<PriceConfigDto>>("api/price/config", new UpdatePriceConfigDto
         {
-            PricePerBWPage = parsed[0].Value!.Value,
-            PricePerColorPage = parsed[1].Value!.Value,
-            DoubleSidedDiscountPercent = parsed[2].Value!.Value,
-            BindingPrice = parsed[3].Value!.Value,
-            StaplePrice = parsed[4].Value!.Value
+            PricePerBWPage = fields[0].Value!.Value,
+            PricePerColorPage = fields[1].Value!.Value,
+            DoubleSidedDiscountPercent = fields[2].Value!.Value,
+            BindingPrice = fields[3].Value!.Value,
+            StaplePrice = fields[4].Value!.Value
         });
 
-        if (!result.Success)
+        if (result == null || !result.Success)
         {
-            Errors = result.Errors?.Count > 0 ? result.Errors : new List<string> { result.Message ?? "Cập nhật thất bại." };
+            Errors = result?.Errors?.Count > 0 ? result.Errors : new List<string> { result?.Message ?? "Cập nhật thất bại." };
             await LoadAsync();
             return Page();
         }
@@ -91,8 +92,11 @@ public class PriceConfigModel : PageModel
 
     private async Task LoadAsync()
     {
-        Current = (await _priceConfigService.GetActiveConfigAsync()).Data;
-        History = (await _priceConfigService.GetHistoryAsync(10)).Data ?? new();
+        var currentRes = await _api.GetAsync<ApiResponse<PriceConfigDto>>("api/price/config");
+        Current = currentRes?.Data;
+
+        var histRes = await _api.GetAsync<ApiResponse<List<PriceConfigDto>>>("api/price/config/history?count=10");
+        History = histRes?.Data ?? new();
     }
 
     private static string Format(decimal value) => value.ToString("0.##", CultureInfo.InvariantCulture);

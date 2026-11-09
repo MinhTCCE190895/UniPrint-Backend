@@ -1,26 +1,24 @@
-
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using UniPrint.Business.Common;
 using UniPrint.Business.DTOs;
-using UniPrint.Business.Services;
 using UniPrint.DataAccess.Enums;
+using UniPrint.Web.Services;
 
 namespace UniPrint.Web.Pages.Admin;
 
 [Authorize(Roles = "Admin")]
 public class StudyMaterialsModel : PageModel
 {
-    private readonly IStudyHubService _studyHubService;
+    private readonly WebApiClient _api;
 
-    public StudyMaterialsModel(
-        IStudyHubService studyHubService)
+    public StudyMaterialsModel(WebApiClient api)
     {
-        _studyHubService = studyHubService;
+        _api = api;
     }
 
-    public List<StudyMaterialDto> PendingMaterials
-    { get; set; } = new();
+    public List<StudyMaterialDto> PendingMaterials { get; set; } = new();
 
     [TempData]
     public string? SuccessMessage { get; set; }
@@ -32,43 +30,32 @@ public class StudyMaterialsModel : PageModel
     {
         try
         {
-            var result = await _studyHubService
-                .GetPendingMaterialsForAdminAsync();
-
-            if (!result.Success)
+            var result = await _api.GetAsync<ApiResponse<List<StudyMaterialDto>>>("api/studyhub/admin/pending-materials");
+            if (result == null || !result.Success)
             {
-                ErrorMessage = result.Message
-                    ?? "Không thể tải danh sách tài liệu.";
+                ErrorMessage = result?.Message ?? "Không thể tải danh sách tài liệu.";
                 return;
             }
 
-            PendingMaterials = result.Data?.ToList()
-                ?? new List<StudyMaterialDto>();
+            PendingMaterials = result.Data ?? new List<StudyMaterialDto>();
         }
         catch (Exception)
         {
-            ErrorMessage =
-                "Có lỗi khi tải tài liệu chờ duyệt.";
+            ErrorMessage = "Có lỗi khi tải tài liệu chờ duyệt.";
         }
     }
 
-    public async Task<IActionResult> OnPostApproveAsync(
-        Guid id)
+    public async Task<IActionResult> OnPostApproveAsync(Guid id)
     {
-        return await ModerateAsync(
-            id, MaterialStatus.Approved);
+        return await ModerateAsync(id, MaterialStatus.Approved);
     }
 
-    public async Task<IActionResult> OnPostRejectAsync(
-        Guid id)
+    public async Task<IActionResult> OnPostRejectAsync(Guid id)
     {
-        return await ModerateAsync(
-            id, MaterialStatus.Rejected);
+        return await ModerateAsync(id, MaterialStatus.Rejected);
     }
 
-    private async Task<IActionResult> ModerateAsync(
-        Guid id,
-        MaterialStatus status)
+    private async Task<IActionResult> ModerateAsync(Guid id, MaterialStatus status)
     {
         if (id == Guid.Empty)
         {
@@ -78,26 +65,25 @@ public class StudyMaterialsModel : PageModel
 
         try
         {
-            var result = await _studyHubService
-                .ModerateMaterialAsync(id, status);
-
-            if (!result.Success)
+            var result = await _api.PatchAsync<ApiResponse<bool>>($"api/studyhub/admin/materials/{id}/moderate", new ModerateMaterialDto
             {
-                ErrorMessage = result.Message
-                    ?? "Không thể cập nhật trạng thái.";
+                NewStatus = status
+            });
+
+            if (result == null || !result.Success)
+            {
+                ErrorMessage = result?.Message ?? "Không thể cập nhật trạng thái.";
             }
             else
             {
-                SuccessMessage =
-                    status == MaterialStatus.Approved
+                SuccessMessage = status == MaterialStatus.Approved
                     ? "Duyệt tài liệu thành công!"
                     : "Từ chối tài liệu thành công!";
             }
         }
         catch (Exception)
         {
-            ErrorMessage =
-                "Có lỗi xảy ra khi duyệt tài liệu.";
+            ErrorMessage = "Có lỗi xảy ra khi duyệt tài liệu.";
         }
 
         return RedirectToPage();

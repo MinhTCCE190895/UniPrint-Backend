@@ -1,17 +1,20 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using UniPrint.Business.Common;
 using UniPrint.Business.DTOs;
-using UniPrint.Business.Services;
+using UniPrint.Web.Services;
 
 namespace UniPrint.Web.Pages.Staff;
 
+[Authorize(Roles = "Staff,Admin")]
 public class ShelvesModel : PageModel
 {
-    private readonly IShelfService _shelfService;
+    private readonly WebApiClient _api;
 
-    public ShelvesModel(IShelfService shelfService)
+    public ShelvesModel(WebApiClient api)
     {
-        _shelfService = shelfService;
+        _api = api;
     }
 
     public ShelfInventoryResponseDto Inventory { get; set; } = new();
@@ -35,8 +38,8 @@ public class ShelvesModel : PageModel
 
     public async Task OnGetAsync()
     {
-        var response = await _shelfService.GetShelfInventoryAsync();
-        Inventory = response.Data ?? new ShelfInventoryResponseDto();
+        var response = await _api.GetAsync<ApiResponse<ShelfInventoryResponseDto>>("api/shelves/inventory");
+        Inventory = response?.Data ?? new ShelfInventoryResponseDto();
     }
 
     public async Task<IActionResult> OnPostCreateAsync()
@@ -47,10 +50,10 @@ public class ShelvesModel : PageModel
             return RedirectToPage();
         }
 
-        var result = await _shelfService.CreateShelfAsync(CreateInput);
-        if (!result.Success)
+        var result = await _api.PostAsync<ApiResponse<ShelfResponseDto>>("api/shelves", CreateInput);
+        if (result == null || !result.Success)
         {
-            ErrorMessage = result.Message;
+            ErrorMessage = result?.Message ?? "Tạo kệ thất bại.";
         }
         else
         {
@@ -68,10 +71,10 @@ public class ShelvesModel : PageModel
             return RedirectToPage();
         }
 
-        var result = await _shelfService.UpdateShelfAsync(EditShelfId, UpdateInput);
-        if (!result.Success)
+        var result = await _api.PutAsync<ApiResponse<ShelfResponseDto>>($"api/shelves/{EditShelfId}", UpdateInput);
+        if (result == null || !result.Success)
         {
-            ErrorMessage = result.Message;
+            ErrorMessage = result?.Message ?? "Cập nhật kệ thất bại.";
         }
         else
         {
@@ -89,10 +92,10 @@ public class ShelvesModel : PageModel
             return RedirectToPage();
         }
 
-        var result = await _shelfService.DeleteShelfAsync(id);
-        if (!result.Success)
+        var result = await _api.DeleteAsync<ApiResponse<bool>>($"api/shelves/{id}");
+        if (result == null || !result.Success)
         {
-            ErrorMessage = result.Message;
+            ErrorMessage = result?.Message ?? "Xóa kệ thất bại.";
         }
         else
         {

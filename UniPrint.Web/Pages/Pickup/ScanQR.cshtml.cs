@@ -1,19 +1,20 @@
-using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.Authorization;
-using UniPrint.Business.Services;
+using UniPrint.Business.Common;
+using UniPrint.Business.DTOs;
+using UniPrint.Web.Services;
 
 namespace UniPrint.Web.Pages.Pickup;
 
 [Authorize(Roles = "Staff,Admin")]
 public class ScanQRModel : PageModel
 {
-    private readonly IPrintOrderService _orderService;
+    private readonly WebApiClient _api;
 
-    public ScanQRModel(IPrintOrderService orderService)
+    public ScanQRModel(WebApiClient api)
     {
-        _orderService = orderService;
+        _api = api;
     }
 
     [BindProperty]
@@ -28,12 +29,17 @@ public class ScanQRModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
-        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var staffId))
-            return Challenge();
-        var result = await _orderService.ScanPickupQrAsync(QrToken.Trim(), staffId);
+        if (string.IsNullOrWhiteSpace(QrToken))
+        {
+            IsSuccess = false;
+            Message = "Vui lòng nhập hoặc quét mã QR.";
+            return Page();
+        }
 
-        IsSuccess = result.Success;
-        Message = result.Message;
+        var result = await _api.PostAsync<ApiResponse<PrintOrderResponseDto>>($"api/printorders/scan-pickup-qr?qrToken={Uri.EscapeDataString(QrToken.Trim())}");
+
+        IsSuccess = result != null && result.Success;
+        Message = result?.Message ?? "Quét mã QR thất bại.";
 
         return Page();
     }

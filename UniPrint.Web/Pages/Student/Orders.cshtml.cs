@@ -1,21 +1,21 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using UniPrint.Business.Common;
 using UniPrint.Business.DTOs;
-using UniPrint.Business.Services;
 using UniPrint.DataAccess.Enums;
+using UniPrint.Web.Services;
 
 namespace UniPrint.Web.Pages.Student;
 
 [Authorize(Roles = "Student")]
 public class OrdersModel : PageModel
 {
-    private readonly IPrintOrderService _orderService;
+    private readonly WebApiClient _api;
 
-    public OrdersModel(IPrintOrderService orderService)
+    public OrdersModel(WebApiClient api)
     {
-        _orderService = orderService;
+        _api = api;
     }
 
     public List<PrintOrderResponseDto> Orders { get; set; } = new();
@@ -38,14 +38,8 @@ public class OrdersModel : PageModel
 
     public async Task<IActionResult> OnGetAsync()
     {
-        var studentIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!Guid.TryParse(studentIdStr, out var studentId))
-        {
-            return RedirectToPage("/Auth/Login");
-        }
-
-        var result = await _orderService.GetStudentOrdersAsync(studentId);
-        if (result.Success && result.Data != null)
+        var result = await _api.GetAsync<ApiResponse<List<PrintOrderResponseDto>>>("api/printorders/my-orders");
+        if (result != null && result.Success && result.Data != null)
         {
             var allOrders = result.Data;
             TotalOrdersCount = allOrders.Count;
@@ -71,20 +65,14 @@ public class OrdersModel : PageModel
 
     public async Task<IActionResult> OnPostCancelAsync(Guid orderId)
     {
-        var studentIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!Guid.TryParse(studentIdStr, out var studentId))
-        {
-            return RedirectToPage("/Auth/Login");
-        }
-
-        var result = await _orderService.CancelOrderAsync(orderId, studentId);
-        if (result.Success)
+        var result = await _api.PostAsync<ApiResponse<bool>>($"api/printorders/{orderId}/cancel");
+        if (result != null && result.Success)
         {
             SuccessMessage = "Đã hủy đơn hàng thành công.";
         }
         else
         {
-            ErrorMessage = result.Message ?? "Không thể hủy đơn hàng.";
+            ErrorMessage = result?.Message ?? "Không thể hủy đơn hàng.";
         }
 
         return RedirectToPage(new { StatusFilter });
