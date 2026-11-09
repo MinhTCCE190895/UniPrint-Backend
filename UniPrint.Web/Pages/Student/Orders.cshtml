@@ -275,12 +275,16 @@
 
                                         @if (order.Status < PrintOrderStatus.Printing && !isCancelled && order.PaymentStatus != PaymentStatus.Paid)
                                         {
-                                            <form method="post" asp-page-handler="Cancel" onsubmit="return confirm('Bạn có chắc chắn muốn hủy đơn hàng @order.OrderCode không?');" class="d-inline m-0">
-                                                <input type="hidden" name="orderId" value="@order.Id" />
-                                                <button type="submit" class="btn btn-danger btn-sm" title="Hủy đơn hàng này">
-                                                    Hủy
-                                                </button>
-                                            </form>
+                                            <button type="button" 
+                                                    class="btn btn-danger btn-sm" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#cancelConfirmModal"
+                                                    data-orderid="@order.Id"
+                                                    data-ordercode="@order.OrderCode"
+                                                    data-docname="@order.DocumentName"
+                                                    title="Hủy đơn hàng này">
+                                                Hủy
+                                            </button>
                                         }
                                     </div>
                                 </td>
@@ -373,6 +377,60 @@
     </div>
 </div>
 
+<!-- Modal Xác Nhận Hủy Đơn Hàng -->
+<div class="modal fade" id="cancelConfirmModal" tabindex="-1" aria-labelledby="cancelConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: var(--radius-lg); border: 1px solid var(--border-card); overflow: hidden; box-shadow: var(--shadow-md);">
+            <div class="modal-header py-3" style="background-color: var(--surface-subtle); border-bottom: 1px solid var(--border-subtle);">
+                <div class="d-flex align-items-center gap-2">
+                    <svg class="icon-duotone icon-sm text-danger" viewBox="0 0 24 24">
+                        <circle class="bg-shape" cx="12" cy="12" r="9" />
+                        <path class="stroke-shape" d="M12 8v4m0 4h.01" />
+                    </svg>
+                    <h5 class="modal-title mb-0" id="cancelConfirmModalLabel" style="font-weight: 700; font-size: 16px; color: var(--text-heading);">Xác Nhận Hủy Đơn Hàng</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="Cancel">
+                <input type="hidden" name="orderId" id="cancelModalOrderId" value="" />
+                <div class="modal-body p-4">
+                    <p class="mb-3" style="font-size: 14px; color: var(--text-heading);">
+                        Bạn có chắc chắn muốn hủy đơn hàng này không? Sau khi xác nhận hủy, đơn in sẽ bị chấm dứt và không thể khôi phục lại.
+                    </p>
+
+                    <div class="tonal-panel p-3 mb-3" style="font-size: 13px; background-color: var(--surface-subtle); border: 1px solid var(--border-card); border-radius: var(--radius-md);">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Mã đơn hàng:</span>
+                            <strong class="mono" id="cancelModalOrderCode" style="color: var(--intent-action-base);">-</strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Tài liệu:</span>
+                            <strong id="cancelModalDocName" class="text-truncate ps-2" style="max-width: 250px;">-</strong>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning py-2 mb-0 d-flex align-items-start gap-2 text-start" style="font-size: 12px;">
+                        <svg class="icon-duotone icon-sm flex-shrink-0 mt-1" viewBox="0 0 24 24">
+                            <path class="bg-shape" d="M12 2L2 22h20L12 2z"/>
+                            <path class="stroke-shape" d="M12 9v4m0 4h.01"/>
+                        </svg>
+                        <span><strong>Lưu ý (BR02):</strong> Chỉ cho phép hủy khi nhân viên chưa bắt đầu in (trước trạng thái Đang In Ấn) và đơn chưa được thanh toán thành công.</span>
+                    </div>
+                </div>
+                <div class="modal-footer py-2" style="background-color: var(--surface-subtle); border-top: 1px solid var(--border-subtle);">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Không, giữ lại</button>
+                    <button type="submit" class="btn btn-danger btn-sm">
+                        <svg class="icon-duotone icon-sm me-1" viewBox="0 0 24 24">
+                            <path class="stroke-shape" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                        Xác Nhận Hủy Đơn
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -399,6 +457,22 @@
                     if (qrImg && qrToken) {
                         qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(qrToken)}`;
                     }
+                });
+            }
+
+            const cancelModal = document.getElementById('cancelConfirmModal');
+            if (cancelModal) {
+                cancelModal.addEventListener('show.bs.modal', function (event) {
+                    const button = event.relatedTarget;
+                    if (!button) return;
+
+                    const orderId = button.getAttribute('data-orderid') || '';
+                    const orderCode = button.getAttribute('data-ordercode') || '';
+                    const docName = button.getAttribute('data-docname') || '';
+
+                    document.getElementById('cancelModalOrderId').value = orderId;
+                    document.getElementById('cancelModalOrderCode').innerText = orderCode;
+                    document.getElementById('cancelModalDocName').innerText = docName;
                 });
             }
 
