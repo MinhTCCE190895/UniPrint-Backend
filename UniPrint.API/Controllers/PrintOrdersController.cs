@@ -119,11 +119,12 @@ public class PrintOrdersController : ControllerBase
     }
 
     [HttpPost("{id}/cancel")]
-    [Authorize(Roles = "Student")]
+    [Authorize]
     public async Task<IActionResult> CancelOrder(Guid id)
     {
-        var studentId = GetCurrentUserId();
-        var result = await _orderService.CancelOrderAsync(id, studentId);
+        var currentUserId = GetCurrentUserId();
+        var isStaffOrAdmin = User.IsInRole("Staff") || User.IsInRole("Admin");
+        var result = await _orderService.CancelOrderAsync(id, currentUserId, isStaffOrAdmin);
         if (!result.Success) return BadRequest(result);
         return Ok(result);
     }
