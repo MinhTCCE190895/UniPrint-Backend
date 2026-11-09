@@ -218,6 +218,7 @@ public class StudyHubService : IStudyHubService
             DocumentId = request.DocumentId,
             SubjectId = request.SubjectId,
             CategoryId = request.CategoryId,
+            UploadedByStudentId = studentId,
             Status = MaterialStatus.Pending,
             DownloadCount = 0,
             PrintCount = 0,
