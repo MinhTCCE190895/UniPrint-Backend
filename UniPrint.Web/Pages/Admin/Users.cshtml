@@ -1,0 +1,249 @@
+@page
+@model UniPrint.Web.Pages.Admin.UsersModel
+@using UniPrint.DataAccess.Enums
+@{
+    ViewData["Title"] = "Quản Lý Người Dùng";
+    string Local(DateTime utc) => DateTime.SpecifyKind(utc, DateTimeKind.Utc).ToLocalTime().ToString("HH:mm dd/MM/yyyy");
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h3 class="fw-bold mb-1">👥 Quản Lý Người Dùng (Admin)</h3>
+        <p class="text-muted small mb-0">Xem danh sách người dùng toàn hệ thống, phân quyền Role và khóa/mở khóa tài khoản.</p>
+    </div>
+    <span class="badge badge-info px-3 py-2 fs-6">Tổng: @Model.TotalUsers người dùng</span>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.SuccessMessage))
+{
+    <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> @Model.SuccessMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> @Model.ErrorMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- Thống kê tổng quan -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3 h-100 bg-white">
+            <div class="text-muted small fw-semibold">Sinh Viên</div>
+            <div class="fs-4 fw-bold" style="color: var(--intent-action-base);">@Model.StudentCount</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3 h-100 bg-white">
+            <div class="text-muted small fw-semibold">Nhân Viên (Staff)</div>
+            <div class="fs-4 fw-bold" style="color: var(--intent-alert-base);">@Model.StaffCount</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3 h-100 bg-white">
+            <div class="text-muted small fw-semibold">Quản Trị Viên (Admin)</div>
+            <div class="fs-4 fw-bold" style="color: var(--intent-danger-base);">@Model.AdminCount</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3 h-100 bg-white">
+            <div class="text-muted small fw-semibold">Tài Khoản Đã Khóa</div>
+            <div class="fs-4 fw-bold" style="color: var(--text-muted);">@Model.LockedCount</div>
+        </div>
+    </div>
+</div>
+
+<!-- Bộ lọc & Tìm kiếm -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-3">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0">🔍</span>
+                    <input type="text" name="SearchTerm" value="@Model.SearchTerm" class="form-control border-start-0" placeholder="Tìm theo họ tên, email hoặc SĐT..." />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select name="RoleFilter" class="form-select">
+                    <option value="">-- Tất cả vai trò --</option>
+                    <option value="@UserRole.Student" selected="@(Model.RoleFilter == UserRole.Student)">Sinh viên</option>
+                    <option value="@UserRole.Staff" selected="@(Model.RoleFilter == UserRole.Staff)">Nhân viên (Staff)</option>
+                    <option value="@UserRole.Admin" selected="@(Model.RoleFilter == UserRole.Admin)">Quản trị viên (Admin)</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="StatusFilter" class="form-select">
+                    <option value="">-- Tất cả trạng thái --</option>
+                    <option value="true" selected="@(Model.StatusFilter == true)">Đang hoạt động</option>
+                    <option value="false" selected="@(Model.StatusFilter == false)">Đã khóa</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary flex-fill">Lọc</button>
+                <a asp-page="/Admin/Users" class="btn btn-outline-secondary" title="Đặt lại bộ lọc">Xóa</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Bảng danh sách người dùng -->
+<div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th scope="col" style="min-width: 220px;">Người Dùng</th>
+                    <th scope="col">Số Điện Thoại</th>
+                    <th scope="col">Vai Trò (Role)</th>
+                    <th scope="col">Trạng Thái</th>
+                    <th scope="col">Ngày Tham Gia</th>
+                    <th scope="col" class="text-end" style="min-width: 200px;">Thao Tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Users.Count == 0)
+                {
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <div class="fs-1 mb-2">📭</div>
+                            <div>Không tìm thấy người dùng nào phù hợp với bộ lọc.</div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var user in Model.Users)
+                    {
+                        var isSelf = user.Id == Model.CurrentAdminId;
+                        <tr class="@(!user.IsActive ? "table-light opacity-75" : "")">
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold me-2 shadow-sm"
+                                         style="width: 40px; height: 40px; background-color: @(user.Role == UserRole.Admin ? "var(--intent-danger-base)" : user.Role == UserRole.Staff ? "var(--intent-alert-base)" : "var(--intent-action-base)");">
+                                        @(string.IsNullOrEmpty(user.FullName) ? "U" : user.FullName.Substring(0, 1).ToUpper())
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold text-dark">
+                                            @user.FullName
+                                            @if (isSelf)
+                                            {
+                                                <span class="badge badge-secondary ms-1" style="font-size: 0.7rem;">Bạn</span>
+                                            }
+                                        </div>
+                                        <div class="text-muted small">@user.Email</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                @(string.IsNullOrEmpty(user.PhoneNumber) ? "—" : user.PhoneNumber)
+                            </td>
+                            <td>
+                                @switch (user.Role)
+                                {
+                                    case UserRole.Admin:
+                                        <span class="badge badge-danger">Quản trị viên</span>
+                                        break;
+                                    case UserRole.Staff:
+                                        <span class="badge badge-warning">Nhân viên</span>
+                                        break;
+                                    default:
+                                        <span class="badge badge-info">Sinh viên</span>
+                                        break;
+                                }
+                            </td>
+                            <td>
+                                @if (user.IsActive)
+                                {
+                                    <span class="badge badge-success">
+                                        <i class="bi bi-check-circle me-1"></i> Hoạt động
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-secondary">
+                                        <i class="bi bi-lock me-1"></i> Đã khóa
+                                    </span>
+                                }
+                            </td>
+                            <td class="text-muted small">
+                                @Local(user.CreatedAt)
+                            </td>
+                            <td class="text-end">
+                                <div class="d-inline-flex gap-1">
+                                    <!-- Phân quyền Dropdown -->
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-primary dropdown-toggle @(isSelf ? "disabled" : "")"
+                                                type="button"
+                                                data-bs-toggle="dropdown"
+                                                aria-expanded="false"
+                                                title="@(isSelf ? "Không thể tự đổi quyền của chính mình" : "Thay đổi vai trò")">
+                                            Phân quyền
+                                        </button>
+                                        @if (!isSelf)
+                                        {
+                                            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                                <li><h6 class="dropdown-header">Chọn vai trò mới:</h6></li>
+                                                @foreach (UserRole r in Enum.GetValues(typeof(UserRole)))
+                                                {
+                                                    if (r != user.Role)
+                                                    {
+                                                        <li>
+                                                            <form method="post" asp-page-handler="UpdateRole">
+                                                                <input type="hidden" name="userId" value="@user.Id" />
+                                                                <input type="hidden" name="newRole" value="@r" />
+                                                                <button type="submit" class="dropdown-item py-2" onclick="return confirm('Bạn có chắc muốn đổi vai trò của @user.FullName sang @r?');">
+                                                                    Chuyển sang <strong>@r</strong>
+                                                                </button>
+                                                            </form>
+                                                        </li>
+                                                    }
+                                                }
+                                            </ul>
+                                        }
+                                    </div>
+
+                                    <!-- Khóa / Mở khóa button -->
+                                    @if (!isSelf)
+                                    {
+                                        <form method="post" asp-page-handler="ToggleStatus" class="d-inline">
+                                            <input type="hidden" name="userId" value="@user.Id" />
+                                            @if (user.IsActive)
+                                            {
+                                                <input type="hidden" name="isActive" value="false" />
+                                                <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                        title="Khóa tài khoản này"
+                                                        onclick="return confirm('Bạn có chắc muốn KHÓA tài khoản của @user.FullName? Người dùng này sẽ không thể đăng nhập.');">
+                                                    Khóa
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <input type="hidden" name="isActive" value="true" />
+                                                <button type="submit" class="btn btn-sm btn-outline-success"
+                                                        title="Mở khóa tài khoản này"
+                                                        onclick="return confirm('Bạn có chắc muốn MỞ KHÓA tài khoản của @user.FullName?');">
+                                                    Mở khóa
+                                                </button>
+                                            }
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn btn-sm btn-outline-secondary disabled" title="Không thể tự khóa tài khoản của bạn">
+                                            Khóa
+                                        </button>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
