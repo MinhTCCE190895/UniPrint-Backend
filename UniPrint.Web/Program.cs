@@ -27,6 +27,8 @@ builder.Services.AddSingleton(UniPrint.Business.Common.VietQrSettings.FromConfig
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IOrderTrackingService, OrderTrackingService>();
 builder.Services.AddScoped<IPriceConfigService, PriceConfigService>();
+// Task 5: Quản lý người dùng cho Admin
+builder.Services.AddScoped<IUserService, UserService>();
 
 // 3. Cookie Authentication for Razor Pages
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -41,12 +43,14 @@ builder.Services.AddRazorPages(options =>
 {
     options.Conventions.AuthorizeFolder("/Student", "StudentOnly");
     options.Conventions.AuthorizeFolder("/Staff", "StaffOnly");
+    options.Conventions.AuthorizeFolder("/Admin", "AdminOnly");
 });
 
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("StudentOnly", policy => policy.RequireRole("Student"));
     options.AddPolicy("StaffOnly", policy => policy.RequireRole("Staff", "Admin"));
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
 });
 
 var app = builder.Build();
