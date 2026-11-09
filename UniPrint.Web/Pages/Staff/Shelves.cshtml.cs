@@ -14,7 +14,9 @@ public class ShelvesModel : PageModel
         _shelfService = shelfService;
     }
 
-    public List<ShelfResponseDto> Shelves { get; set; } = new();
+    public ShelfInventoryResponseDto Inventory { get; set; } = new();
+    public List<ShelfInventoryItemDto> Shelves => Inventory.Shelves;
+    public ShelfInventorySummaryDto Summary => Inventory.Summary;
 
     [BindProperty]
     public CreateShelfDto CreateInput { get; set; } = new();
@@ -33,8 +35,8 @@ public class ShelvesModel : PageModel
 
     public async Task OnGetAsync()
     {
-        var response = await _shelfService.GetAllShelvesAsync();
-        Shelves = response.Data ?? new List<ShelfResponseDto>();
+        var response = await _shelfService.GetShelfInventoryAsync();
+        Inventory = response.Data ?? new ShelfInventoryResponseDto();
     }
 
     public async Task<IActionResult> OnPostCreateAsync()

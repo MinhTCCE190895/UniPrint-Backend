@@ -3,14 +3,13 @@
 @{
     ViewData["Title"] = "Quản Lý Kệ Lưu Trữ - Staff Station";
 
-    // [UI Presentation Only] Các biến đếm và tính toán tỷ lệ dưới đây CHỈ phục vụ hiển thị số liệu trực quan trên giao diện (Cards & Progress Bars).
-    // Tuyệt đối không can thiệp hay thay đổi logic nghiệp vụ trong UniPrint.Business / IShelfService.
-    var totalShelves = Model.Shelves.Count;
-    var availableShelves = Model.Shelves.Count(s => s.IsAvailable);
-    var fullShelves = Model.Shelves.Count(s => !s.IsAvailable);
-    var totalOrders = Model.Shelves.Sum(s => s.CurrentCount);
-    var totalCapacity = Model.Shelves.Sum(s => s.MaxCapacity);
-    var stationRate = totalCapacity > 0 ? Math.Round((double)totalOrders / totalCapacity * 100, 1) : 0;
+    // [UI Presentation Only] Các biến đếm và tính toán tỷ lệ dưới đây phục vụ hiển thị số liệu trực quan trên giao diện (Cards & Progress Bars).
+    var totalShelves = Model.Summary.TotalShelves;
+    var availableShelves = Model.Summary.AvailableShelvesCount;
+    var fullShelves = Model.Summary.FullShelvesCount;
+    var totalOrders = Model.Summary.TotalStoredOrders;
+    var totalCapacity = Model.Summary.TotalCapacity;
+    var stationRate = Model.Summary.OverallOccupancyRate;
 }
 
 <div class="container mt-2">
@@ -120,8 +119,33 @@
                     Sơ Đồ Kệ Trạm In Vật Lý
                 </h5>
                 <span class="text-muted small">
-                    Hiển thị <strong>@totalShelves</strong> kệ đang hoạt động
+                    Hiển thị <strong id="shelfVisibleCount">@totalShelves</strong> / @totalShelves kệ
                 </span>
+            </div>
+
+            <!-- Shelf Filter & Quick Search Bar (For Scalable Stations with Many Shelves) -->
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 p-2 rounded-3" style="background-color: var(--surface-card); border: 1px solid var(--border-card);">
+                <div class="d-flex align-items-center gap-1.5 flex-wrap">
+                    <button type="button" class="btn btn-sm btn-subtle active shelf-filter-btn px-2.5 py-1" data-filter="all" onclick="filterShelves('all', this)">
+                        Tất cả (@totalShelves)
+                    </button>
+                    <button type="button" class="btn btn-sm btn-subtle shelf-filter-btn px-2.5 py-1" data-filter="available" onclick="filterShelves('available', this)">
+                        <span class="d-inline-block rounded-circle me-1" style="width: 6px; height: 6px; background-color: var(--intent-confirm-base);"></span>
+                        Còn chỗ (@availableShelves)
+                    </button>
+                    <button type="button" class="btn btn-sm btn-subtle shelf-filter-btn px-2.5 py-1" data-filter="full" onclick="filterShelves('full', this)">
+                        <span class="d-inline-block rounded-circle me-1" style="width: 6px; height: 6px; background-color: var(--intent-danger-base);"></span>
+                        Đã đầy tải (@fullShelves)
+                    </button>
+                </div>
+                <div style="min-width: 200px; max-width: 280px; flex: 1;">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-white border-end-0" style="border-color: var(--border-card);">
+                            <svg class="icon-duotone icon-sm text-muted" viewBox="0 0 24 24"><circle class="bg-shape" cx="11" cy="11" r="8"/><path class="stroke-shape" d="M21 21l-4.35-4.35"/></svg>
+                        </span>
+                        <input type="text" id="shelfSearchInput" class="form-control border-start-0 ps-1" placeholder="Tìm theo mã hoặc vị trí..." oninput="onSearchShelves(this.value)" style="border-color: var(--border-card);" />
+                    </div>
+                </div>
             </div>
 
             @if (Model.Shelves.Count == 0)
@@ -137,23 +161,38 @@
             }
             else
             {
-                <div class="d-flex flex-column gap-3">
+                <!-- Empty Filter Results Alert -->
+                <div id="noShelvesMatch" class="card p-4 text-center my-2 d-none" style="border-color: var(--border-card) !important;">
+                    <svg class="icon-duotone mx-auto mb-2 text-muted" style="width: 32px; height: 32px;" viewBox="0 0 24 24">
+                        <circle class="bg-shape" cx="11" cy="11" r="8"/>
+                        <path class="stroke-shape" d="M21 21l-4.35-4.35"/>
+                    </svg>
+                    <p class="mb-0 text-muted" style="font-size: 13.5px; font-weight: 500;">
+                        Không tìm thấy kệ nào khớp với điều kiện lọc hiện tại.
+                    </p>
+                </div>
+
+                <div id="shelvesGridContainer" class="d-flex flex-column gap-3">
                     @foreach (var s in Model.Shelves)
                     {
                         // [UI Presentation Only] Tính toán số chỗ trống phục vụ nhãn hiển thị trực quan
                         var remaining = s.MaxCapacity - s.CurrentCount;
-                        <div class="card p-3" style="border-left: 4px solid @(!s.IsAvailable ? "var(--intent-danger-base)" : "var(--intent-action-base)");">
-                            <div class="d-flex justify-content-between align-items-start mb-2 flex-wrap gap-2">
+                        <div class="shelf-item-card card border bg-white shadow-xs rounded-3 mb-3" 
+                             data-shelf-code="@s.ShelfCode" 
+                             data-shelf-location="@s.Location" 
+                             data-shelf-available="@(s.IsAvailable ? "true" : "false")"
+                             style="padding: 20px 22px; border-color: var(--border-card) !important;">
+                            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                                 <div class="d-flex align-items-center gap-3">
                                     <div class="d-flex align-items-center justify-content-center" 
-                                         style="width: 46px; height: 46px; border-radius: var(--radius-md); background-color: @(!s.IsAvailable ? "var(--intent-danger-tint)" : "var(--intent-action-tint)");">
-                                        <span class="mono" style="font-weight: 700; font-size: 18px; color: @(!s.IsAvailable ? "var(--intent-danger-base)" : "var(--intent-action-base)");">
+                                         style="width: 48px; height: 48px; border-radius: var(--radius-md); background-color: @(!s.IsAvailable ? "var(--intent-danger-tint)" : "var(--intent-action-tint)"); border: 1px solid @(!s.IsAvailable ? "var(--intent-danger-border)" : "var(--intent-action-border)");">
+                                        <span class="mono fw-bold" style="font-size: 18px; color: @(!s.IsAvailable ? "var(--intent-danger-base)" : "var(--intent-action-base)");">
                                             @s.ShelfCode
                                         </span>
                                     </div>
                                     <div>
                                         <div class="d-flex align-items-center gap-2">
-                                            <strong style="font-size: 15px; color: var(--text-heading);">Kệ @s.ShelfCode</strong>
+                                            <strong style="font-size: 16px; color: var(--text-heading);">Kệ @s.ShelfCode</strong>
                                             @if (s.IsAvailable)
                                             {
                                                 <span class="badge status-available">
@@ -169,7 +208,7 @@
                                                 </span>
                                             }
                                         </div>
-                                        <div class="text-muted small mt-1" style="font-weight: 500;">
+                                        <div class="text-muted small mt-1" style="font-weight: 500; font-size: 13px;">
                                             Vị trí: <strong>@s.Location</strong>
                                         </div>
                                     </div>
@@ -177,21 +216,26 @@
 
                                 <!-- Action Buttons (Non-wrapping guarantee) -->
                                 <div class="d-flex align-items-center gap-2">
-                                    <button type="button" class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#editModal-@s.Id">
-                                        <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><path class="stroke-shape" d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                    <button type="button" class="btn btn-secondary btn-sm px-3 py-1.5" data-bs-toggle="modal" data-bs-target="#inventoryModal-@s.Id">
+                                        <svg class="icon-duotone icon-sm me-1" viewBox="0 0 24 24"><path class="bg-shape" d="M4 6h16v12H4z"/><path class="stroke-shape" d="M3 6h18M3 12h18M3 18h18M4 6v12M20 6v12"/></svg>
+                                        Kiểm Kê Đơn (@s.StoredOrders.Count)
+                                    </button>
+
+                                    <button type="button" class="btn btn-secondary btn-sm px-3 py-1.5" data-bs-toggle="modal" data-bs-target="#editModal-@s.Id">
+                                        <svg class="icon-duotone icon-sm me-1" viewBox="0 0 24 24"><path class="stroke-shape" d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                                         Chỉnh Sửa
                                     </button>
 
                                     @if (s.CurrentCount > 0)
                                     {
-                                        <button type="button" class="btn btn-secondary btn-sm opacity-50" disabled title="Không thể xóa kệ đang có đơn lưu trữ">
+                                        <button type="button" class="btn btn-secondary btn-sm px-3 py-1.5 opacity-50" disabled title="Không thể xóa kệ đang có đơn lưu trữ">
                                             Xóa
                                         </button>
                                     }
                                     else
                                     {
                                         <form method="post" asp-page-handler="Delete" asp-route-id="@s.Id" class="d-inline m-0" onsubmit="return confirm('Bạn có chắc chắn muốn xóa kệ @s.ShelfCode không?');">
-                                            <button type="submit" class="btn btn-danger btn-sm">
+                                            <button type="submit" class="btn btn-danger btn-sm px-3 py-1.5">
                                                 Xóa
                                             </button>
                                         </form>
@@ -200,15 +244,15 @@
                             </div>
 
                             <!-- Visual Slot Progress & Occupancy -->
-                            <div class="mt-2 pt-2 border-top" style="border-color: var(--border-subtle) !important;">
-                                <div class="d-flex justify-content-between align-items-center mb-1" style="font-size: 12px;">
+                            <div class="mt-3 pt-3 border-top" style="border-color: var(--border-subtle) !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-1.5" style="font-size: 12.5px;">
                                     <span class="text-muted">Mức độ lấp đầy ngăn kệ:</span>
                                     <span class="mono" style="font-weight: 600; color: var(--text-heading);">
                                         @s.CurrentCount / @s.MaxCapacity đơn (@s.OccupancyRate%)
                                     </span>
                                 </div>
-                                <div class="progress" style="height: 7px;">
-                                    <div class="progress-bar @(s.OccupancyRate >= 100 ? "bg-danger" : s.OccupancyRate >= 70 ? "bg-warning" : "")" 
+                                <div class="progress" style="height: 8px; border-radius: var(--radius-pill); background-color: var(--surface-subtle);">
+                                    <div class="progress-bar @(s.OccupancyRate >= 100 ? "bg-danger" : s.OccupancyRate >= 70 ? "bg-warning" : "bg-success")" 
                                          role="progressbar" 
                                          style="width: @(Math.Min(100, s.OccupancyRate))%" 
                                          aria-valuenow="@s.CurrentCount" 
@@ -255,6 +299,230 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Inventory Detail Modal (Task 15 - Redesigned Impeccable Nordic Atelier) -->
+                        <div class="modal fade" id="inventoryModal-@s.Id" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+                                <div class="modal-content" style="border-radius: var(--radius-lg); border: 1px solid var(--border-card); background-color: var(--surface-card); overflow: hidden;">
+                                    <!-- Modal Header -->
+                                    <div class="modal-header px-4 py-3" style="background-color: var(--surface-card); border-bottom: 1px solid var(--border-card);">
+                                        <div class="d-flex align-items-center justify-content-between w-100">
+                                            <div class="d-flex align-items-center gap-3">
+                                                <div class="d-flex align-items-center justify-content-center"
+                                                     style="width: 44px; height: 44px; border-radius: var(--radius-md); background-color: @(!s.IsAvailable ? "var(--intent-danger-tint)" : "var(--intent-action-tint)"); border: 1px solid @(!s.IsAvailable ? "var(--intent-danger-border)" : "var(--intent-action-border)");">
+                                                    <span class="mono fw-bold" style="font-size: 17px; color: @(!s.IsAvailable ? "var(--intent-danger-base)" : "var(--intent-action-base)");">
+                                                        @s.ShelfCode
+                                                    </span>
+                                                </div>
+                                                <div>
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <h5 class="modal-title fw-bold mb-0" style="font-size: 16px; color: var(--text-heading);">
+                                                            Kiểm Kê Kệ @s.ShelfCode
+                                                        </h5>
+                                                        @if (s.IsAvailable)
+                                                        {
+                                                            <span class="badge status-available">
+                                                                Còn @(s.MaxCapacity - s.CurrentCount) chỗ trống
+                                                            </span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="badge status-depleted">
+                                                                Đã đầy tải (100%)
+                                                            </span>
+                                                        }
+                                                    </div>
+                                                    <div class="d-flex align-items-center gap-1 text-muted small mt-0.5" style="font-size: 12px;">
+                                                        <svg class="icon-duotone icon-sm text-muted" viewBox="0 0 24 24"><circle class="bg-shape" cx="12" cy="10" r="3"/><path class="stroke-shape" d="M12 2a8 8 0 00-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 00-8-8z"/></svg>
+                                                        <span>Vị trí vật lý: <strong>@s.Location</strong></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Quick KPI Micro-Tiles -->
+                                    <div class="border-bottom" style="padding: 16px 20px; background-color: var(--surface-subtle); border-color: var(--border-card) !important;">
+                                        <div class="row g-2">
+                                            <div class="col-4">
+                                                <div class="rounded bg-white border" style="padding: 14px 16px; border-color: var(--border-card) !important;">
+                                                    <div class="text-muted small" style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px;">
+                                                        Đang lưu trữ
+                                                    </div>
+                                                    <div class="d-flex align-items-baseline gap-1 mt-1">
+                                                        <span class="mono fw-bold" style="font-size: 18px; color: var(--text-heading);">@s.CurrentCount</span>
+                                                        <span class="text-muted" style="font-size: 12px;">/ @s.MaxCapacity đơn</span>
+                                                    </div>
+                                                    <div class="progress mt-2" style="height: 4px; background-color: var(--surface-subtle);">
+                                                        <div class="progress-bar @(s.OccupancyRate >= 100 ? "bg-danger" : s.OccupancyRate >= 70 ? "bg-warning" : "bg-success")"
+                                                             role="progressbar"
+                                                             style="width: @(Math.Min(100, s.OccupancyRate))%">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-4">
+                                                <div class="rounded bg-white border" style="padding: 14px 16px; border-color: var(--border-card) !important;">
+                                                    <div class="text-muted small" style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px;">
+                                                        Mức lấp đầy
+                                                    </div>
+                                                    <div class="d-flex align-items-baseline gap-1 mt-1">
+                                                        <span class="mono fw-bold" style="font-size: 18px; color: @(s.OccupancyRate >= 100 ? "var(--intent-danger-base)" : s.OccupancyRate >= 70 ? "var(--intent-alert-base)" : "var(--intent-confirm-base)");">
+                                                            @s.OccupancyRate%
+                                                        </span>
+                                                    </div>
+                                                    <div class="text-muted small mt-2" style="font-size: 10.5px;">
+                                                        @(s.IsAvailable ? $"Còn trống {s.MaxCapacity - s.CurrentCount} ngăn" : "Kệ đã kín tải")
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-4">
+                                                <div class="rounded bg-white border" style="padding: 14px 16px; border-color: var(--border-card) !important;">
+                                                    <div class="text-muted small" style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px;">
+                                                        Tổng giá trị đơn
+                                                    </div>
+                                                    <div class="d-flex align-items-baseline gap-1 mt-1">
+                                                        <span class="mono fw-bold" style="font-size: 18px; color: var(--intent-action-base);">
+                                                            @s.StoredOrders.Sum(o => o.TotalPrice).ToString("N0")
+                                                        </span>
+                                                        <span class="text-muted" style="font-size: 11px;">đ</span>
+                                                    </div>
+                                                    <div class="text-muted small mt-2" style="font-size: 10.5px;">
+                                                        Gồm @s.StoredOrders.Count đơn tại kệ
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Modal Body (Orders Ledger) -->
+                                    <div class="modal-body" style="padding: 20px 24px; background-color: var(--surface-ground);">
+                                        <div class="d-flex justify-content-between align-items-center mb-2.5 px-1">
+                                            <span id="modalOrderCountHeader-@s.Id" style="font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-muted);">
+                                                Danh Sách Đơn Hàng Lưu Kho (@s.StoredOrders.Count)
+                                            </span>
+                                            <span class="d-inline-flex align-items-center gap-1.5 text-muted small" style="font-size: 11px;">
+                                                <span class="rounded-circle" style="width: 6px; height: 6px; background-color: var(--intent-confirm-base);"></span>
+                                                Cập nhật thời gian thực
+                                            </span>
+                                        </div>
+
+                                        @if (s.StoredOrders.Count > 1)
+                                        {
+                                            <!-- Quick Order Filter when shelf has multiple records -->
+                                            <div class="mb-3">
+                                                <div class="input-group input-group-sm">
+                                                    <span class="input-group-text bg-white border-end-0" style="border-color: var(--border-card);">
+                                                        <svg class="icon-duotone icon-sm text-muted" viewBox="0 0 24 24"><circle class="bg-shape" cx="11" cy="11" r="8"/><path class="stroke-shape" d="M21 21l-4.35-4.35"/></svg>
+                                                    </span>
+                                                    <input type="text" class="form-control border-start-0 ps-1" placeholder="Tìm theo mã đơn, sinh viên, tài liệu..." oninput="filterModalOrders(this, '@s.Id')" style="border-color: var(--border-card);" />
+                                                </div>
+                                            </div>
+                                        }
+
+                                        <!-- Empty Search Filter State Inside Modal -->
+                                        <div id="noOrdersMatch-@s.Id" class="text-center py-4 px-3 bg-white rounded border d-none mb-2" style="border-color: var(--border-card) !important;">
+                                            <p class="mb-0 text-muted small" style="font-size: 12.5px;">Không tìm thấy đơn hàng nào khớp với từ khóa tìm kiếm.</p>
+                                        </div>
+
+                                        @if (s.StoredOrders.Count == 0)
+                                        {
+                                            <div class="text-center py-5 px-3 bg-white rounded border" style="padding: 40px 20px; border-color: var(--border-card) !important;">
+                                                <div class="d-inline-flex p-3 rounded-circle bg-light mb-3">
+                                                    <svg class="icon-duotone text-muted" style="width: 36px; height: 36px;" viewBox="0 0 24 24">
+                                                        <path class="bg-shape" d="M4 6h16v12H4z"/>
+                                                        <path class="stroke-shape" d="M3 6h18M3 12h18M3 18h18M4 6v12M20 6v12"/>
+                                                    </svg>
+                                                </div>
+                                                <h6 class="fw-bold mb-1" style="color: var(--text-heading); font-size: 14px;">Ngăn Kệ Hiện Đang Trống</h6>
+                                                <p class="text-muted small mb-0" style="max-width: 320px; margin: 0 auto; font-size: 12px;">
+                                                    Chưa có đơn hàng nào lưu trên kệ @s.ShelfCode. Kệ đang sẵn sàng tiếp nhận tối đa @s.MaxCapacity đơn in mới.
+                                                </p>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div id="modalOrdersList-@s.Id" class="d-flex flex-column gap-2.5">
+                                                @foreach (var order in s.StoredOrders)
+                                                {
+                                                    <div class="modal-order-card rounded bg-white border" 
+                                                         data-order-code="@order.OrderCode" 
+                                                         data-student-name="@order.StudentName" 
+                                                         data-doc-name="@order.DocumentName"
+                                                         style="padding: 16px 18px; border-color: var(--border-card) !important;">
+                                                        <!-- Row 1: Code, Student, Status, Timestamp -->
+                                                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                                            <div class="d-flex align-items-center gap-2">
+                                                                <span class="mono fw-bold px-2 py-0.5 rounded" style="font-size: 12px; background-color: var(--surface-subtle); color: var(--text-heading); border: 1px solid var(--border-card);">
+                                                                    @order.OrderCode
+                                                                </span>
+                                                                <span class="fw-bold" style="font-size: 13.5px; color: var(--text-heading);">
+                                                                    @order.StudentName
+                                                                </span>
+                                                            </div>
+                                                            <div class="d-flex align-items-center gap-2">
+                                                                @if (order.IsPaid)
+                                                                {
+                                                                    <span class="badge status-available">
+                                                                        <svg class="icon-duotone icon-sm me-1" viewBox="0 0 24 24"><circle class="bg-shape" cx="12" cy="12" r="9"/><path class="stroke-shape" d="M8 12l3 3 5-5"/></svg>
+                                                                        Đã thanh toán
+                                                                    </span>
+                                                                }
+                                                                else
+                                                                {
+                                                                    <span class="badge status-pending">
+                                                                        <svg class="icon-duotone icon-sm me-1" viewBox="0 0 24 24"><circle class="bg-shape" cx="12" cy="12" r="9"/><path class="stroke-shape" d="M12 8v4M12 16h.01"/></svg>
+                                                                        Chờ thanh toán
+                                                                    </span>
+                                                                }
+                                                                <span class="mono text-muted small ms-1" style="font-size: 11.5px;">
+                                                                    @order.CreatedAt.ToLocalTime().ToString("HH:mm · dd/MM")
+                                                                </span>
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- Dashed Separator -->
+                                                        <div style="border-top: 1px dashed var(--border-subtle); margin: 8px 0 10px 0;"></div>
+
+                                                        <!-- Row 2: Document Specs & Total Price -->
+                                                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                                            <div class="d-flex align-items-center gap-2 text-truncate" style="max-width: 480px;">
+                                                                <svg class="icon-duotone icon-sm flex-shrink-0 text-muted" viewBox="0 0 24 24">
+                                                                    <path class="bg-shape" d="M6 3h8l6 6v12H6z"/>
+                                                                    <path class="stroke-shape" d="M14 3v6h6M6 3h8l6 6v12a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2zM9 13h6M9 17h4"/>
+                                                                </svg>
+                                                                <span class="text-truncate fw-medium" style="font-size: 13px; color: var(--text-body);" title="@order.DocumentName">
+                                                                    @order.DocumentName
+                                                                </span>
+                                                                <div class="d-flex align-items-center gap-1 flex-shrink-0 ms-1">
+                                                                    <span class="badge status-neutral" style="font-size: 10.5px;">@order.NumberOfCopies bản</span>
+                                                                    <span class="badge status-neutral" style="font-size: 10.5px;">@(order.IsColor ? "Màu" : "Trắng đen")</span>
+                                                                    <span class="badge status-neutral" style="font-size: 10.5px;">@(order.IsDoubleSided ? "2 mặt" : "1 mặt")</span>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="mono fw-bold" style="font-size: 15px; color: var(--text-heading);">
+                                                                @order.TotalPrice.ToString("N0") <span style="font-size: 11.5px; font-weight: 500; color: var(--text-muted);">đ</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+
+                                    <!-- Modal Footer -->
+                                    <div class="modal-footer px-4 py-2.5 bg-white d-flex justify-content-between align-items-center" style="border-top: 1px solid var(--border-card);">
+                                        <div class="text-muted small d-flex align-items-center gap-1.5" style="font-size: 12px;">
+                                            <svg class="icon-duotone icon-sm" style="color: var(--intent-action-base);" viewBox="0 0 24 24"><circle class="bg-shape" cx="12" cy="12" r="9"/><path class="stroke-shape" d="M12 8v4M12 16h.01"/></svg>
+                                            <span>Vị trí kệ sẽ tự động giải phóng khi sinh viên quét mã QR trả hàng.</span>
+                                        </div>
+                                        <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Đóng</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     }
                 </div>
             }
@@ -264,7 +532,7 @@
         <div class="col-lg-4">
             <div style="position: sticky; top: 76px;">
                 <!-- Quick Inline Shelf Creator Card (Preserved 100% OnPostCreateAsync binding) -->
-                <div class="card p-3 mb-3">
+                <div class="card mb-3" style="padding: 22px 24px; border-color: var(--border-card) !important;">
                     <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom" style="border-color: var(--border-subtle) !important;">
                         <svg class="icon-duotone" style="color: var(--intent-action-base);" viewBox="0 0 24 24">
                             <circle class="bg-shape" cx="12" cy="12" r="9"/>
@@ -299,7 +567,7 @@
                 </div>
 
                 <!-- Ergonomic Station Notice -->
-                <div class="tonal-panel" style="font-size: 12.5px;">
+                <div class="tonal-panel" style="padding: 20px 22px; font-size: 12.5px;">
                     <div class="d-flex align-items-center gap-2 mb-2 font-monospace" style="font-weight: 700; color: var(--intent-action-base);">
                         <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><circle class="bg-shape" cx="12" cy="12" r="9"/><path class="stroke-shape" d="M12 8v4M12 16h.01"/></svg>
                         LƯU Ý VẬN HÀNH TRẠM IN
@@ -314,3 +582,97 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+<script>
+    let currentShelfFilter = 'all';
+    let currentShelfKeyword = '';
+
+    function filterShelves(filterType, btn) {
+        currentShelfFilter = filterType;
+        document.querySelectorAll('.shelf-filter-btn').forEach(b => {
+            b.classList.remove('active', 'btn-action');
+            b.classList.add('btn-subtle');
+        });
+        if (btn) {
+            btn.classList.add('active', 'btn-action');
+            btn.classList.remove('btn-subtle');
+        }
+        applyShelfFilters();
+    }
+
+    function onSearchShelves(kw) {
+        currentShelfKeyword = (kw || '').trim().toLowerCase();
+        applyShelfFilters();
+    }
+
+    function applyShelfFilters() {
+        const cards = document.querySelectorAll('.shelf-item-card');
+        let visibleCount = 0;
+        cards.forEach(card => {
+            const code = (card.getAttribute('data-shelf-code') || '').toLowerCase();
+            const loc = (card.getAttribute('data-shelf-location') || '').toLowerCase();
+            const isAvail = card.getAttribute('data-shelf-available') === 'true';
+
+            let matchesType = true;
+            if (currentShelfFilter === 'available') matchesType = isAvail;
+            if (currentShelfFilter === 'full') matchesType = !isAvail;
+
+            let matchesKeyword = true;
+            if (currentShelfKeyword) {
+                matchesKeyword = code.includes(currentShelfKeyword) || loc.includes(currentShelfKeyword);
+            }
+
+            if (matchesType && matchesKeyword) {
+                card.classList.remove('d-none');
+                visibleCount++;
+            } else {
+                card.classList.add('d-none');
+            }
+        });
+
+        const counter = document.getElementById('shelfVisibleCount');
+        if (counter) counter.innerText = visibleCount;
+
+        const noMatch = document.getElementById('noShelvesMatch');
+        if (noMatch) {
+            if (visibleCount === 0 && cards.length > 0) {
+                noMatch.classList.remove('d-none');
+            } else {
+                noMatch.classList.add('d-none');
+            }
+        }
+    }
+
+    function filterModalOrders(input, shelfId) {
+        const query = (input.value || '').trim().toLowerCase();
+        const container = document.getElementById('modalOrdersList-' + shelfId);
+        if (!container) return;
+        const orders = container.querySelectorAll('.modal-order-card');
+        let matched = 0;
+        orders.forEach(o => {
+            const code = (o.getAttribute('data-order-code') || '').toLowerCase();
+            const student = (o.getAttribute('data-student-name') || '').toLowerCase();
+            const doc = (o.getAttribute('data-doc-name') || '').toLowerCase();
+            if (!query || code.includes(query) || student.includes(query) || doc.includes(query)) {
+                o.classList.remove('d-none');
+                matched++;
+            } else {
+                o.classList.add('d-none');
+            }
+        });
+        const noMatch = document.getElementById('noOrdersMatch-' + shelfId);
+        if (noMatch) {
+            if (matched === 0 && orders.length > 0) {
+                noMatch.classList.remove('d-none');
+            } else {
+                noMatch.classList.add('d-none');
+            }
+        }
+        const header = document.getElementById('modalOrderCountHeader-' + shelfId);
+        if (header) {
+            header.innerText = query ? `DANH SÁCH ĐƠN HÀNG LƯU KHO (KHỚP ${matched}/${orders.length})` : `DANH SÁCH ĐƠN HÀNG LƯU KHO (${orders.length})`;
+        }
+    }
+</script>
+}
