@@ -20,6 +20,7 @@ public class StudentOrderHistoryTests : IDisposable
     private readonly PrintOrderService _service;
     private readonly Guid _studentId = Guid.NewGuid();
     private readonly Guid _otherStudentId = Guid.NewGuid();
+    private readonly Guid _staffId = Guid.NewGuid();
 
     public StudentOrderHistoryTests()
     {
@@ -49,6 +50,14 @@ public class StudentOrderHistoryTests : IDisposable
                 Email = "other@uniprint.edu.vn",
                 PasswordHash = "hash",
                 Role = UserRole.Student
+            },
+            new User
+            {
+                Id = _staffId,
+                FullName = "Printing Staff",
+                Email = "staff@uniprint.edu.vn",
+                PasswordHash = "hash",
+                Role = UserRole.Staff
             }
         );
         _dbContext.SaveChanges();
@@ -192,6 +201,55 @@ public class StudentOrderHistoryTests : IDisposable
 
         // Assert
         result.Success.Should().BeTrue();
+        result.Message.Should().Contain("thành công");
+        var updatedOrder = await _dbContext.PrintOrders.FindAsync(order.Id);
+        updatedOrder!.Status.Should().Be(PrintOrderStatus.Cancelled);
+        updatedOrder.UpdatedAt.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task CancelOrderAsync_WhenOrderIsProcessing_ShouldCancelSuccessfully()
+    {
+        // Arrange - Trạng thái Processing: Staff đã tiếp nhận nhưng chưa chạy máy in (Printing)
+        var doc = new Document
+        {
+            Id = Guid.NewGuid(),
+            UserId = _studentId,
+            FileName = "ProcessingCancel.pdf",
+            FileExtension = ".pdf",
+            FilePath = "uploads/processing.pdf",
+            FileSizeBytes = 1000,
+            PageCount = 5
+        };
+        await _dbContext.Documents.AddAsync(doc);
+
+        var opt = new PrintOption
+        {
+            Id = Guid.NewGuid(),
+            NumberOfCopies = 1,
+            UnitPricePerPage = 350m,
+            TotalPrice = 3500m
+        };
+        await _dbContext.PrintOptions.AddAsync(opt);
+
+        var order = new PrintOrder
+        {
+            Id = Guid.NewGuid(),
+            OrderCode = "ORD-PROCESSING-1",
+            StudentId = _studentId,
+            DocumentId = doc.Id,
+            PrintOptionId = opt.Id,
+            Status = PrintOrderStatus.Processing,
+            CreatedAt = DateTime.UtcNow
+        };
+        await _dbContext.PrintOrders.AddAsync(order);
+        await _dbContext.SaveChangesAsync();
+
+        // Act
+        var result = await _service.CancelOrderAsync(order.Id, _studentId);
+
+        // Assert - Cho phép hủy vì chưa in
+        result.Success.Should().BeTrue();
         var updatedOrder = await _dbContext.PrintOrders.FindAsync(order.Id);
         updatedOrder!.Status.Should().Be(PrintOrderStatus.Cancelled);
     }
@@ -199,7 +257,7 @@ public class StudentOrderHistoryTests : IDisposable
     [Fact]
     public async Task CancelOrderAsync_WhenOrderIsPrintingOrHigher_ShouldFail_DueToBR02()
     {
-        // Arrange
+        // Arrange - Trạng thái Printing: Staff đã bắt đầu in -> Chặn hủy theo BR02
         var doc = new Document
         {
             Id = Guid.NewGuid(),
@@ -237,7 +295,7 @@ public class StudentOrderHistoryTests : IDisposable
         // Act
         var result = await _service.CancelOrderAsync(order.Id, _studentId);
 
-        // Assert
+        // Assert - Phải chặn theo BR02
         result.Success.Should().BeFalse();
         result.Message.Should().Contain("BR02");
         var updatedOrder = await _dbContext.PrintOrders.FindAsync(order.Id);
@@ -245,7 +303,99 @@ public class StudentOrderHistoryTests : IDisposable
     }
 
     [Fact]
-    public async Task CancelOrderAsync_WhenOrderBelongsToAnotherStudent_ShouldReturnFail()
+    public async Task CancelOrderAsync_WhenOrderIsReadyForPickup_ShouldFail_DueToBR02()
+    {
+        // Arrange - Đã in xong xếp kệ (ReadyForPickup >= Printing) -> Chặn hủy
+        var doc = new Document
+        {
+            Id = Guid.NewGuid(),
+            UserId = _studentId,
+            FileName = "ReadyCancelTest.pdf",
+            FileExtension = ".pdf",
+            FilePath = "uploads/ready.pdf",
+            FileSizeBytes = 1000,
+            PageCount = 5
+        };
+        await _dbContext.Documents.AddAsync(doc);
+
+        var opt = new PrintOption
+        {
+            Id = Guid.NewGuid(),
+            NumberOfCopies = 1,
+            UnitPricePerPage = 350m,
+            TotalPrice = 5000m
+        };
+        await _dbContext.PrintOptions.AddAsync(opt);
+
+        var order = new PrintOrder
+        {
+            Id = Guid.NewGuid(),
+            OrderCode = "ORD-READY-1",
+            StudentId = _studentId,
+            DocumentId = doc.Id,
+            PrintOptionId = opt.Id,
+            Status = PrintOrderStatus.ReadyForPickup,
+            CreatedAt = DateTime.UtcNow
+        };
+        await _dbContext.PrintOrders.AddAsync(order);
+        await _dbContext.SaveChangesAsync();
+
+        // Act
+        var result = await _service.CancelOrderAsync(order.Id, _studentId);
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("BR02");
+    }
+
+    [Fact]
+    public async Task CancelOrderAsync_WhenOrderIsAlreadyCancelled_ShouldFail()
+    {
+        // Arrange
+        var doc = new Document
+        {
+            Id = Guid.NewGuid(),
+            UserId = _studentId,
+            FileName = "AlreadyCancelled.pdf",
+            FileExtension = ".pdf",
+            FilePath = "uploads/already.pdf",
+            FileSizeBytes = 1000,
+            PageCount = 2
+        };
+        await _dbContext.Documents.AddAsync(doc);
+
+        var opt = new PrintOption
+        {
+            Id = Guid.NewGuid(),
+            NumberOfCopies = 1,
+            UnitPricePerPage = 350m,
+            TotalPrice = 700m
+        };
+        await _dbContext.PrintOptions.AddAsync(opt);
+
+        var order = new PrintOrder
+        {
+            Id = Guid.NewGuid(),
+            OrderCode = "ORD-ALREADY-CANCELLED",
+            StudentId = _studentId,
+            DocumentId = doc.Id,
+            PrintOptionId = opt.Id,
+            Status = PrintOrderStatus.Cancelled,
+            CreatedAt = DateTime.UtcNow
+        };
+        await _dbContext.PrintOrders.AddAsync(order);
+        await _dbContext.SaveChangesAsync();
+
+        // Act - Hủy lần thứ hai
+        var result = await _service.CancelOrderAsync(order.Id, _studentId);
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("đã bị hủy trước đó");
+    }
+
+    [Fact]
+    public async Task CancelOrderAsync_WhenOrderBelongsToAnotherStudent_ShouldReturnFail_PreventIDOR()
     {
         // Arrange
         var doc = new Document
@@ -282,12 +432,117 @@ public class StudentOrderHistoryTests : IDisposable
         await _dbContext.PrintOrders.AddAsync(order);
         await _dbContext.SaveChangesAsync();
 
-        // Act - Student tries to cancel someone else's order
+        // Act - Student cố tình hủy đơn của người khác
+        var result = await _service.CancelOrderAsync(order.Id, _studentId);
+
+        // Assert - Chặn IDOR
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("Không tìm thấy đơn hàng");
+    }
+
+    [Fact]
+    public async Task CancelOrderAsync_WhenStaffCancelsForStudent_ShouldCancelSuccessfully()
+    {
+        // Arrange
+        var doc = new Document
+        {
+            Id = Guid.NewGuid(),
+            UserId = _studentId,
+            FileName = "StaffCancelTest.pdf",
+            FileExtension = ".pdf",
+            FilePath = "uploads/staffcancel.pdf",
+            FileSizeBytes = 1000,
+            PageCount = 3
+        };
+        await _dbContext.Documents.AddAsync(doc);
+
+        var opt = new PrintOption
+        {
+            Id = Guid.NewGuid(),
+            NumberOfCopies = 1,
+            UnitPricePerPage = 350m,
+            TotalPrice = 1050m
+        };
+        await _dbContext.PrintOptions.AddAsync(opt);
+
+        var order = new PrintOrder
+        {
+            Id = Guid.NewGuid(),
+            OrderCode = "ORD-STAFF-CANCEL",
+            StudentId = _studentId,
+            DocumentId = doc.Id,
+            PrintOptionId = opt.Id,
+            Status = PrintOrderStatus.Pending,
+            CreatedAt = DateTime.UtcNow
+        };
+        await _dbContext.PrintOrders.AddAsync(order);
+        await _dbContext.SaveChangesAsync();
+
+        // Act - Staff hủy đơn hỗ trợ sinh viên tại quầy
+        var result = await _service.CancelOrderAsync(order.Id, _staffId, isStaffOrAdmin: true);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        var updatedOrder = await _dbContext.PrintOrders.FindAsync(order.Id);
+        updatedOrder!.Status.Should().Be(PrintOrderStatus.Cancelled);
+    }
+
+    [Fact]
+    public async Task CancelOrderAsync_WhenOrderHasPendingPayment_ShouldMarkPaymentAsFailed()
+    {
+        // Arrange
+        var doc = new Document
+        {
+            Id = Guid.NewGuid(),
+            UserId = _studentId,
+            FileName = "PendingPayment.pdf",
+            FileExtension = ".pdf",
+            FilePath = "uploads/payment.pdf",
+            FileSizeBytes = 1000,
+            PageCount = 3
+        };
+        await _dbContext.Documents.AddAsync(doc);
+
+        var opt = new PrintOption
+        {
+            Id = Guid.NewGuid(),
+            NumberOfCopies = 1,
+            UnitPricePerPage = 350m,
+            TotalPrice = 1050m
+        };
+        await _dbContext.PrintOptions.AddAsync(opt);
+
+        var payment = new Payment
+        {
+            Id = Guid.NewGuid(),
+            Amount = 1050m,
+            Method = PaymentMethod.Cash,
+            Status = PaymentStatus.Pending,
+            CreatedAt = DateTime.UtcNow
+        };
+        await _dbContext.Payments.AddAsync(payment);
+
+        var order = new PrintOrder
+        {
+            Id = Guid.NewGuid(),
+            OrderCode = "ORD-PAYMENT-CANCEL",
+            StudentId = _studentId,
+            DocumentId = doc.Id,
+            PrintOptionId = opt.Id,
+            Status = PrintOrderStatus.Pending,
+            Payment = payment,
+            CreatedAt = DateTime.UtcNow
+        };
+        await _dbContext.PrintOrders.AddAsync(order);
+        await _dbContext.SaveChangesAsync();
+
+        // Act
         var result = await _service.CancelOrderAsync(order.Id, _studentId);
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Message.Should().Contain("Không tìm thấy đơn hàng");
+        result.Success.Should().BeTrue();
+        var updatedPayment = await _dbContext.Payments.FindAsync(payment.Id);
+        updatedPayment!.Status.Should().Be(PaymentStatus.Failed);
     }
 
     public void Dispose()

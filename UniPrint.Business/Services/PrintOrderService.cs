@@ -16,7 +16,7 @@ public interface IPrintOrderService
     Task<ApiResponse<bool>> UpdateOrderStatusAsync(Guid orderId, Guid staffId, PrintOrderStatus newStatus, CancellationToken ct = default);
     Task<ApiResponse<bool>> AssignShelfAsync(Guid orderId, Guid staffId, Guid shelfId, CancellationToken ct = default);
     Task<ApiResponse<PrintOrderResponseDto>> ScanPickupQrAsync(string qrToken, Guid staffId, CancellationToken ct = default);
-    Task<ApiResponse<bool>> CancelOrderAsync(Guid orderId, Guid studentId, CancellationToken ct = default);
+    Task<ApiResponse<bool>> CancelOrderAsync(Guid orderId, Guid userId, bool isStaffOrAdmin = false, CancellationToken ct = default);
 }
 
 public class PrintOrderService : IPrintOrderService
@@ -374,29 +374,57 @@ public class PrintOrderService : IPrintOrderService
         return ApiResponse<PrintOrderResponseDto>.Ok(response.Data, "Xác nhận nhận tài liệu thành công. Đơn hàng đã hoàn tất!");
     }
 
-    public async Task<ApiResponse<bool>> CancelOrderAsync(Guid orderId, Guid studentId, CancellationToken ct = default)
+    public async Task<ApiResponse<bool>> CancelOrderAsync(Guid orderId, Guid userId, bool isStaffOrAdmin = false, CancellationToken ct = default)
     {
         var order = await _unitOfWork.Repository<PrintOrder>().Query()
             .Include(o => o.Payment)
             .FirstOrDefaultAsync(o => o.Id == orderId, ct);
-        if (order == null || order.StudentId != studentId)
+        if (order == null)
         {
             return ApiResponse<bool>.Fail("Không tìm thấy đơn hàng.");
         }
 
-        // Task 18: đơn đã thanh toán (VietQR) không tự hủy được, cần liên hệ quầy để hoàn tiền.
-        if (order.Payment?.Status == PaymentStatus.Paid)
+        // Chặn IDOR: Chỉ chủ sở hữu (sinh viên tạo đơn) hoặc nhân viên quầy (Staff/Admin) mới có quyền hủy
+        if (!isStaffOrAdmin && order.StudentId != userId)
+        {
+            return ApiResponse<bool>.Fail("Không tìm thấy đơn hàng.");
+        }
+
+        // Đơn hàng đã bị hủy trước đó
+        if (order.Status == PrintOrderStatus.Cancelled)
+        {
+            return ApiResponse<bool>.Fail("Đơn hàng này đã bị hủy trước đó.");
+        }
+
+        // Đơn hàng đã hoàn tất
+        if (order.Status == PrintOrderStatus.Completed)
+        {
+            return ApiResponse<bool>.Fail("Đơn hàng đã hoàn tất, không thể hủy.");
+        }
+
+        // Task 18: Đơn đã thanh toán online (VietQR) không tự hủy được, cần liên hệ quầy để hoàn tiền
+        if (order.Payment?.Status == PaymentStatus.Paid && !isStaffOrAdmin)
         {
             return ApiResponse<bool>.Fail("Đơn hàng đã được thanh toán, vui lòng liên hệ quầy in để hủy và hoàn tiền.");
         }
 
-        // BR02: Khi Staff đã bắt đầu in (Printing trở đi) -> không được hủy
-        if (order.Status >= PrintOrderStatus.Printing && order.Status != PrintOrderStatus.Cancelled)
+        // Quy tắc BR02: Khi Staff đã bắt đầu in (Printing trở đi) -> cấm tuyệt đối không được hủy để bảo vệ vật tư in ấn (giấy, mực)
+        if (order.Status >= PrintOrderStatus.Printing)
         {
             return ApiResponse<bool>.Fail("Đơn hàng đã bắt đầu in hoặc đã hoàn tất, không thể hủy (BR02).");
         }
 
+        // Hủy đơn hàng hợp lệ (khi đang ở Pending hoặc Processing)
         order.Status = PrintOrderStatus.Cancelled;
+        order.UpdatedAt = DateTime.UtcNow;
+
+        if (order.Payment != null && order.Payment.Status == PaymentStatus.Pending)
+        {
+            order.Payment.Status = PaymentStatus.Failed;
+            order.Payment.UpdatedAt = DateTime.UtcNow;
+            _unitOfWork.Repository<Payment>().Update(order.Payment);
+        }
+
         _unitOfWork.Repository<PrintOrder>().Update(order);
         await _unitOfWork.SaveChangesAsync(ct);
 

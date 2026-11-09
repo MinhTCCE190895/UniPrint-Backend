@@ -273,7 +273,7 @@
                                             </button>
                                         }
 
-                                        @if (isPending)
+                                        @if (order.Status < PrintOrderStatus.Printing && !isCancelled && order.PaymentStatus != PaymentStatus.Paid)
                                         {
                                             <form method="post" asp-page-handler="Cancel" onsubmit="return confirm('Bạn có chắc chắn muốn hủy đơn hàng @order.OrderCode không?');" class="d-inline m-0">
                                                 <input type="hidden" name="orderId" value="@order.Id" />
