@@ -31,6 +31,8 @@ builder.Services.AddSingleton(UniPrint.Business.Common.VietQrSettings.FromConfig
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IOrderTrackingService, OrderTrackingService>();
 builder.Services.AddScoped<IPriceConfigService, PriceConfigService>();
+// Task 5: Quản lý người dùng cho Admin
+builder.Services.AddScoped<IUserService, UserService>();
 
 // 3. Authentication & JWT Bearer
 var jwtSecret = builder.Configuration["JwtSettings:Secret"] ?? "UniPrint_Super_Secret_Key_For_Course_Project_2026_FPTU_Must_Be_Long_And_Secure!";

@@ -43,6 +43,8 @@ builder.Services.AddSingleton(
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IOrderTrackingService, OrderTrackingService>();
 builder.Services.AddScoped<IPriceConfigService, PriceConfigService>();
+// Task 5: Quản lý người dùng cho Admin
+builder.Services.AddScoped<IUserService, UserService>();
 
 // =====================================================
 // 3. HTTP CLIENT
@@ -141,6 +143,12 @@ builder.Services.AddRazorPages(options =>
     options.Conventions.AuthorizeFolder(
         "/Staff",
         "StaffOnly"
+    );
+
+    // Admin Pages (Task 5, Task 20, Task 22)
+    options.Conventions.AuthorizeFolder(
+        "/Admin",
+        "AdminOnly"
     );
 
     // Task 21: Student Upload Study Material
