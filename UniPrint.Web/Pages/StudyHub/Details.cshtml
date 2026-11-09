@@ -1,0 +1,231 @@
+﻿
+@page
+@model UniPrint.Web.Pages.StudyHub.DetailsModel
+
+@{
+    ViewData["Title"] = "Chi tiết tài liệu";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+            @if (TempData["ReviewSuccess"] is string success)
+            {
+                <div class="alert alert-success">
+                    @success
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+            {
+                <div class="alert alert-danger">
+                    @Model.ErrorMessage
+                </div>
+            }
+
+            <!-- THÔNG TIN TÀI LIỆU -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body p-4">
+
+                    <h3 class="fw-bold mb-3">
+                        @Model.Material.Title
+                    </h3>
+
+                    <span class="badge bg-success mb-3">
+                        Đã kiểm duyệt
+                    </span>
+
+                    <p>@Model.Material.Description</p>
+
+                    <hr />
+
+                    <p>
+                        <strong>Môn học:</strong>
+                        @Model.Material.SubjectCode -
+                        @Model.Material.SubjectName
+                    </p>
+
+                    <p>
+                        <strong>Danh mục:</strong>
+                        @Model.Material.CategoryName
+                    </p>
+
+                    <p>
+                        <strong>Người đăng:</strong>
+                        @Model.Material.UploaderName
+                    </p>
+
+                    <p>
+                        <strong>Tên file:</strong>
+                        @Model.Material.DocumentFileName
+                    </p>
+
+                    <p>
+                        <strong>Ngày đăng:</strong>
+                        @Model.Material.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                    </p>
+
+                    <p>
+                        <strong>Đánh giá trung bình:</strong>
+                        <span class="text-warning fw-bold">
+                            ★ @Model.Material.AverageRating.ToString("F1") / 5.0
+                        </span>
+                    </p>
+
+                    <p>
+                        <strong>Lượt tải:</strong>
+                        @Model.Material.DownloadCount
+                    </p>
+
+                    <hr />
+
+                    <div class="d-flex gap-2 flex-wrap">
+
+                        <a asp-page="/StudyHub/Details"
+                           asp-page-handler="Download"
+                           asp-route-id="@Model.Material.Id"
+                           class="btn btn-success">
+                            <i class="bi bi-download"></i>
+                            Tải tài liệu
+                        </a>
+
+                        <a asp-page="/StudyHub/Index"
+                           class="btn btn-secondary">
+                            Quay lại
+                        </a>
+
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- CREATE / UPDATE REVIEW -->
+            @if (User.IsInRole("Student"))
+            {
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-body p-4">
+
+                        <h4 class="fw-bold mb-2">
+                            @(Model.HasReviewed
+                                ? "Chỉnh sửa đánh giá của bạn"
+                                : "Đánh giá tài liệu")
+                        </h4>
+
+                        <p class="text-muted">
+                            Mỗi sinh viên chỉ có một đánh giá
+                            cho mỗi tài liệu. Bạn có thể cập nhật
+                            đánh giá đã gửi.
+                        </p>
+
+                        <form method="post"
+                              asp-page-handler="Review"
+                              asp-route-id="@Model.Material.Id">
+
+                            <div asp-validation-summary="All"
+                                 class="text-danger mb-3">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">
+                                    Số sao đánh giá
+                                </label>
+
+                                <select asp-for="Rating"
+                                        class="form-select"
+                                        required>
+                                    <option value="0">
+                                        -- Chọn số sao --
+                                    </option>
+                                    <option value="1">★ 1 sao</option>
+                                    <option value="2">★★ 2 sao</option>
+                                    <option value="3">★★★ 3 sao</option>
+                                    <option value="4">★★★★ 4 sao</option>
+                                    <option value="5">★★★★★ 5 sao</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="Comment"
+                                       class="form-label fw-bold">
+                                    Nhận xét
+                                </label>
+
+                                <textarea asp-for="Comment"
+                                          class="form-control"
+                                          rows="4"
+                                          maxlength="1000"
+                                          placeholder="Nhập nhận xét về tài liệu..."></textarea>
+                            </div>
+
+                            <button type="submit"
+                                    class="btn btn-primary">
+                                @(Model.HasReviewed
+                                    ? "Cập nhật đánh giá"
+                                    : "Gửi đánh giá")
+                            </button>
+
+                        </form>
+
+                    </div>
+                </div>
+            }
+
+            <!-- DANH SÁCH ĐÁNH GIÁ -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body p-4">
+
+                    <h4 class="fw-bold mb-3">
+                        Đánh giá từ sinh viên
+                        (@Model.Reviews.Count)
+                    </h4>
+
+                    @if (Model.Reviews.Count == 0)
+                    {
+                        <div class="alert alert-light border mb-0">
+                            Chưa có đánh giá nào cho tài liệu này.
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var review in Model.Reviews)
+                        {
+                            <div class="border-bottom pb-3 mb-3">
+
+                                <div class="d-flex justify-content-between
+                                            align-items-center flex-wrap gap-2">
+
+                                    <strong>
+                                        @review.StudentName
+                                    </strong>
+
+                                    <span class="text-warning fw-bold">
+                                        @for (int i = 0; i < review.Rating; i++)
+                                        {
+                                            <text>★</text>
+                                        }
+                                        @for (int i = review.Rating; i < 5; i++)
+                                        {
+                                            <text>☆</text>
+                                        }
+                                    </span>
+
+                                </div>
+
+                                @if (!string.IsNullOrWhiteSpace(review.Comment))
+                                {
+                                    <p class="text-muted mt-2 mb-0">
+                                        @review.Comment
+                                    </p>
+                                }
+
+                            </div>
+                        }
+                    }
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

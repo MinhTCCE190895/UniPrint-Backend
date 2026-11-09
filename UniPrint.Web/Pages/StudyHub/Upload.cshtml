@@ -1,0 +1,167 @@
+﻿
+@page
+@model UniPrint.Web.Pages.StudyHub.UploadModel
+
+@{
+    ViewData["Title"] = "Đăng Tải Tài Liệu";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+
+                    <h3 class="fw-bold mb-2">
+                        Đăng Tải Tài Liệu Học Tập
+                    </h3>
+
+                    <p class="text-muted">
+                        Chia sẻ tài liệu với cộng đồng sinh viên.
+                        Tài liệu sẽ ở trạng thái Pending
+                        cho đến khi Admin phê duyệt.
+                    </p>
+
+                    @if (!string.IsNullOrEmpty(Model.Message))
+                    {
+                        <div class="alert alert-info">
+                            @Model.Message
+                        </div>
+                    }
+
+                    <div asp-validation-summary="All"
+                         class="text-danger"></div>
+
+                    <form method="post"
+                          enctype="multipart/form-data">
+
+                        @Html.AntiForgeryToken()
+
+                        <!-- Tên tài liệu -->
+                        <div class="mb-3">
+                            <label asp-for="Title"
+                                   class="form-label">
+                                Tên tài liệu
+                            </label>
+
+                            <input asp-for="Title"
+                                   class="form-control"
+                                   placeholder="Nhập tên tài liệu"
+                                   required />
+
+                            <span asp-validation-for="Title"
+                                  class="text-danger"></span>
+                        </div>
+
+                        <!-- Mô tả tài liệu -->
+                        <div class="mb-3">
+                            <label asp-for="Description"
+                                   class="form-label">
+                                Mô tả tài liệu
+                            </label>
+
+                            <textarea asp-for="Description"
+                                      class="form-control"
+                                      rows="4"
+                                      placeholder="Nhập mô tả tài liệu"
+                                      required></textarea>
+
+                            <span asp-validation-for="Description"
+                                  class="text-danger"></span>
+                        </div>
+
+                        <!-- Chọn môn học -->
+                        <div class="mb-3">
+                            <label asp-for="SubjectId"
+                                   class="form-label">
+                                Môn học
+                            </label>
+
+                            <select asp-for="SubjectId"
+                                    class="form-select"
+                                    required>
+
+                                <option value="">
+                                    -- Chọn môn học --
+                                </option>
+
+                                @foreach (var subject in Model.Subjects)
+                                {
+                                    <option value="@subject.Id">
+                                        @subject.Code - @subject.Name
+                                    </option>
+                                }
+                            </select>
+
+                            <span asp-validation-for="SubjectId"
+                                  class="text-danger"></span>
+                        </div>
+
+                        <!-- Chọn danh mục -->
+                        <div class="mb-3">
+                            <label asp-for="CategoryId"
+                                   class="form-label">
+                                Danh mục tài liệu
+                            </label>
+
+                            <select asp-for="CategoryId"
+                                    class="form-select"
+                                    required>
+
+                                <option value="">
+                                    -- Chọn danh mục --
+                                </option>
+
+                                @foreach (var category in Model.Categories)
+                                {
+                                    <option value="@category.Id">
+                                        @category.Name
+                                    </option>
+                                }
+                            </select>
+
+                            <span asp-validation-for="CategoryId"
+                                  class="text-danger"></span>
+                        </div>
+
+                        <!-- Chọn file -->
+                        <div class="mb-3">
+                            <label asp-for="UploadedFile"
+                                   class="form-label">
+                                Chọn tài liệu PDF/DOCX
+                            </label>
+
+                            <input asp-for="UploadedFile"
+                                   type="file"
+                                   class="form-control"
+                                   accept=".pdf,.docx"
+                                   required />
+
+                            <small class="text-muted">
+                                Dung lượng tối đa: 10MB.
+                            </small>
+
+                            <span asp-validation-for="UploadedFile"
+                                  class="text-danger"></span>
+                        </div>
+
+                        <!-- Nút thao tác -->
+                        <div class="d-flex gap-2">
+                            <button type="submit"
+                                    class="btn btn-primary">
+                                Gửi Tài Liệu Chờ Duyệt
+                            </button>
+
+                            <a asp-page="/StudyHub/Index"
+                               class="btn btn-secondary">
+                                Quay Lại
+                            </a>
+                        </div>
+
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
