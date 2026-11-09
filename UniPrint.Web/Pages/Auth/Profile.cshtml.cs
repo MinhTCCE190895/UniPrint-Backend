@@ -5,20 +5,18 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using UniPrint.Business.Common;
 using UniPrint.Business.DTOs;
-using UniPrint.Business.Services;
+using UniPrint.Web.Services;
 
 namespace UniPrint.Web.Pages.Auth;
 
 [Authorize]
 public class ProfileModel : PageModel
 {
-    private readonly IAuthService _authService;
+    private readonly WebApiClient _api;
 
-    public ProfileModel(IAuthService authService)
-    {
-        _authService = authService;
-    }
+    public ProfileModel(WebApiClient api) => _api = api;
 
     public UserProfileDto? UserProfile { get; set; }
 
@@ -56,16 +54,10 @@ public class ProfileModel : PageModel
 
     public async Task<IActionResult> OnGetAsync()
     {
-        var userId = GetCurrentUserId();
-        if (userId == null)
+        var result = await _api.GetAsync<ApiResponse<UserProfileDto>>("api/auth/me");
+        if (result == null || !result.Success || result.Data == null)
         {
-            return RedirectToPage("/Auth/Login");
-        }
-
-        var result = await _authService.GetProfileAsync(userId.Value);
-        if (!result.Success || result.Data == null)
-        {
-            ErrorMessage = result.Message ?? "Không tìm thấy thông tin người dùng.";
+            ErrorMessage = result?.Message ?? "Không tìm thấy thông tin người dùng.";
             return RedirectToPage("/Index");
         }
 
@@ -79,16 +71,10 @@ public class ProfileModel : PageModel
     public async Task<IActionResult> OnPostUpdateProfileAsync()
     {
         ActiveTab = "info";
-        var userId = GetCurrentUserId();
-        if (userId == null)
-        {
-            return RedirectToPage("/Auth/Login");
-        }
-
         if (string.IsNullOrWhiteSpace(FullName))
         {
             ErrorMessage = "Họ và tên không được để trống.";
-            await LoadUserProfileAsync(userId.Value);
+            await LoadUserProfileAsync();
             return Page();
         }
 
@@ -98,25 +84,24 @@ public class ProfileModel : PageModel
             if (!System.Text.RegularExpressions.Regex.IsMatch(phoneTrimmed, @"^(0|\+84)[0-9]{9,10}$"))
             {
                 ErrorMessage = "Số điện thoại không hợp lệ (cần 10 số, bắt đầu bằng 0 hoặc +84).";
-                await LoadUserProfileAsync(userId.Value);
+                await LoadUserProfileAsync();
                 return Page();
             }
         }
 
-        var result = await _authService.UpdateProfileAsync(userId.Value, new UpdateProfileRequestDto
+        var result = await _api.PutAsync<ApiResponse<UserProfileDto>>("api/auth/profile", new UpdateProfileRequestDto
         {
             FullName = FullName,
             PhoneNumber = PhoneNumber
         });
 
-        if (!result.Success || result.Data == null)
+        if (result == null || !result.Success || result.Data == null)
         {
-            ErrorMessage = result.Message ?? "Cập nhật thông tin thất bại.";
-            await LoadUserProfileAsync(userId.Value);
+            ErrorMessage = result?.Message ?? "Cập nhật thông tin thất bại.";
+            await LoadUserProfileAsync();
             return Page();
         }
 
-        // Cập nhật lại Claims trong Cookie để header hiển thị tên mới ngay lập tức
         if (User.Identity is ClaimsIdentity identity)
         {
             var existingNameClaim = identity.FindFirst(ClaimTypes.Name);
@@ -135,51 +120,38 @@ public class ProfileModel : PageModel
     public async Task<IActionResult> OnPostChangePasswordAsync()
     {
         ActiveTab = "password";
-        var userId = GetCurrentUserId();
-        if (userId == null)
-        {
-            return RedirectToPage("/Auth/Login");
-        }
-
         if (string.IsNullOrWhiteSpace(CurrentPassword))
         {
             PasswordErrorMessage = "Mật khẩu hiện tại không được để trống.";
-            await LoadUserProfileAsync(userId.Value);
+            await LoadUserProfileAsync();
             return Page();
         }
 
-        if (string.IsNullOrWhiteSpace(NewPassword))
-        {
-            PasswordErrorMessage = "Mật khẩu mới không được để trống.";
-            await LoadUserProfileAsync(userId.Value);
-            return Page();
-        }
-
-        if (NewPassword.Length < 6)
+        if (string.IsNullOrWhiteSpace(NewPassword) || NewPassword.Length < 6)
         {
             PasswordErrorMessage = "Mật khẩu mới phải có ít nhất 6 ký tự.";
-            await LoadUserProfileAsync(userId.Value);
+            await LoadUserProfileAsync();
             return Page();
         }
 
         if (NewPassword != ConfirmPassword)
         {
             PasswordErrorMessage = "Xác nhận mật khẩu mới không khớp.";
-            await LoadUserProfileAsync(userId.Value);
+            await LoadUserProfileAsync();
             return Page();
         }
 
-        var result = await _authService.ChangePasswordAsync(userId.Value, new ChangePasswordRequestDto
+        var result = await _api.PutAsync<ApiResponse<bool>>("api/auth/change-password", new ChangePasswordRequestDto
         {
             CurrentPassword = CurrentPassword,
             NewPassword = NewPassword,
             ConfirmPassword = ConfirmPassword
         });
 
-        if (!result.Success)
+        if (result == null || !result.Success)
         {
-            PasswordErrorMessage = result.Message ?? "Đổi mật khẩu thất bại.";
-            await LoadUserProfileAsync(userId.Value);
+            PasswordErrorMessage = result?.Message ?? "Đổi mật khẩu thất bại.";
+            await LoadUserProfileAsync();
             return Page();
         }
 
@@ -187,22 +159,12 @@ public class ProfileModel : PageModel
         return RedirectToPage("/Auth/Profile", new { activeTab = "password" });
     }
 
-    private async Task LoadUserProfileAsync(Guid userId)
+    private async Task LoadUserProfileAsync()
     {
-        var result = await _authService.GetProfileAsync(userId);
-        if (result.Success && result.Data != null)
+        var result = await _api.GetAsync<ApiResponse<UserProfileDto>>("api/auth/me");
+        if (result != null && result.Success && result.Data != null)
         {
             UserProfile = result.Data;
         }
-    }
-
-    private Guid? GetCurrentUserId()
-    {
-        var idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (Guid.TryParse(idClaim, out var userId))
-        {
-            return userId;
-        }
-        return null;
     }
 }

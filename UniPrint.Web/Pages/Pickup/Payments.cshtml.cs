@@ -1,24 +1,24 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using UniPrint.Business.Common;
 using UniPrint.Business.DTOs;
-using UniPrint.Business.Services;
 using UniPrint.DataAccess.Enums;
+using UniPrint.Web.Services;
 
 namespace UniPrint.Web.Pages.Pickup;
 
 /// <summary>
-/// Task 18: Staff thu tiền mặt khi giao tài liệu hoặc xác nhận đã nhận chuyển khoản VietQR.
+/// Task 18: Staff thu tiền mặt khi giao tài liệu hoặc xác nhận đã nhận chuyển khoản VietQR qua REST API.
 /// </summary>
 [Authorize(Roles = "Staff,Admin")]
 public class PaymentsModel : PageModel
 {
-    private readonly IPaymentService _paymentService;
+    private readonly WebApiClient _api;
 
-    public PaymentsModel(IPaymentService paymentService)
+    public PaymentsModel(WebApiClient api)
     {
-        _paymentService = paymentService;
+        _api = api;
     }
 
     [BindProperty(SupportsGet = true)]
@@ -34,25 +34,29 @@ public class PaymentsModel : PageModel
 
     public async Task OnGetAsync()
     {
-        var result = await _paymentService.GetUnpaidPaymentsAsync(Keyword);
-        UnpaidPayments = result.Data ?? new();
+        var url = "api/payments/unpaid";
+        if (!string.IsNullOrWhiteSpace(Keyword))
+        {
+            url += $"?keyword={Uri.EscapeDataString(Keyword.Trim())}";
+        }
+
+        var result = await _api.GetAsync<ApiResponse<List<PaymentResponseDto>>>(url);
+        UnpaidPayments = result?.Data ?? new();
     }
 
     public async Task<IActionResult> OnPostConfirmAsync(Guid orderId, PaymentMethod method, string? transactionCode)
     {
-        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var staffId))
-            return Challenge();
-
-        var result = await _paymentService.ConfirmPaymentAsync(orderId, staffId, new ConfirmPaymentDto
+        var result = await _api.PostAsync<ApiResponse<PaymentResponseDto>>($"api/payments/order/{orderId}/confirm", new ConfirmPaymentDto
         {
             Method = method,
             TransactionCode = transactionCode
         });
 
-        IsSuccess = result.Success;
-        Message = result.Success
-            ? $"{result.Data!.OrderCode}: {result.Message}"
-            : result.Message;
+        IsSuccess = result != null && result.Success;
+        Message = result != null && result.Success
+            ? $"{result.Data?.OrderCode}: {result.Message}"
+            : (result?.Message ?? "Xác nhận thanh toán thất bại.");
+
         return RedirectToPage(new { Keyword });
     }
 }

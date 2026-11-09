@@ -4,19 +4,17 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using UniPrint.Business.Common;
 using UniPrint.Business.DTOs;
-using UniPrint.Business.Services;
+using UniPrint.Web.Services;
 
 namespace UniPrint.Web.Pages.Auth;
 
 public class RegisterModel : PageModel
 {
-    private readonly IAuthService _authService;
+    private readonly WebApiClient _api;
 
-    public RegisterModel(IAuthService authService)
-    {
-        _authService = authService;
-    }
+    public RegisterModel(WebApiClient api) => _api = api;
 
     [BindProperty]
     [Required(ErrorMessage = "Vui lòng nhập họ và tên")]
@@ -44,18 +42,13 @@ public class RegisterModel : PageModel
 
     public string? ErrorMessage { get; set; }
 
-    public void OnGet()
-    {
-    }
+    public void OnGet() { }
 
     public async Task<IActionResult> OnPostAsync()
     {
-        if (!ModelState.IsValid)
-        {
-            return Page();
-        }
+        if (!ModelState.IsValid) return Page();
 
-        var result = await _authService.RegisterAsync(new RegisterRequestDto
+        var result = await _api.PostAsync<ApiResponse<AuthResponseDto>>("api/auth/register", new RegisterRequestDto
         {
             FullName = FullName,
             Email = Email,
@@ -63,13 +56,18 @@ public class RegisterModel : PageModel
             PhoneNumber = PhoneNumber
         });
 
-        if (!result.Success || result.Data == null)
+        if (result == null || !result.Success || result.Data == null)
         {
-            ErrorMessage = result.Message ?? "Đăng ký không thành công. Vui lòng thử lại.";
+            ErrorMessage = result?.Message ?? "Đăng ký không thành công. Vui lòng thử lại.";
             return Page();
         }
 
-        // Tự động đăng nhập vào Cookie Session sau khi đăng ký thành công
+        // Lưu JWT token vào Session
+        if (!string.IsNullOrEmpty(result.Data.AccessToken))
+        {
+            HttpContext.Session.SetString("jwt_token", result.Data.AccessToken);
+        }
+
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, result.Data.UserId.ToString()),
@@ -80,10 +78,8 @@ public class RegisterModel : PageModel
 
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
         var principal = new ClaimsPrincipal(identity);
-
         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
 
-        // Tự động chuyển hướng về Trang Chủ (Home Hub) sau khi đăng ký thành công
         return RedirectToPage("/Index");
     }
 }

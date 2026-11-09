@@ -1,27 +1,20 @@
-
-using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
+using UniPrint.Business.Common;
 using UniPrint.Business.DTOs;
-using UniPrint.Business.Services;
-using UniPrint.DataAccess.Context;
 using UniPrint.DataAccess.Enums;
+using UniPrint.Web.Services;
 
 namespace UniPrint.Web.Pages.StudyHub;
 
 public class IndexModel : PageModel
 {
-    private readonly IStudyHubService _studyHubService;
-    private readonly UniPrintDbContext _dbContext;
+    private readonly WebApiClient _api;
 
-    public IndexModel(
-        IStudyHubService studyHubService,
-        UniPrintDbContext dbContext)
+    public IndexModel(WebApiClient api)
     {
-        _studyHubService = studyHubService;
-        _dbContext = dbContext;
+        _api = api;
     }
 
     // ==========================================
@@ -60,20 +53,27 @@ public class IndexModel : PageModel
     public class MyMaterialItem
     {
         public Guid Id { get; set; }
-
         public string Title { get; set; } = "";
-
         public string Description { get; set; } = "";
-
         public MaterialStatus Status { get; set; }
-
         public string SubjectCode { get; set; } = "";
-
         public string SubjectName { get; set; } = "";
-
         public string CategoryName { get; set; } = "";
-
         public DateTime CreatedAt { get; set; }
+    }
+
+    private class LookupSubject
+    {
+        public Guid Id { get; set; }
+        public string Code { get; set; } = "";
+        public string Name { get; set; } = "";
+    }
+
+    private class LookupCategory
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = "";
+        public string? Description { get; set; }
     }
 
     // ==========================================
@@ -82,40 +82,23 @@ public class IndexModel : PageModel
 
     private async Task LoadFilterOptionsAsync()
     {
-        SubjectOptions = await _dbContext.Subjects
-            .AsNoTracking()
-            .OrderBy(s => s.Code)
-            .Select(s => new SelectListItem
-            {
-                Value = s.Id.ToString(),
-                Text = s.Code + " - " + s.Name
-            })
-            .ToListAsync();
-
-        CategoryOptions = await _dbContext.Categories
-            .AsNoTracking()
-            .OrderBy(c => c.Name)
-            .Select(c => new SelectListItem
-            {
-                Value = c.Id.ToString(),
-                Text = c.Name
-            })
-            .ToListAsync();
-
-        // Giữ lựa chọn sau khi tìm kiếm
-        foreach (var option in SubjectOptions)
+        var subjectsRes = await _api.GetAsync<ApiResponse<List<LookupSubject>>>("api/lookup/subjects");
+        var subjects = subjectsRes?.Data ?? new();
+        SubjectOptions = subjects.Select(s => new SelectListItem
         {
-            option.Selected =
-                SubjectId.HasValue &&
-                option.Value == SubjectId.Value.ToString();
-        }
+            Value = s.Id.ToString(),
+            Text = s.Code + " - " + s.Name,
+            Selected = SubjectId.HasValue && s.Id == SubjectId.Value
+        }).ToList();
 
-        foreach (var option in CategoryOptions)
+        var categoriesRes = await _api.GetAsync<ApiResponse<List<LookupCategory>>>("api/lookup/categories");
+        var categories = categoriesRes?.Data ?? new();
+        CategoryOptions = categories.Select(c => new SelectListItem
         {
-            option.Selected =
-                CategoryId.HasValue &&
-                option.Value == CategoryId.Value.ToString();
-        }
+            Value = c.Id.ToString(),
+            Text = c.Name,
+            Selected = CategoryId.HasValue && c.Id == CategoryId.Value
+        }).ToList();
     }
 
     // ==========================================
@@ -124,73 +107,28 @@ public class IndexModel : PageModel
 
     public async Task OnGetAsync()
     {
-        // Bước 1: Load môn học và danh mục
         await LoadFilterOptionsAsync();
 
-        // Bước 2: Search & Filter tài liệu Approved
-        var result = await _studyHubService
-            .GetApprovedMaterialsAsync(
-                Search?.Trim(),
-                SubjectId,
-                CategoryId
-            );
+        var url = "api/studyhub/materials";
+        var queryParams = new List<string>();
+        if (!string.IsNullOrWhiteSpace(Search))
+            queryParams.Add($"search={Uri.EscapeDataString(Search.Trim())}");
+        if (SubjectId.HasValue)
+            queryParams.Add($"subjectId={SubjectId.Value}");
+        if (CategoryId.HasValue)
+            queryParams.Add($"categoryId={CategoryId.Value}");
 
-        Materials = result.Data ?? new List<StudyMaterialDto>();
+        if (queryParams.Any())
+            url += "?" + string.Join("&", queryParams);
 
-        // Bước 3: EC08 - Chỉ hiển thị tài liệu Approved
-        // Truy vấn trực tiếp theo Id để kiểm tra trạng thái
-        // ngay cả khi Business Service trả về dữ liệu khác.
-        var approvedIds = await _dbContext.StudyMaterials
-            .AsNoTracking()
-            .Where(m => m.Status == MaterialStatus.Approved)
-            .Select(m => m.Id)
-            .ToListAsync();
+        var result = await _api.GetAsync<ApiResponse<List<StudyMaterialDto>>>(url);
+        Materials = result?.Data ?? new List<StudyMaterialDto>();
 
-        var approvedIdSet = approvedIds.ToHashSet();
-
-        Materials = Materials
-            .Where(m => approvedIdSet.Contains(m.Id))
-            .ToList();
-
-        // Bước 4: Chỉ Student mới xem tài liệu cá nhân
+        // Chỉ Student mới xem tài liệu cá nhân
         if (!User.IsInRole("Student"))
             return;
 
-        var userIdString = User.FindFirstValue(
-            ClaimTypes.NameIdentifier);
-
-        if (!Guid.TryParse(userIdString, out var studentId))
-            return;
-
-        // Bước 5: Lấy tất cả tài liệu của Student
-        // Bao gồm Pending, Approved, Rejected
-        MyMaterials = await (
-            from material in _dbContext.StudyMaterials.AsNoTracking()
-
-            join document in _dbContext.Documents.AsNoTracking()
-                on material.DocumentId equals document.Id
-
-            join subject in _dbContext.Subjects.AsNoTracking()
-                on material.SubjectId equals subject.Id
-
-            join category in _dbContext.Categories.AsNoTracking()
-                on material.CategoryId equals category.Id
-
-            where document.UserId == studentId
-
-            orderby material.CreatedAt descending
-
-            select new MyMaterialItem
-            {
-                Id = material.Id,
-                Title = material.Title,
-                Description = material.Description,
-                Status = material.Status,
-                SubjectCode = subject.Code,
-                SubjectName = subject.Name,
-                CategoryName = category.Name,
-                CreatedAt = material.CreatedAt
-            }
-        ).ToListAsync();
+        var myMatRes = await _api.GetAsync<ApiResponse<List<MyMaterialItem>>>("api/lookup/my-materials");
+        MyMaterials = myMatRes?.Data ?? new List<MyMaterialItem>();
     }
 }

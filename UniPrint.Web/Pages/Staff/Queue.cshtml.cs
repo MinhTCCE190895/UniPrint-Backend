@@ -1,21 +1,21 @@
-using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using UniPrint.Business.Common;
 using UniPrint.Business.DTOs;
-using UniPrint.Business.Services;
 using UniPrint.DataAccess.Enums;
+using UniPrint.Web.Services;
 
 namespace UniPrint.Web.Pages.Staff;
 
+[Authorize(Roles = "Staff,Admin")]
 public class QueueModel : PageModel
 {
-    private readonly IPrintOrderService _orderService;
-    private readonly IShelfService _shelfService;
+    private readonly WebApiClient _api;
 
-    public QueueModel(IPrintOrderService orderService, IShelfService shelfService)
+    public QueueModel(WebApiClient api)
     {
-        _orderService = orderService;
-        _shelfService = shelfService;
+        _api = api;
     }
 
     public List<PrintOrderResponseDto> Orders { get; set; } = new();
@@ -29,46 +29,46 @@ public class QueueModel : PageModel
 
     public async Task OnGetAsync()
     {
-        var result = await _orderService.GetStaffQueueOrdersAsync();
-        Orders = result.Data ?? new List<PrintOrderResponseDto>();
+        var result = await _api.GetAsync<ApiResponse<List<PrintOrderResponseDto>>>("api/printorders/queue");
+        Orders = result?.Data ?? new List<PrintOrderResponseDto>();
 
-        var shelvesResult = await _shelfService.GetAvailableShelvesAsync();
-        AvailableShelves = shelvesResult.Data ?? new List<ShelfResponseDto>();
+        var shelvesResult = await _api.GetAsync<ApiResponse<List<ShelfResponseDto>>>("api/shelves/available");
+        AvailableShelves = shelvesResult?.Data ?? new List<ShelfResponseDto>();
     }
 
     public async Task<IActionResult> OnPostUpdateStatusAsync(Guid orderId, PrintOrderStatus newStatus)
     {
-        var staffId = GetCurrentStaffId();
-        var result = await _orderService.UpdateOrderStatusAsync(orderId, staffId, newStatus);
-        if (!result.Success)
+        var result = await _api.PatchAsync<ApiResponse<PrintOrderResponseDto>>($"api/printorders/{orderId}/status", new UpdateOrderStatusDto
         {
-            ErrorMessage = result.Message;
+            NewStatus = newStatus
+        });
+
+        if (result != null && result.Success)
+        {
+            SuccessMessage = result.Message;
         }
         else
         {
-            SuccessMessage = result.Message;
+            ErrorMessage = result?.Message ?? "Cập nhật trạng thái thất bại.";
         }
         return RedirectToPage();
     }
 
     public async Task<IActionResult> OnPostAssignShelfAsync(Guid orderId, Guid shelfId)
     {
-        var staffId = GetCurrentStaffId();
-        var result = await _orderService.AssignShelfAsync(orderId, staffId, shelfId);
-        if (!result.Success)
+        var result = await _api.PostAsync<ApiResponse<PrintOrderResponseDto>>($"api/printorders/{orderId}/assign-shelf", new AssignShelfDto
         {
-            ErrorMessage = result.Message;
-        }
-        else
+            ShelfId = shelfId
+        });
+
+        if (result != null && result.Success)
         {
             SuccessMessage = result.Message;
         }
+        else
+        {
+            ErrorMessage = result?.Message ?? "Gán kệ thất bại.";
+        }
         return RedirectToPage();
-    }
-
-    private Guid GetCurrentStaffId()
-    {
-        var staffIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        return staffIdClaim != null ? Guid.Parse(staffIdClaim) : Guid.Parse("22222222-2222-2222-2222-222222222222");
     }
 }

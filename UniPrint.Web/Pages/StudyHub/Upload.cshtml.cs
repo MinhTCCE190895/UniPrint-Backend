@@ -1,33 +1,22 @@
-
 using System.ComponentModel.DataAnnotations;
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
+using UniPrint.Business.Common;
 using UniPrint.Business.DTOs;
-using UniPrint.Business.Services;
-using UniPrint.DataAccess.Context;
+using UniPrint.Web.Services;
 
 namespace UniPrint.Web.Pages.StudyHub;
 
 [Authorize(Roles = "Student")]
 public class UploadModel : PageModel
 {
-    private readonly IDocumentService _documentService;
-    private readonly IStudyHubService _studyHubService;
-    private readonly UniPrintDbContext _dbContext;
+    private readonly WebApiClient _api;
     private readonly ILogger<UploadModel> _logger;
 
-    public UploadModel(
-        IDocumentService documentService,
-        IStudyHubService studyHubService,
-        UniPrintDbContext dbContext,
-        ILogger<UploadModel> logger)
+    public UploadModel(WebApiClient api, ILogger<UploadModel> logger)
     {
-        _documentService = documentService;
-        _studyHubService = studyHubService;
-        _dbContext = dbContext;
+        _api = api;
         _logger = logger;
     }
 
@@ -60,7 +49,6 @@ public class UploadModel : PageModel
     // ================================
 
     public List<SubjectOption> Subjects { get; set; } = new();
-
     public List<CategoryOption> Categories { get; set; } = new();
 
     public class SubjectOption
@@ -82,26 +70,11 @@ public class UploadModel : PageModel
 
     private async Task LoadOptionsAsync()
     {
-        Subjects = await _dbContext.Subjects
-            .AsNoTracking()
-            .OrderBy(s => s.Code)
-            .Select(s => new SubjectOption
-            {
-                Id = s.Id,
-                Code = s.Code,
-                Name = s.Name
-            })
-            .ToListAsync();
+        var subRes = await _api.GetAsync<ApiResponse<List<SubjectOption>>>("api/lookup/subjects");
+        Subjects = subRes?.Data ?? new();
 
-        Categories = await _dbContext.Categories
-            .AsNoTracking()
-            .OrderBy(c => c.Name)
-            .Select(c => new CategoryOption
-            {
-                Id = c.Id,
-                Name = c.Name
-            })
-            .ToListAsync();
+        var catRes = await _api.GetAsync<ApiResponse<List<CategoryOption>>>("api/lookup/categories");
+        Categories = catRes?.Data ?? new();
     }
 
     // ================================
@@ -121,157 +94,77 @@ public class UploadModel : PageModel
     {
         await LoadOptionsAsync();
 
-        // 1. Validate form
         if (!ModelState.IsValid)
         {
             return Page();
         }
 
-        if (SubjectId == Guid.Empty ||
-            CategoryId == Guid.Empty)
+        if (SubjectId == Guid.Empty || CategoryId == Guid.Empty)
         {
-            ModelState.AddModelError(
-                "",
-                "Vui lòng chọn môn học và danh mục."
-            );
-
+            ModelState.AddModelError("", "Vui lòng chọn môn học và danh mục.");
             return Page();
         }
 
-        // 2. Validate file
-        if (UploadedFile == null ||
-            UploadedFile.Length == 0)
+        if (UploadedFile == null || UploadedFile.Length == 0)
         {
-            ModelState.AddModelError(
-                "",
-                "Vui lòng chọn file tài liệu."
-            );
-
+            ModelState.AddModelError("", "Vui lòng chọn file tài liệu.");
             return Page();
         }
 
-        var extension = Path
-            .GetExtension(UploadedFile.FileName)
-            .ToLowerInvariant();
-
-        if (extension != ".pdf" &&
-            extension != ".docx")
+        var extension = Path.GetExtension(UploadedFile.FileName).ToLowerInvariant();
+        if (extension != ".pdf" && extension != ".docx")
         {
-            ModelState.AddModelError(
-                "",
-                "Chỉ hỗ trợ file PDF hoặc DOCX."
-            );
-
+            ModelState.AddModelError("", "Chỉ hỗ trợ file PDF hoặc DOCX.");
             return Page();
         }
 
         const long maxFileSize = 10 * 1024 * 1024;
-
         if (UploadedFile.Length > maxFileSize)
         {
-            ModelState.AddModelError(
-                "",
-                "Dung lượng file tối đa là 10MB."
-            );
-
+            ModelState.AddModelError("", "Dung lượng file tối đa là 10MB.");
             return Page();
-        }
-
-        // 3. Get student ID from Cookie Authentication
-        var userIdString = User.FindFirstValue(
-            ClaimTypes.NameIdentifier
-        );
-
-        if (!Guid.TryParse(userIdString, out var studentId))
-        {
-            return Challenge();
         }
 
         try
         {
-            // 4. Validate selected subject and category
-            var subjectExists = await _dbContext.Subjects
-                .AnyAsync(s => s.Id == SubjectId);
+            // 1. Upload file lên API DocumentsController
+            using var form = new MultipartFormDataContent();
+            using var stream = UploadedFile.OpenReadStream();
+            var fileContent = new StreamContent(stream);
+            fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(
+                UploadedFile.ContentType ?? "application/octet-stream");
+            form.Add(fileContent, "file", UploadedFile.FileName);
 
-            var categoryExists = await _dbContext.Categories
-                .AnyAsync(c => c.Id == CategoryId);
-
-            if (!subjectExists || !categoryExists)
+            var docResult = await _api.PostMultipartAsync<ApiResponse<DocumentResponseDto>>("api/documents/upload", form);
+            if (docResult == null || !docResult.Success || docResult.Data == null)
             {
-                ModelState.AddModelError(
-                    "",
-                    "Môn học hoặc danh mục không hợp lệ."
-                );
-
+                ModelState.AddModelError("", docResult?.Message ?? "Có lỗi khi tải file lên.");
                 return Page();
             }
 
-            // 5. Upload document
-            await using var stream =
-                UploadedFile.OpenReadStream();
-
-            var documentResult =
-                await _documentService.UploadDocumentStreamAsync(
-                    studentId,
-                    stream,
-                    UploadedFile.FileName,
-                    UploadedFile.Length
-                );
-
-            if (!documentResult.Success ||
-                documentResult.Data == null)
+            // 2. Tạo Study Material qua API StudyHubController
+            var materialResult = await _api.PostAsync<ApiResponse<StudyMaterialDto>>("api/studyhub/materials", new CreateMaterialDto
             {
-                Message = documentResult.Message
-                    ?? "Không thể tải file lên hệ thống.";
-
-                return Page();
-            }
-
-            // 6. Create Study Material
-            var request = new CreateMaterialDto
-            {
-                Title = Title,
-                Description = Description,
-                DocumentId = documentResult.Data.Id,
+                Title = Title.Trim(),
+                Description = Description.Trim(),
+                DocumentId = docResult.Data.Id,
                 SubjectId = SubjectId,
                 CategoryId = CategoryId
-            };
+            });
 
-            var materialResult =
-                await _studyHubService.UploadMaterialAsync(
-                    studentId,
-                    request
-                );
-
-            if (!materialResult.Success)
+            if (materialResult == null || !materialResult.Success)
             {
-                Message =
-                    "File đã tải lên nhưng không thể " +
-                    "tạo Study Material: " +
-                    materialResult.Message;
-
+                ModelState.AddModelError("", materialResult?.Message ?? "Có lỗi khi đăng tải tài liệu.");
                 return Page();
             }
 
-            // 7. Success
-            TempData["SuccessMessage"] =
-                "Đăng tải thành công! " +
-                "Tài liệu đang chờ Admin phê duyệt.";
-
+            TempData["SuccessMessage"] = "Tài liệu học tập đã được gửi duyệt lên Admin (BR04)!";
             return RedirectToPage("/StudyHub/Index");
         }
         catch (Exception ex)
         {
-            _logger.LogError(
-                ex,
-                "Upload Study Material failed for student {StudentId}",
-                studentId
-            );
-
-            Message =
-                "Có lỗi xảy ra khi đăng tải tài liệu. " +
-                "Vui lòng thử lại.";
-
+            _logger.LogError(ex, "Error uploading study material");
+            ModelState.AddModelError("", "Có lỗi xảy ra trong quá trình xử lý.");
             return Page();
         }
     }

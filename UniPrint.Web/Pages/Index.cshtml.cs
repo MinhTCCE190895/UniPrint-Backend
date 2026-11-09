@@ -1,22 +1,19 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using UniPrint.Business.Common;
 using UniPrint.Business.DTOs;
-using UniPrint.Business.Services;
+using UniPrint.Web.Services;
 
 namespace UniPrint.Web.Pages;
 
 public class IndexModel : PageModel
 {
-    private readonly IPrintOrderService _orderService;
-    private readonly IDocumentService _documentService;
+    private readonly WebApiClient _api;
 
-    public IndexModel(IPrintOrderService orderService, IDocumentService documentService)
+    public IndexModel(WebApiClient api)
     {
-        _orderService = orderService;
-        _documentService = documentService;
+        _api = api;
     }
 
-    // [UI Presentation Only] Dữ liệu theo dõi tiến độ và tóm tắt kho tài liệu
     public List<PrintOrderResponseDto> RecentOrders { get; set; } = new();
     public int TotalDocuments { get; set; } = 0;
 
@@ -24,20 +21,16 @@ public class IndexModel : PageModel
     {
         if (User.Identity?.IsAuthenticated == true && User.IsInRole("Student"))
         {
-            if (Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+            var ordersResult = await _api.GetAsync<ApiResponse<List<PrintOrderResponseDto>>>("api/printorders/my-orders");
+            if (ordersResult != null && ordersResult.Success && ordersResult.Data != null)
             {
-                var ordersResult = await _orderService.GetStudentOrdersAsync(userId);
-                if (ordersResult.Success && ordersResult.Data != null)
-                {
-                    // Lấy 4 đơn in gần nhất để hiển thị theo dõi tiến độ trên trang chủ
-                    RecentOrders = ordersResult.Data.Take(4).ToList();
-                }
+                RecentOrders = ordersResult.Data.Take(4).ToList();
+            }
 
-                var docsResult = await _documentService.GetMyDocumentsAsync(userId);
-                if (docsResult.Success && docsResult.Data != null)
-                {
-                    TotalDocuments = docsResult.Data.Count;
-                }
+            var docsResult = await _api.GetAsync<ApiResponse<List<DocumentResponseDto>>>("api/documents/my-documents");
+            if (docsResult != null && docsResult.Success && docsResult.Data != null)
+            {
+                TotalDocuments = docsResult.Data.Count;
             }
         }
     }
