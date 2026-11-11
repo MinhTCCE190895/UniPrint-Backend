@@ -8,11 +8,11 @@ namespace UniPrint.Business.Common;
 /// </summary>
 public class VietQrSettings
 {
-    /// <summary>Mã BIN ngân hàng theo chuẩn NAPAS (VD: 970436 = Vietcombank).</summary>
-    public string BankBin { get; set; } = "970436";
-    public string BankName { get; set; } = "Vietcombank";
-    public string AccountNo { get; set; } = "1234567890";
-    public string AccountName { get; set; } = "UNIPRINT FPTU";
+    /// <summary>Mã BIN ngân hàng theo chuẩn NAPAS (VD: 970418 = BIDV).</summary>
+    public string BankBin { get; set; } = "970418";
+    public string BankName { get; set; } = "BIDV";
+    public string AccountNo { get; set; } = "8830693506";
+    public string AccountName { get; set; } = "NGUYEN HOANG LONG";
 
     public static VietQrSettings FromConfiguration(IConfiguration? configuration)
     {
