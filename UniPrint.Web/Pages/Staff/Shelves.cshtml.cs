@@ -104,4 +104,19 @@ public class ShelvesModel : PageModel
 
         return RedirectToPage();
     }
+
+    public async Task<IActionResult> OnPostCleanupExpiredAsync(bool hardDelete = false)
+    {
+        var result = await _api.PostAsync<ApiResponse<int>>($"api/shelves/cleanup-expired?hardDelete={hardDelete}");
+        if (result != null && result.Success)
+        {
+            SuccessMessage = result.Message;
+        }
+        else
+        {
+            ErrorMessage = result?.Message ?? "Dọn dẹp đơn quá hạn thất bại.";
+        }
+
+        return RedirectToPage();
+    }
 }

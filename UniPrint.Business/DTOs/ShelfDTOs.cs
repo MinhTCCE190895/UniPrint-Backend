@@ -43,6 +43,9 @@ public class ShelfInventoryOrderDto
     public decimal TotalPrice { get; set; }
     public string Status { get; set; } = string.Empty;
     public bool IsPaid { get; set; }
+    public string? QrToken { get; set; }
+    public DateTime? QrExpiresAt { get; set; }
+    public bool IsExpired { get; set; }
     public DateTime CreatedAt { get; set; }
 }
 
@@ -59,6 +62,7 @@ public class ShelfInventorySummaryDto
     public int AvailableShelvesCount { get; set; }
     public int FullShelvesCount { get; set; }
     public double OverallOccupancyRate { get; set; }
+    public int CleanedExpiredCount { get; set; }
 }
 
 public class ShelfInventoryResponseDto

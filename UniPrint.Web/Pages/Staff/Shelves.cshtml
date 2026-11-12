@@ -28,6 +28,14 @@
             </div>
         </div>
         <div class="d-flex align-items-center gap-2">
+            <form method="post" asp-page-handler="CleanupExpired" class="d-inline">
+                <button type="submit" class="btn btn-outline-danger d-flex align-items-center gap-1.5"
+                        onclick="return confirm('Hệ thống sẽ quét toàn bộ các đơn hàng có mã QR nhận tài liệu đã hết hạn (quá 7 ngày) đang nằm trên kệ, tự động hủy và giải phóng vị trí trên kệ. Bạn có chắc chắn muốn thực hiện?');"
+                        title="Tự động hủy các đơn hết hạn QR và giải phóng slot trên kệ">
+                    <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><path class="bg-shape" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/><path class="stroke-shape" d="M10 11v6M14 11v6M4 7h16M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3"/></svg>
+                    Dọn Dẹp Đơn Quá Hạn QR
+                </button>
+            </form>
             <a asp-page="/Staff/Queue" class="btn btn-secondary">
                 <svg class="icon-duotone icon-sm" viewBox="0 0 24 24">
                     <path class="bg-shape" d="M4 6h16v14H4z"/>
@@ -474,6 +482,12 @@
                                                                     <span class="badge status-pending">
                                                                         <svg class="icon-duotone icon-sm me-1" viewBox="0 0 24 24"><circle class="bg-shape" cx="12" cy="12" r="9"/><path class="stroke-shape" d="M12 8v4M12 16h.01"/></svg>
                                                                         Chờ thanh toán
+                                                                    </span>
+                                                                }
+                                                                @if (order.IsExpired)
+                                                                {
+                                                                    <span class="badge bg-danger text-white border border-danger-subtle" title="Mã QR nhận tài liệu của đơn này đã quá hạn">
+                                                                        Quá hạn QR
                                                                     </span>
                                                                 }
                                                                 <span class="mono text-muted small ms-1" style="font-size: 11.5px;">

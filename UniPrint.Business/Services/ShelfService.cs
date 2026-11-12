@@ -16,6 +16,7 @@ public interface IShelfService
     Task<ApiResponse<ShelfResponseDto>> CreateShelfAsync(CreateShelfDto dto, CancellationToken ct = default);
     Task<ApiResponse<ShelfResponseDto>> UpdateShelfAsync(Guid shelfId, UpdateShelfDto dto, CancellationToken ct = default);
     Task<ApiResponse<bool>> DeleteShelfAsync(Guid shelfId, CancellationToken ct = default);
+    Task<ApiResponse<int>> CleanupExpiredShelfOrdersAsync(bool hardDelete = false, CancellationToken ct = default);
 }
 
 public class ShelfService : IShelfService
@@ -68,6 +69,9 @@ public class ShelfService : IShelfService
 
     public async Task<ApiResponse<ShelfDetailDto>> GetShelfByIdAsync(Guid shelfId, CancellationToken ct = default)
     {
+        // Tự động dọn dẹp các đơn hàng quá hạn mã QR trước khi đọc chi tiết kệ
+        await CleanupExpiredShelfOrdersAsync(false, ct);
+
         var shelf = await _unitOfWork.Repository<Shelf>().GetByIdAsync(shelfId, ct);
         if (shelf == null)
         {
@@ -116,6 +120,9 @@ public class ShelfService : IShelfService
 
     public async Task<ApiResponse<ShelfInventoryResponseDto>> GetShelfInventoryAsync(CancellationToken ct = default)
     {
+        // Tự động dọn dẹp các đơn hàng quá hạn mã QR đang nằm trên kệ
+        var cleanupRes = await CleanupExpiredShelfOrdersAsync(false, ct);
+
         var shelves = await _unitOfWork.Repository<Shelf>().Query()
             .AsNoTracking()
             .OrderBy(s => s.ShelfCode)
@@ -126,11 +133,13 @@ public class ShelfService : IShelfService
             .Include(o => o.Student)
             .Include(o => o.Document)
             .Include(o => o.PrintOption)
+            .Include(o => o.PickupQR)
             .Include(o => o.Payment)
             .Where(o => o.ShelfId != null && o.Status != PrintOrderStatus.Completed && o.Status != PrintOrderStatus.Cancelled)
             .OrderBy(o => o.CreatedAt)
             .ToListAsync(ct);
 
+        var now = DateTime.UtcNow;
         var ordersByShelf = activeOrders
             .GroupBy(o => o.ShelfId!.Value)
             .ToDictionary(g => g.Key, g => g.Select(o => new ShelfInventoryOrderDto
@@ -145,6 +154,9 @@ public class ShelfService : IShelfService
                 TotalPrice = o.PrintOption != null ? o.PrintOption.TotalPrice : 0,
                 Status = o.Status.ToString(),
                 IsPaid = o.Payment != null && o.Payment.Status == PaymentStatus.Paid,
+                QrToken = o.PickupQR != null ? o.PickupQR.QrToken : null,
+                QrExpiresAt = o.PickupQR != null ? o.PickupQR.ExpiresAt : null,
+                IsExpired = o.PickupQR != null && !o.PickupQR.IsUsed && o.PickupQR.ExpiresAt <= now,
                 CreatedAt = o.CreatedAt
             }).ToList());
 
@@ -173,7 +185,8 @@ public class ShelfService : IShelfService
             TotalStoredOrders = totalStoredOrders,
             AvailableShelvesCount = availableShelvesCount,
             FullShelvesCount = fullShelvesCount,
-            OverallOccupancyRate = overallOccupancyRate
+            OverallOccupancyRate = overallOccupancyRate,
+            CleanedExpiredCount = cleanupRes.Success ? cleanupRes.Data : 0
         };
 
         var response = new ShelfInventoryResponseDto
@@ -308,5 +321,74 @@ public class ShelfService : IShelfService
         await _unitOfWork.SaveChangesAsync(ct);
 
         return ApiResponse<bool>.Ok(true, $"Đã xóa kệ '{shelf.ShelfCode}' thành công.");
+    }
+
+    public async Task<ApiResponse<int>> CleanupExpiredShelfOrdersAsync(bool hardDelete = false, CancellationToken ct = default)
+    {
+        var now = DateTime.UtcNow;
+
+        // Tìm tất cả các đơn hàng đang nằm trên kệ (ShelfId != null) mà mã QR nhận hàng đã hết hạn
+        var expiredOrders = await _unitOfWork.Repository<PrintOrder>().Query()
+            .Include(o => o.Shelf)
+            .Include(o => o.PickupQR)
+            .Include(o => o.Payment)
+            .Where(o => o.ShelfId != null
+                     && o.Status != PrintOrderStatus.Completed
+                     && o.Status != PrintOrderStatus.Cancelled
+                     && o.PickupQR != null
+                     && !o.PickupQR.IsUsed
+                     && o.PickupQR.ExpiresAt <= now)
+            .ToListAsync(ct);
+
+        if (!expiredOrders.Any())
+        {
+            return ApiResponse<int>.Ok(0, "Không có đơn hàng nào trên kệ bị quá hạn mã QR.");
+        }
+
+        int count = 0;
+        foreach (var order in expiredOrders)
+        {
+            // 1. Tự động giải phóng vị trí trên kệ
+            if (order.Shelf != null && order.Shelf.CurrentCount > 0)
+            {
+                order.Shelf.CurrentCount -= 1;
+                _unitOfWork.Repository<Shelf>().Update(order.Shelf);
+            }
+
+            if (hardDelete)
+            {
+                // Xóa hẳn đơn khỏi cơ sở dữ liệu nếu yêu cầu hard delete
+                _unitOfWork.Repository<PrintOrder>().Delete(order);
+            }
+            else
+            {
+                // Mặc định: Gỡ khỏi kệ và chuyển trạng thái sang Cancelled kèm lý do tự động hủy do hết hạn
+                order.ShelfId = null;
+                order.Status = PrintOrderStatus.Cancelled;
+                order.UpdatedAt = now;
+                var expNote = $"[Hệ thống] Tự động giải phóng kệ và hủy đơn do mã QR nhận tài liệu đã hết hạn vào {order.PickupQR?.ExpiresAt:dd/MM/yyyy HH:mm}.";
+                order.Notes = string.IsNullOrWhiteSpace(order.Notes) ? expNote : $"{order.Notes} | {expNote}";
+
+                if (order.PickupQR != null)
+                {
+                    order.PickupQR.IsUsed = true;
+                    order.PickupQR.UsedAt = now;
+                    _unitOfWork.Repository<PickupQR>().Update(order.PickupQR);
+                }
+
+                if (order.Payment != null && order.Payment.Status == PaymentStatus.Pending)
+                {
+                    order.Payment.Status = PaymentStatus.Failed;
+                    order.Payment.UpdatedAt = now;
+                    _unitOfWork.Repository<Payment>().Update(order.Payment);
+                }
+
+                _unitOfWork.Repository<PrintOrder>().Update(order);
+            }
+            count++;
+        }
+
+        await _unitOfWork.SaveChangesAsync(ct);
+        return ApiResponse<int>.Ok(count, $"Đã tự động {(hardDelete ? "xóa" : "giải phóng kệ và hủy")} {count} đơn hàng quá hạn mã QR lưu kho.");
     }
 }

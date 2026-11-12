@@ -81,4 +81,14 @@ public class ShelvesController : ControllerBase
         }
         return Ok(result);
     }
+
+    /// <summary>
+    /// Quét và tự động giải phóng/xóa các đơn hàng có mã QR nhận tài liệu đã hết hạn đang nằm trên kệ.
+    /// </summary>
+    [HttpPost("cleanup-expired")]
+    public async Task<IActionResult> CleanupExpired([FromQuery] bool hardDelete = false, CancellationToken ct = default)
+    {
+        var result = await _shelfService.CleanupExpiredShelfOrdersAsync(hardDelete, ct);
+        return Ok(result);
+    }
 }
