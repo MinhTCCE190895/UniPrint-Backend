@@ -47,7 +47,8 @@ public class LoginModel : PageModel
             new(ClaimTypes.NameIdentifier, result.Data.UserId.ToString()),
             new(ClaimTypes.Name, result.Data.FullName),
             new(ClaimTypes.Email, result.Data.Email),
-            new(ClaimTypes.Role, result.Data.Role.ToString())
+            new(ClaimTypes.Role, result.Data.Role.ToString()),
+            new("jwt_token", result.Data.AccessToken)
         };
 
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);

@@ -119,14 +119,19 @@ else
                                                 ⇄ Khách đổi sang chuyển khoản VietQR
                                             </a>
                                             <div class="collapse mt-2" id="switchCK-@p.OrderId">
+                                                <div class="small mb-1">
+                                                    <span class="text-muted" style="font-size: 11.5px;">Mã CK đối soát:</span>
+                                                    <code class="fw-bold text-primary font-monospace bg-light px-1 py-0.5 rounded border" style="font-size: 11.5px;">@p.ExpectedTransferCode</code>
+                                                </div>
                                                 <form method="post" asp-page-handler="Confirm" class="d-flex gap-2">
                                                     <input type="hidden" name="orderId" value="@p.OrderId" />
                                                     <input type="hidden" name="method" value="@((int)PaymentMethod.VietQR_PayOS)" />
                                                     <input type="hidden" name="keyword" value="@Model.Keyword" />
                                                     <input name="transactionCode" class="form-control form-control-sm font-monospace"
-                                                           placeholder="Mã GD ngân hàng (VD: FT2401011234)"
+                                                           placeholder="Nhập: @p.ExpectedTransferCode"
+                                                           value="@p.ExpectedTransferCode"
                                                            minlength="3" maxlength="50" pattern="[A-Za-z0-9_-]{3,50}"
-                                                           title="Mã GD ngân hàng phải từ 3 đến 50 ký tự chữ và số" required />
+                                                           title="Mã GD ngân hàng phải khớp với nội dung chuyển khoản (@p.ExpectedTransferCode)" required />
                                                     <button type="submit" class="btn btn-sm btn-primary text-nowrap">Duyệt CK</button>
                                                 </form>
                                             </div>
@@ -137,14 +142,22 @@ else
                                 {
                                     @* KHÁCH CHỌN CHUYỂN KHOẢN VIETQR: Hiển thị form duyệt mã giao dịch *@
                                     <div class="d-flex flex-column gap-1">
+                                        <div class="small d-flex align-items-center gap-1">
+                                            <span class="text-muted" style="font-size: 11.5px;">Nội dung CK:</span>
+                                            <code class="fw-bold text-primary font-monospace bg-light px-1.5 py-0.5 rounded border"
+                                                  style="font-size: 12px; cursor: pointer;"
+                                                  onclick="document.getElementById('txCode-@p.OrderId').value='@p.ExpectedTransferCode'"
+                                                  title="Click để tự động điền mã">@p.ExpectedTransferCode</code>
+                                        </div>
                                         <form method="post" asp-page-handler="Confirm" class="d-flex gap-2">
                                             <input type="hidden" name="orderId" value="@p.OrderId" />
                                             <input type="hidden" name="method" value="@((int)PaymentMethod.VietQR_PayOS)" />
                                             <input type="hidden" name="keyword" value="@Model.Keyword" />
-                                            <input name="transactionCode" class="form-control form-control-sm font-monospace"
-                                                   placeholder="Mã GD ngân hàng (VD: FT2401011234)"
+                                            <input id="txCode-@p.OrderId" name="transactionCode" class="form-control form-control-sm font-monospace"
+                                                   placeholder="Nhập: @p.ExpectedTransferCode"
+                                                   value="@p.ExpectedTransferCode"
                                                    minlength="3" maxlength="50" pattern="[A-Za-z0-9_-]{3,50}"
-                                                   title="Nhập mã giao dịch ngân hàng từ 3 đến 50 ký tự chữ và số" required />
+                                                   title="Nhập mã chuyển khoản phải khớp với nội dung: @p.ExpectedTransferCode" required />
                                             <button type="submit" class="btn btn-sm btn-primary text-nowrap fw-semibold">
                                                 Duyệt CK
                                             </button>

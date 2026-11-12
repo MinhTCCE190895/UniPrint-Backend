@@ -123,6 +123,18 @@ public class PaymentService : IPaymentService
 
             var normalizedCode = code.ToUpperInvariant();
 
+            // Đối soát khớp với nội dung chuyển khoản VietQR của sinh viên (VD: ORD20261112CECB32)
+            var expectedTransferCode = VietQrGenerator.BuildTransferContent(order.OrderCode);
+            var cleanInput = normalizedCode.Replace("-", "");
+            var cleanExpected = expectedTransferCode.Replace("-", "").ToUpperInvariant();
+
+            if (!cleanInput.Equals(cleanExpected, StringComparison.OrdinalIgnoreCase)
+                && !normalizedCode.Contains(cleanExpected, StringComparison.OrdinalIgnoreCase))
+            {
+                return ApiResponse<PaymentResponseDto>.Fail(
+                    $"Mã chuyển khoản không khớp với nội dung chuyển khoản của sinh viên. Vui lòng đối soát lại và nhập đúng mã: {expectedTransferCode}");
+            }
+
             // Chống gian lận / Replay: Kiểm tra trùng lặp mã giao dịch ngân hàng trên hệ thống
             var isDuplicate = await _unitOfWork.Repository<Payment>().Query()
                 .AnyAsync(p => p.TransactionCode == normalizedCode && p.Id != payment.Id, ct);
