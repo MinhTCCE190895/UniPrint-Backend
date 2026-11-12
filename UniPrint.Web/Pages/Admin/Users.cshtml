@@ -4,8 +4,6 @@
 @{
     ViewData["Title"] = "Quản Lý Người Dùng";
     string Local(DateTime utc) => DateTime.SpecifyKind(utc, DateTimeKind.Utc).ToLocalTime().ToString("HH:mm dd/MM/yyyy");
-    var hasToast = !string.IsNullOrEmpty(Model.SuccessMessage) || !string.IsNullOrEmpty(Model.ErrorMessage);
-    var isSuccessToast = !string.IsNullOrEmpty(Model.SuccessMessage);
 }
 
 <style>
@@ -40,47 +38,6 @@
         z-index: 1055;
     }
 </style>
-
-@if (hasToast)
-{
-    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1090;">
-        <div id="adminActionToast"
-             class="toast border-0 shadow-lg"
-             role="alert"
-             aria-live="assertive"
-             aria-atomic="true"
-             data-bs-delay="5500"
-             style="background-color: @(isSuccessToast ? "var(--intent-confirm-bg, #ECFDF5)" : "var(--intent-danger-bg, #FEF2F2)"); border-left: 4px solid @(isSuccessToast ? "var(--intent-confirm-base)" : "var(--intent-danger-base)") !important;">
-            <div class="toast-body d-flex align-items-start justify-content-between gap-2 p-3">
-                <div class="d-flex align-items-start gap-2">
-                    @if (isSuccessToast)
-                    {
-                        <svg class="icon-duotone icon-sm flex-shrink-0 mt-1" style="color: var(--intent-confirm-base);" viewBox="0 0 24 24">
-                            <circle class="bg-shape" cx="12" cy="12" r="9" />
-                            <path class="stroke-shape" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <div>
-                            <div class="fw-bold small" style="color: var(--intent-confirm-base);">Thao tác thành công</div>
-                            <div class="small" style="color: var(--text-heading);">@Model.SuccessMessage</div>
-                        </div>
-                    }
-                    else
-                    {
-                        <svg class="icon-duotone icon-sm flex-shrink-0 mt-1" style="color: var(--intent-danger-base);" viewBox="0 0 24 24">
-                            <circle class="bg-shape" cx="12" cy="12" r="9" />
-                            <path class="stroke-shape" d="M12 8v4M12 16h.01" />
-                        </svg>
-                        <div>
-                            <div class="fw-bold small" style="color: var(--intent-danger-base);">Không thể thực hiện</div>
-                            <div class="small" style="color: var(--text-heading);">@Model.ErrorMessage</div>
-                        </div>
-                    }
-                </div>
-                <button type="button" class="btn-close btn-close-sm ms-2" data-bs-dismiss="toast" aria-label="Đóng"></button>
-            </div>
-        </div>
-    </div>
-}
 
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
     <div>
@@ -544,11 +501,6 @@
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const toastEl = document.getElementById('adminActionToast');
-            if (toastEl && window.bootstrap && bootstrap.Toast) {
-                new bootstrap.Toast(toastEl).show();
-            }
-
             const usersTable = document.getElementById('usersTable');
             if (usersTable) {
                 usersTable.addEventListener('show.bs.dropdown', function (event) {
