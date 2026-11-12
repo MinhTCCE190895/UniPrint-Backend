@@ -38,7 +38,7 @@ public class QueueModel : PageModel
 
     public async Task<IActionResult> OnPostUpdateStatusAsync(Guid orderId, PrintOrderStatus newStatus)
     {
-        var result = await _api.PatchAsync<ApiResponse<PrintOrderResponseDto>>($"api/printorders/{orderId}/status", new UpdateOrderStatusDto
+        var result = await _api.PatchAsync<ApiResponse<bool>>($"api/printorders/{orderId}/status", new UpdateOrderStatusDto
         {
             NewStatus = newStatus
         });
@@ -56,7 +56,7 @@ public class QueueModel : PageModel
 
     public async Task<IActionResult> OnPostAssignShelfAsync(Guid orderId, Guid shelfId)
     {
-        var result = await _api.PostAsync<ApiResponse<PrintOrderResponseDto>>($"api/printorders/{orderId}/assign-shelf", new AssignShelfDto
+        var result = await _api.PostAsync<ApiResponse<bool>>($"api/printorders/{orderId}/assign-shelf", new AssignShelfDto
         {
             ShelfId = shelfId
         });

@@ -34,6 +34,16 @@ public class WebApiClient
     private void AttachToken()
     {
         var token = _httpContextAccessor.HttpContext?.Session.GetString("jwt_token");
+        if (string.IsNullOrEmpty(token))
+        {
+            // Fallback sang Claims trong Cookie nếu Session trong RAM bị mất (VD: sau khi restart server)
+            token = _httpContextAccessor.HttpContext?.User?.FindFirst("jwt_token")?.Value;
+            if (!string.IsNullOrEmpty(token))
+            {
+                _httpContextAccessor.HttpContext?.Session.SetString("jwt_token", token);
+            }
+        }
+
         if (!string.IsNullOrEmpty(token))
             _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         else

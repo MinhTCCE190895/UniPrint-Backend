@@ -1,3 +1,4 @@
+using UniPrint.Business.Common;
 using UniPrint.DataAccess.Enums;
 
 namespace UniPrint.Business.DTOs;
@@ -8,6 +9,7 @@ public class PaymentResponseDto
     public Guid Id { get; set; }
     public Guid OrderId { get; set; }
     public string OrderCode { get; set; } = string.Empty;
+    public string ExpectedTransferCode => VietQrGenerator.BuildTransferContent(OrderCode);
     public string StudentName { get; set; } = string.Empty;
     public PrintOrderStatus OrderStatus { get; set; }
     public decimal Amount { get; set; }

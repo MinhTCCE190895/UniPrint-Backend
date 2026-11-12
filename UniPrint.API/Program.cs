@@ -34,6 +34,8 @@ builder.Services.AddScoped<IOrderTrackingService, OrderTrackingService>();
 builder.Services.AddScoped<IPriceConfigService, PriceConfigService>();
 // Task 5: Quản lý người dùng cho Admin
 builder.Services.AddScoped<IUserService, UserService>();
+// Tự động quét và giải phóng đơn quá hạn mã QR trên kệ lưu trữ định kỳ
+builder.Services.AddHostedService<UniPrint.API.Services.ExpiredOrderCleanupBackgroundService>();
 
 // 3. Authentication & JWT Bearer
 var jwtSecret = builder.Configuration["JwtSettings:Secret"] ?? "UniPrint_Super_Secret_Key_For_Course_Project_2026_FPTU_Must_Be_Long_And_Secure!";

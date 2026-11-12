@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using UniPrint.Business.Common;
 using UniPrint.Business.DTOs;
@@ -23,7 +24,9 @@ public interface IPaymentService
 
 public class PaymentService : IPaymentService
 {
+    private const int MinTransactionCodeLength = 3;
     private const int MaxTransactionCodeLength = 50;
+    private static readonly Regex TransactionCodeRegex = new(@"^[A-Za-z0-9_\-]{3,50}$", RegexOptions.Compiled);
 
     private static readonly PrintOrderStatus[] CashCollectableStatuses =
     {
@@ -114,9 +117,31 @@ public class PaymentService : IPaymentService
             var code = request.TransactionCode?.Trim();
             if (string.IsNullOrEmpty(code))
                 return ApiResponse<PaymentResponseDto>.Fail("Vui lòng nhập mã giao dịch ngân hàng để đối soát chuyển khoản.");
-            if (code.Length > MaxTransactionCodeLength)
-                return ApiResponse<PaymentResponseDto>.Fail($"Mã giao dịch tối đa {MaxTransactionCodeLength} ký tự.");
-            transactionCode = code;
+
+            if (code.Length < MinTransactionCodeLength || code.Length > MaxTransactionCodeLength || !TransactionCodeRegex.IsMatch(code))
+                return ApiResponse<PaymentResponseDto>.Fail($"Mã giao dịch ngân hàng không hợp lệ (phải từ {MinTransactionCodeLength} đến {MaxTransactionCodeLength} ký tự chữ và số, ví dụ: FT2401011234).");
+
+            var normalizedCode = code.ToUpperInvariant();
+
+            // Đối soát khớp với nội dung chuyển khoản VietQR của sinh viên (VD: ORD20261112CECB32)
+            var expectedTransferCode = VietQrGenerator.BuildTransferContent(order.OrderCode);
+            var cleanInput = normalizedCode.Replace("-", "");
+            var cleanExpected = expectedTransferCode.Replace("-", "").ToUpperInvariant();
+
+            if (!cleanInput.Equals(cleanExpected, StringComparison.OrdinalIgnoreCase)
+                && !normalizedCode.Contains(cleanExpected, StringComparison.OrdinalIgnoreCase))
+            {
+                return ApiResponse<PaymentResponseDto>.Fail(
+                    $"Mã chuyển khoản không khớp với nội dung chuyển khoản của sinh viên. Vui lòng đối soát lại và nhập đúng mã: {expectedTransferCode}");
+            }
+
+            // Chống gian lận / Replay: Kiểm tra trùng lặp mã giao dịch ngân hàng trên hệ thống
+            var isDuplicate = await _unitOfWork.Repository<Payment>().Query()
+                .AnyAsync(p => p.TransactionCode == normalizedCode && p.Id != payment.Id, ct);
+            if (isDuplicate)
+                return ApiResponse<PaymentResponseDto>.Fail("Mã giao dịch ngân hàng này đã được sử dụng cho một đơn khác trước đó. Vui lòng kiểm tra lại để tránh trùng lặp.");
+
+            transactionCode = normalizedCode;
         }
 
         payment.Method = request.Method;

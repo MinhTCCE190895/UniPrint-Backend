@@ -9,24 +9,31 @@
 
 <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
     <div>
-        <h3 class="fw-bold mb-0">💳 Thanh Toán Đơn In</h3>
-        <div class="text-muted small">Thu tiền mặt khi giao tài liệu hoặc xác nhận đã nhận chuyển khoản VietQR.</div>
+        <h3 class="fw-bold mb-0">💳 Quản Lý Thanh Toán Đơn In</h3>
+        <div class="text-muted small">Thu tiền mặt khi giao tài liệu hoặc xác nhận chuyển khoản VietQR qua mã giao dịch ngân hàng.</div>
     </div>
     <form method="get" class="d-flex gap-2">
         <input asp-for="Keyword" class="form-control" placeholder="Mã đơn hoặc tên sinh viên" />
-        <button class="btn btn-outline-primary" type="submit">Tìm</button>
+        <button class="btn btn-outline-primary" type="submit">Tìm kiếm</button>
     </form>
 </div>
 
 @if (!string.IsNullOrEmpty(Model.Message))
 {
-    <div class="alert @(Model.IsSuccess ? "alert-success" : "alert-danger")">@Model.Message</div>
+    <div class="alert @(Model.IsSuccess ? "alert-success" : "alert-danger") alert-dismissible fade show" role="alert">
+        @Model.Message
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
 }
 
 @if (!Model.UnpaidPayments.Any())
 {
     <div class="card border-0 shadow-sm">
-        <div class="card-body text-center text-muted py-5">Không có hóa đơn nào đang chờ thanh toán.</div>
+        <div class="card-body text-center text-muted py-5">
+            <div class="fs-1 mb-2">🎉</div>
+            <div class="fw-semibold">Không có hóa đơn nào đang chờ thanh toán</div>
+            <div class="small">Tất cả đơn hàng hiện tại đã được thanh toán đầy đủ hoặc chưa phát sinh đơn mới.</div>
+        </div>
     </div>
 }
 else
@@ -36,12 +43,12 @@ else
             <table class="table align-middle mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th>Mã đơn</th>
+                        <th style="width: 160px;">Mã đơn</th>
                         <th>Sinh viên</th>
-                        <th>Trạng thái đơn</th>
-                        <th>Phương thức</th>
-                        <th class="text-end">Số tiền</th>
-                        <th style="min-width: 320px">Xác nhận</th>
+                        <th style="width: 140px;">Trạng thái đơn</th>
+                        <th style="width: 170px;">Phương thức chọn</th>
+                        <th class="text-end" style="width: 130px;">Số tiền</th>
+                        <th style="min-width: 340px;">Xác nhận thanh toán</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -52,31 +59,126 @@ else
                             <td class="fw-semibold font-monospace">
                                 <a asp-page="/Orders/Tracking" asp-route-id="@p.OrderId" class="text-decoration-none">@p.OrderCode</a>
                             </td>
-                            <td>@p.StudentName</td>
-                            <td><span class="badge bg-secondary">@p.OrderStatus</span></td>
                             <td>
-                                <span class="badge @(p.Method == PaymentMethod.VietQR_PayOS ? "bg-info text-dark" : "bg-warning text-dark")">@p.MethodText</span>
+                                <div class="fw-semibold">@p.StudentName</div>
                             </td>
-                            <td class="text-end fw-bold">@p.Amount.ToString("N0", vnd) đ</td>
                             <td>
-                                <div class="d-flex flex-column gap-2">
-                                    <form method="post" asp-page-handler="Confirm" class="d-flex gap-2">
-                                        <input type="hidden" name="orderId" value="@p.OrderId" />
-                                        <input type="hidden" name="method" value="@((int)PaymentMethod.Cash)" />
-                                        <input type="hidden" name="keyword" value="@Model.Keyword" />
-                                        <button type="submit" class="btn btn-sm btn-success" disabled="@(!canCollectCash)"
-                                                title="@(canCollectCash ? "Xác nhận đã thu đủ tiền mặt" : "Chỉ thu tiền mặt khi đơn đã in xong")">
-                                            Đã thu tiền mặt
-                                        </button>
-                                    </form>
-                                    <form method="post" asp-page-handler="Confirm" class="d-flex gap-2">
-                                        <input type="hidden" name="orderId" value="@p.OrderId" />
-                                        <input type="hidden" name="method" value="@((int)PaymentMethod.VietQR_PayOS)" />
-                                        <input type="hidden" name="keyword" value="@Model.Keyword" />
-                                        <input name="transactionCode" class="form-control form-control-sm" placeholder="Mã giao dịch ngân hàng" maxlength="50" required />
-                                        <button type="submit" class="btn btn-sm btn-primary text-nowrap">Đã nhận CK</button>
-                                    </form>
-                                </div>
+                                <span class="badge bg-secondary">@p.OrderStatus</span>
+                            </td>
+                            <td>
+                                @if (p.Method == PaymentMethod.Cash)
+                                {
+                                    <span class="badge bg-warning text-dark border border-warning-subtle px-2 py-1">
+                                        💵 @p.MethodText
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-info text-dark border border-info-subtle px-2 py-1">
+                                        🏦 @p.MethodText
+                                    </span>
+                                }
+                            </td>
+                            <td class="text-end fw-bold text-success">
+                                @p.Amount.ToString("N0", vnd) đ
+                            </td>
+                            <td>
+                                @if (p.Method == PaymentMethod.Cash)
+                                {
+                                    @* KHÁCH CHỌN TIỀN MẶT: Ưu tiên luồng thu tiền mặt *@
+                                    <div class="d-flex flex-column gap-1">
+                                        @if (canCollectCash)
+                                        {
+                                            <form method="post" asp-page-handler="Confirm" class="d-flex align-items-center gap-2">
+                                                <input type="hidden" name="orderId" value="@p.OrderId" />
+                                                <input type="hidden" name="method" value="@((int)PaymentMethod.Cash)" />
+                                                <input type="hidden" name="keyword" value="@Model.Keyword" />
+                                                <button type="submit" class="btn btn-sm btn-success fw-bold shadow-sm d-inline-flex align-items-center gap-1">
+                                                    💵 Đã thu tiền mặt
+                                                </button>
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 11px;">
+                                                    Sẵn sàng giao
+                                                </span>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <div class="d-flex align-items-center gap-2">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary disabled" title="Theo quy định, tiền mặt chỉ thu khi đơn đã in xong và xếp lên kệ">
+                                                    💵 Thu tiền mặt
+                                                </button>
+                                                <span class="text-muted small" style="font-size: 11.5px; line-height: 1.3;">
+                                                    ⏳ Thu tiền khi giao tài liệu (Đang chờ in/lên kệ)
+                                                </span>
+                                            </div>
+                                        }
+
+                                        @* Tùy chọn linh hoạt: Khách đổi ý sang chuyển khoản VietQR *@
+                                        <div class="mt-1">
+                                            <a class="text-decoration-none small text-primary" data-bs-toggle="collapse" href="#switchCK-@p.OrderId" role="button" aria-expanded="false" style="font-size: 11.5px;">
+                                                ⇄ Khách đổi sang chuyển khoản VietQR
+                                            </a>
+                                            <div class="collapse mt-2" id="switchCK-@p.OrderId">
+                                                <div class="small mb-1">
+                                                    <span class="text-muted" style="font-size: 11.5px;">Mã CK đối soát:</span>
+                                                    <code class="fw-bold text-primary font-monospace bg-light px-1 py-0.5 rounded border" style="font-size: 11.5px;">@p.ExpectedTransferCode</code>
+                                                </div>
+                                                <form method="post" asp-page-handler="Confirm" class="d-flex gap-2">
+                                                    <input type="hidden" name="orderId" value="@p.OrderId" />
+                                                    <input type="hidden" name="method" value="@((int)PaymentMethod.VietQR_PayOS)" />
+                                                    <input type="hidden" name="keyword" value="@Model.Keyword" />
+                                                    <input name="transactionCode" class="form-control form-control-sm font-monospace"
+                                                           placeholder="Nhập: @p.ExpectedTransferCode"
+                                                           value="@p.ExpectedTransferCode"
+                                                           minlength="3" maxlength="50" pattern="[A-Za-z0-9_-]{3,50}"
+                                                           title="Mã GD ngân hàng phải khớp với nội dung chuyển khoản (@p.ExpectedTransferCode)" required />
+                                                    <button type="submit" class="btn btn-sm btn-primary text-nowrap">Duyệt CK</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    @* KHÁCH CHỌN CHUYỂN KHOẢN VIETQR: Hiển thị form duyệt mã giao dịch *@
+                                    <div class="d-flex flex-column gap-1">
+                                        <div class="small d-flex align-items-center gap-1">
+                                            <span class="text-muted" style="font-size: 11.5px;">Nội dung CK:</span>
+                                            <code class="fw-bold text-primary font-monospace bg-light px-1.5 py-0.5 rounded border"
+                                                  style="font-size: 12px; cursor: pointer;"
+                                                  onclick="document.getElementById('txCode-@p.OrderId').value='@p.ExpectedTransferCode'"
+                                                  title="Click để tự động điền mã">@p.ExpectedTransferCode</code>
+                                        </div>
+                                        <form method="post" asp-page-handler="Confirm" class="d-flex gap-2">
+                                            <input type="hidden" name="orderId" value="@p.OrderId" />
+                                            <input type="hidden" name="method" value="@((int)PaymentMethod.VietQR_PayOS)" />
+                                            <input type="hidden" name="keyword" value="@Model.Keyword" />
+                                            <input id="txCode-@p.OrderId" name="transactionCode" class="form-control form-control-sm font-monospace"
+                                                   placeholder="Nhập: @p.ExpectedTransferCode"
+                                                   value="@p.ExpectedTransferCode"
+                                                   minlength="3" maxlength="50" pattern="[A-Za-z0-9_-]{3,50}"
+                                                   title="Nhập mã chuyển khoản phải khớp với nội dung: @p.ExpectedTransferCode" required />
+                                            <button type="submit" class="btn btn-sm btn-primary text-nowrap fw-semibold">
+                                                Duyệt CK
+                                            </button>
+                                        </form>
+
+                                        @if (canCollectCash)
+                                        {
+                                            @* Tùy chọn linh hoạt: Khách không chuyển được, đổi sang trả tiền mặt *@
+                                            <div class="mt-1">
+                                                <form method="post" asp-page-handler="Confirm">
+                                                    <input type="hidden" name="orderId" value="@p.OrderId" />
+                                                    <input type="hidden" name="method" value="@((int)PaymentMethod.Cash)" />
+                                                    <input type="hidden" name="keyword" value="@Model.Keyword" />
+                                                    <button type="submit" class="btn btn-link btn-sm text-decoration-none text-muted p-0" style="font-size: 11.5px;">
+                                                        ⇄ Khách đổi sang trả tiền mặt tại quầy
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        }
+                                    </div>
+                                }
                             </td>
                         </tr>
                     }

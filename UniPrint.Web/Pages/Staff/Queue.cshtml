@@ -170,7 +170,7 @@
     </style>
 
     <!-- Segmented Control Navigation (Impeccable & Taste-Director Craft) -->
-    <div class="queue-segmented-tabs mb-4" id="queueTabs" role="tablist">
+    <div class="queue-segmented-tabs nav mb-4" id="queueTabs" role="tablist">
         <button class="queue-tab-item active" id="tab-pending-btn" data-bs-toggle="pill" data-bs-target="#tab-pending" type="button" role="tab" aria-controls="tab-pending" aria-selected="true">
             <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><path class="bg-shape" d="M4 6h16v14H4z"/><path class="stroke-shape" d="M6 2v4M18 2v4M4 6h16a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2zM4 11h16M8 15h8"/></svg>
             <span>Chờ Tiếp Nhận</span>
@@ -492,3 +492,42 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+<script>
+    document.querySelectorAll('.queue-tab-item').forEach(btn => {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            const targetSelector = this.getAttribute('data-bs-target');
+            if (!targetSelector) return;
+
+            document.querySelectorAll('.queue-tab-item').forEach(b => {
+                b.classList.remove('active');
+                b.setAttribute('aria-selected', 'false');
+            });
+            document.querySelectorAll('.tab-pane').forEach(p => {
+                p.classList.remove('show', 'active');
+            });
+
+            this.classList.add('active');
+            this.setAttribute('aria-selected', 'true');
+            const targetPane = document.querySelector(targetSelector);
+            if (targetPane) {
+                targetPane.classList.add('show', 'active');
+            }
+
+            // Save active tab in sessionStorage
+            sessionStorage.setItem('activeQueueTab', targetSelector);
+        });
+    });
+
+    // Restore active tab on page reload
+    document.addEventListener('DOMContentLoaded', function () {
+        const savedTab = sessionStorage.getItem('activeQueueTab');
+        if (savedTab) {
+            const btn = document.querySelector(`[data-bs-target="${savedTab}"]`);
+            if (btn) btn.click();
+        }
+    });
+</script>
+}
