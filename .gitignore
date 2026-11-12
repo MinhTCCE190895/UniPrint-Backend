@@ -18,6 +18,7 @@
 *.xlsx
 PRN232_UniPrint_Task.xlsx
 Quy dinh lam viec va Git Workflow cho Team.docx
+docs/study/
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs

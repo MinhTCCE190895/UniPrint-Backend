@@ -1,92 +1,131 @@
 /* ==========================================================================
-   UNIPRINT FLAT DESIGN SYSTEM - SEMANTIC INTENT CSS TOKENS
-   Art Direction: Nordic Atelier & Natural Paper (Taste-Director x Impeccable)
-   Non-Wrapping & Zero-Emoji Guaranteed
+   UNIPRINT NORDIC ATELIER PRINT-CRAFT DESIGN SYSTEM
+   Art Direction: Nordic Atelier & Handcrafted Print Studio
+   Palette: Warm Paper (#F6F3EC) | Obsidian Ink (#1B2421) | Forest Teal (#1B3B36)
+   Typography: Plus Jakarta Sans | Instrument Serif | JetBrains Mono
+   Strictly Non-Wrapping & Zero-Emoji Guaranteed
    ========================================================================== */
 
 :root {
   /* ==========================================================================
-     1. SURFACES & GROUNDS (Mặt Phẳng & Không Gian Nền)
+     1. TYPOGRAPHY SCALES
      ========================================================================== */
-  --surface-ground: #FBFBFA;          /* Nền giấy in tự nhiên, chống mỏi mắt */
-  --surface-card: #FFFFFF;            /* Mặt phẳng chứa nội dung chính (Cards, Panels, Modals) */
-  --surface-subtle: #F4F3F0;          /* Nền khối phụ, header bảng dữ liệu, thanh tóm tắt */
-  --surface-hover: #FAF9F6;           /* Phản hồi khi rê chuột trên hàng hoặc khối */
+  --font-display: 'Lora', 'Charter', Georgia, 'Times New Roman', serif;
+  --font-sans: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, "SF Mono", Consolas, monospace;
 
   /* ==========================================================================
-     2. TEXT & TYPOGRAPHIC HIERARCHY (Phân Cấp Chữ Theo Ý Nghĩa)
+     2. SURFACES & GROUNDS (Mặt Phẳng & Không Gian Nền)
      ========================================================================== */
-  --text-heading: #191C1B;            /* Tiêu đề trang, phân mục lớn, số liệu KPI quan trọng */
-  --text-body: #2B2F2E;               /* Văn bản đọc chính, nội dung thông tin (Độ tương phản 12.5:1) */
-  --text-muted: #5E6563;              /* Thông tin diễn giải phụ, hướng dẫn, nhãn form phụ (5.2:1 - Chuẩn AA) */
-  --text-subtle: #8A9390;             /* Metadata kỹ thuật, ngày giờ, placeholder */
-  --text-on-action: #FFFFFF;          /* Chữ nổi trên các nút bấm hành động nền đậm */
+  --bg-page: #F6F3EC;              /* Unbleached warm craft paper ground */
+  --bg-surface: #FFFFFF;           /* Crisp white sheet / card surface */
+  --bg-subtle: #EDE8DD;            /* Notebook divider & table header background */
+  --bg-hover: #E4DECF;             /* Warm row hover */
+
+  /* Aliases for backwards compatibility */
+  --surface-ground: var(--bg-page);
+  --surface-card: var(--bg-surface);
+  --surface-subtle: var(--bg-subtle);
+  --surface-hover: var(--bg-hover);
 
   /* ==========================================================================
-     3. BOUNDARIES & SEPARATORS (Đường Viền & Phân Tách Cấu Trúc)
+     3. BOUNDARIES & RULERS (Đường Viền & Phân Tách Cấu Trúc)
      ========================================================================== */
-  --border-subtle: #EFECE6;           /* Đường viền ngăn cách dòng bảng nhẹ nhàng */
-  --border-card: #E6E4DF;             /* Viền 1px cấu trúc card, panel, bảng */
-  --border-strong: #CFCCC4;          /* Viền khi hover, active hoặc viền ô nhập liệu */
-  --border-focus: #155E56;           /* Viền điểm nhấn khi con trỏ focus vào form */
+  --border-subtle: #E8E3D7;        /* Subtle notebook rule line */
+  --border-card: #DCD5C6;          /* 1px craft card border */
+  --border-strong: #1B3B36;        /* Deep Forest Teal structured border */
+  --border-ruler: #8C8474;         /* Millimeter ruler ticks under capacity meters */
+  --border-focus: #1B3B36;         /* Focus border */
 
   /* ==========================================================================
-     4. ACTION & WORKFLOW INTENTS (Màu Sắc Thể Hiện Rõ Ý Nghĩa Nghiệp Vụ)
+     4. TYPOGRAPHY COLORS (Phân Cấp Chữ)
      ========================================================================== */
-  
-  /* Primary Action Intent (Khởi tạo, Bắt đầu in, Đặt in, Tiếp nhận) */
-  --intent-action-base: #155E56;      /* Deep Nordic Teal */
-  --intent-action-hover: #0F4640;
-  --intent-action-tint: #E6F4F2;
-  --intent-action-border: #B2DED9;
+  --text-heading: #1B2421;         /* Obsidian charcoal oak bark ink */
+  --text-body: #2C3532;            /* Natural letterpress reading text (13.8:1) */
+  --text-muted: #626D69;           /* Graphite pencil secondary text */
+  --text-subtle: #8C9692;          /* Subtle metadata & timestamps */
+  --text-on-accent: #FFFFFF;
+  --text-on-action: #FFFFFF;
 
-  /* Confirm / Success Intent (Xác nhận, Giao hàng thành công, Kệ khả dụng) */
-  --intent-confirm-base: #14532D;     /* Forest Confirm */
+  /* ==========================================================================
+     5. ACCENT & WORKFLOW INTENTS
+     ========================================================================== */
+  --accent: #1B3B36;               /* Deep Forest Teal */
+  --accent-hover: #122825;
+  --accent-tint: #EBF1EF;
+  --accent-border: #C3D5D0;
+
+  /* Intent Aliases */
+  --intent-action-base: var(--accent);
+  --intent-action-hover: var(--accent-hover);
+  --intent-action-tint: var(--accent-tint);
+  --intent-action-border: var(--accent-border);
+
+  /* Artisan Stamp Colors */
+  --stamp-vermilion: #B83A28;      /* Cinnabar vermilion seal */
+  --stamp-amber: #945B00;          /* Workshop amber resin */
+  --stamp-forest: #14532D;         /* Evergreen artisan seal */
+
+  --intent-confirm-base: #14532D;
   --intent-confirm-hover: #0F3F22;
   --intent-confirm-tint: #EAF6EE;
   --intent-confirm-border: #B8E2C5;
 
-  /* Attention / Pending Intent (Cần lưu ý, Hàng đợi chờ in, Kệ sắp đầy) */
-  --intent-alert-base: #7C4A03;       /* Warm Amber */
-  --intent-alert-hover: #613902;
+  --intent-alert-base: #945B00;
+  --intent-alert-hover: #734600;
   --intent-alert-tint: #FEF7E8;
   --intent-alert-border: #FAE0A7;
 
-  /* Destructive / Depleted Intent (Hủy đơn, Xóa kệ, Kệ đã đầy) */
-  --intent-danger-base: #8C1D18;      /* Terracotta Danger */
-  --intent-danger-hover: #6D1612;
+  --intent-danger-base: #B83A28;
+  --intent-danger-hover: #8C1D18;
   --intent-danger-tint: #FDF0F0;
   --intent-danger-border: #F8C8C5;
 
-  /* Neutral / Secondary Intent (Thao tác phụ: Chi tiết, Đổi kệ, Quay lại) */
-  --intent-neutral-base: #191C1B;
+  --intent-neutral-base: #1B2421;
   --intent-neutral-surface: #FFFFFF;
-  --intent-neutral-border: #E6E4DF;
-  --intent-neutral-hover: #F4F3F0;
+  --intent-neutral-border: #DCD5C6;
+  --intent-neutral-hover: #EDE8DD;
 
-  /* ==========================================================================
-     5. GEOMETRY & TYPOGRAPHY
-     ========================================================================== */
+  /* Status Tokens */
+  --badge-pending: #945B00;
+  --badge-pending-bg: #FEF7E8;
+  --badge-printing: #155E75;
+  --badge-printing-bg: #ECFEFF;
+  --badge-ready: #14532D;
+  --badge-ready-bg: #EAF6EE;
+  --badge-cancelled: #B83A28;
+  --badge-cancelled-bg: #FDF0F0;
+
+  /* Geometry & Radii */
   --radius-sm: 4px;
   --radius-md: 6px;
   --radius-lg: 10px;
-  --radius-pill: 999px;
-
-  --font-sans: 'Instrument Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, "SF Mono", Consolas, monospace;
+  --radius-pill: 9999px;
+  --card-radius: 12px;
+  --btn-radius: 8px;
+  --card-border-width: 1px;
+  --shadow-card: 0 4px 20px -2px rgba(27, 59, 54, 0.05);
+  --shadow-sm: 0 1px 3px rgba(27, 59, 54, 0.04);
+  --shadow-md: 0 4px 12px rgba(27, 59, 54, 0.08);
 }
 
 /* ==========================================================================
-   GLOBAL RESET & BASE (STICKY FOOTER FLEXBOX)
+   GLOBAL RESET & ANTI-OVERFLOW FOUNDATION
    ========================================================================== */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 html {
   height: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 body {
   font-family: var(--font-sans);
-  font-weight: 500; /* Đậm nét đầm tay */
-  background-color: var(--surface-ground);
+  font-weight: 500;
+  background-color: var(--bg-page);
   color: var(--text-body);
   line-height: 1.5;
   font-size: 14px;
@@ -95,164 +134,252 @@ body {
   display: flex;
   flex-direction: column;
   margin: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+  position: relative;
 }
 
 .page-main-container {
   flex: 1 0 auto;
+  max-width: 100%;
 }
 
-/* ==========================================================================
-   GLOBAL BROWSER DEFAULTS CUSTOMIZATION LAYER
-   ========================================================================== */
-
-/* 1. Text Selection & Caret Color */
-::selection {
-  background-color: var(--intent-action-tint) !important;
-  color: var(--intent-action-base) !important;
+.container, .container-fluid {
+  max-width: 100%;
 }
-* {
-  caret-color: var(--intent-action-base);
+@media (min-width: 1400px) {
+  .container { max-width: 1320px; }
 }
-
-/* 2. Global Custom Scrollbars (Firefox & Chromium/WebKit) */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-strong) transparent;
+@media (min-width: 1200px) and (max-width: 1399.98px) {
+  .container { max-width: 1140px; }
 }
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+@media (min-width: 992px) and (max-width: 1199.98px) {
+  .container { max-width: 960px; }
 }
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background-color: var(--border-strong);
-  border-radius: var(--radius-pill);
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
-::-webkit-scrollbar-thumb:hover {
-  background-color: var(--text-muted);
-}
-::-webkit-scrollbar-corner {
-  background: transparent;
+@media (min-width: 768px) and (max-width: 991.98px) {
+  .container { max-width: 720px; }
 }
 
-/* 3. Universal Accessible Focus Rings (Anti-Blurry, High-Signal) */
-:focus-visible {
-  outline: 2px solid var(--intent-action-base) !important;
-  outline-offset: 2px !important;
-}
-:focus:not(:focus-visible) {
-  outline: none;
-}
-
-/* 4. Interactive Cursors & Disabled States */
-button,
-[role="button"],
-a,
-label[for],
-select,
-summary,
-input[type="checkbox"],
-input[type="radio"],
-input[type="file"],
-input[type="range"] {
-  cursor: pointer;
-}
-:disabled,
-[disabled],
-.disabled {
-  cursor: not-allowed !important;
-  opacity: 0.6 !important;
-}
-
-.app-footer {
-  flex-shrink: 0;
-  margin-top: auto;
-  background-color: var(--surface-card);
-  border-top: 1px solid var(--border-card);
-}
-
+/* Typography Classes */
 h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-sans);
   color: var(--text-heading);
+  letter-spacing: -0.3px;
   font-weight: 700;
-  letter-spacing: -0.025em;
 }
 
-a {
-  color: var(--intent-action-base);
-  text-decoration: none;
-}
-a:hover {
-  color: var(--intent-action-hover);
+.font-editorial {
+  font-family: var(--font-display) !important;
+  font-weight: 400;
+  letter-spacing: -0.5px;
 }
 
-.mono {
-  font-family: var(--font-mono);
-  font-weight: 500;
+.mono, .font-mono {
+  font-family: var(--font-mono) !important;
   font-variant-numeric: tabular-nums;
 }
 
+a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+a:hover {
+  color: var(--accent-hover);
+}
+
 /* ==========================================================================
-   BUTTON SYSTEM (CHỐNG RỚT DÒNG & THỂ HIỆN Ý NGHĨA QUA MÀU SẮC)
+   PRINT-CRAFT SIGNATURE MOTIFS
    ========================================================================== */
-.btn,
-.btn-action,
-.btn-confirm,
-.btn-danger,
-.btn-secondary,
-.btn-subtle {
-  white-space: nowrap !important; /* Tuyệt đối không bẻ gãy từ hoặc rớt chữ */
-  flex-shrink: 0;                 /* Không bị co ép làm biến dạng */
+
+/* Motif 1: Corner Crop Registration Marks (+) */
+.print-registered {
+  position: relative;
+}
+.print-registered::before {
+  content: "+";
+  position: absolute;
+  top: 6px;
+  left: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--border-ruler);
+  opacity: 0.55;
+  pointer-events: none;
+  line-height: 1;
+  z-index: 2;
+}
+.print-registered::after {
+  content: "+";
+  position: absolute;
+  bottom: 6px;
+  right: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--border-ruler);
+  opacity: 0.55;
+  pointer-events: none;
+  line-height: 1;
+  z-index: 2;
+}
+
+/* Motif 2: Millimeter Ruler Ticks under Capacity Meters */
+.ruler-ticks {
+  display: flex;
+  justify-content: space-between;
+  height: 6px;
+  padding: 0 2px;
+  margin-top: 4px;
+  opacity: 0.45;
+}
+.ruler-tick {
+  width: 1px;
+  height: 3px;
+  background: var(--border-ruler);
+}
+.ruler-tick.major {
+  height: 6px;
+  background: var(--text-heading);
+}
+
+/* Motif 3: Embossed Stamp Badges (Workshop Aesthetics) */
+.stamp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  border: 1.5px dashed currentColor;
+  border-radius: 4px;
+  transform: rotate(-1.5deg);
+  line-height: 1.3;
+  white-space: nowrap !important;
+}
+.stamp-badge.danger {
+  color: var(--stamp-vermilion);
+  background: rgba(184, 58, 40, 0.07);
+}
+.stamp-badge.warning {
+  color: var(--stamp-amber);
+  background: rgba(148, 91, 0, 0.07);
+}
+.stamp-badge.success {
+  color: var(--stamp-forest);
+  background: rgba(20, 83, 45, 0.07);
+}
+
+/* Motif 4: Notebook Spine Stitching */
+.notebook-stitch {
+  border-left: 2px dashed var(--border-card);
+  padding-left: 16px;
+}
+
+/* ==========================================================================
+   CARDS & KPI STATS PANELS
+   ========================================================================== */
+.craft-card, .card {
+  background: var(--bg-surface);
+  border: var(--card-border-width) solid var(--border-card);
+  border-radius: var(--card-radius);
+  box-shadow: var(--shadow-card);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.craft-card:hover {
+  border-color: #C5BCAC;
+}
+
+.card-header {
+  background-color: var(--bg-surface);
+  border-bottom: 1px solid var(--border-card);
+  padding: 14px 18px;
+  font-weight: 600;
+}
+
+.tonal-panel {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-card);
+  border-radius: var(--card-radius);
+  padding: 16px 18px;
+}
+
+/* KPI Overview Grid */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+.kpi-card {
+  background: var(--bg-surface);
+  border: var(--card-border-width) solid var(--border-card);
+  border-radius: var(--card-radius);
+  padding: 18px 20px;
+  box-shadow: var(--shadow-card);
+}
+.kpi-label {
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+.kpi-value {
+  font-family: var(--font-mono);
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text-heading);
+  margin-top: 6px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap !important;
+}
+
+/* ==========================================================================
+   BUTTON SYSTEM
+   ========================================================================== */
+.btn {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  border-radius: var(--btn-radius);
+  padding: 8px 16px;
+  font-size: 13.5px;
+  line-height: 1.4;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  font-family: var(--font-sans);
-  font-size: 13px;
-  font-weight: 600;
-  padding: 7px 14px;
-  border-radius: var(--radius-md);
-  border: 1px solid transparent;
-  cursor: pointer;
-  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
   transition: all 0.15s ease;
-  line-height: 1.4;
 }
 
-/* Primary Action Button (Tạo mới, Đặt in, Bắt đầu in) */
-.btn-action,
-.btn-primary {
-  background-color: var(--intent-action-base) !important;
-  color: var(--text-on-action) !important;
-  border-color: var(--intent-action-base) !important;
+.btn-craft-primary, .btn-action, .btn-primary {
+  background-color: var(--accent) !important;
+  color: var(--text-on-accent) !important;
+  border: 1px solid transparent !important;
 }
-.btn-action:hover,
-.btn-primary:hover {
-  background-color: var(--intent-action-hover) !important;
-  border-color: var(--intent-action-hover) !important;
+.btn-craft-primary:hover, .btn-action:hover, .btn-primary:hover {
+  background-color: var(--accent-hover) !important;
+  color: var(--text-on-accent) !important;
 }
 
-/* Confirm / Success Button (Hoàn tất in, Xác nhận đã giao) */
-.btn-confirm,
-.btn-success {
-  background-color: var(--intent-confirm-base) !important;
-  color: var(--text-on-action) !important;
-  border-color: var(--intent-confirm-base) !important;
+.btn-craft-secondary, .btn-secondary, .btn-outline, .btn-outline-secondary {
+  background-color: var(--bg-surface) !important;
+  border: 1px solid var(--border-card) !important;
+  color: var(--text-body) !important;
 }
-.btn-confirm:hover,
-.btn-success:hover {
-  background-color: var(--intent-confirm-hover) !important;
-  border-color: var(--intent-confirm-hover) !important;
+.btn-craft-secondary:hover, .btn-secondary:hover, .btn-outline:hover, .btn-outline-secondary:hover {
+  background-color: var(--bg-subtle) !important;
+  border-color: var(--border-strong) !important;
+  color: var(--text-heading) !important;
 }
 
-/* Destructive / Danger Button (Xóa kệ, Hủy đơn in) */
 .btn-danger {
   background-color: var(--intent-danger-tint) !important;
   color: var(--intent-danger-base) !important;
-  border-color: var(--intent-danger-border) !important;
+  border: 1px solid var(--intent-danger-border) !important;
 }
 .btn-danger:hover {
   background-color: var(--intent-danger-base) !important;
@@ -260,30 +387,13 @@ a:hover {
   border-color: var(--intent-danger-base) !important;
 }
 
-/* Secondary / Details Button (Xem chi tiết, Chỉnh sửa, Lọc) */
-.btn-secondary,
-.btn-outline,
-.btn-outline-secondary {
-  background-color: var(--surface-card) !important;
-  color: var(--text-heading) !important;
-  border-color: var(--border-card) !important;
-}
-.btn-secondary:hover,
-.btn-outline:hover,
-.btn-outline-secondary:hover {
-  background-color: var(--surface-subtle) !important;
-  border-color: var(--border-strong) !important;
-  color: var(--text-heading) !important;
-}
-
-/* Subtle / Ghost Button (Quay lại, Đóng modal) */
 .btn-subtle {
   background-color: transparent !important;
   color: var(--text-muted) !important;
-  border-color: transparent !important;
+  border: 1px solid transparent !important;
 }
 .btn-subtle:hover {
-  background-color: var(--surface-subtle) !important;
+  background-color: var(--bg-subtle) !important;
   color: var(--text-heading) !important;
 }
 
@@ -294,13 +404,14 @@ a:hover {
 }
 
 /* ==========================================================================
-   STATUS BADGES (HUY HIỆU TRẠNG THÁI THEO Ý NGHĨA)
+   STATUS BADGES & CODE PILLS
    ========================================================================== */
 .badge,
 .status-available,
 .status-pending,
 .status-depleted,
-.status-neutral {
+.status-neutral,
+.status-badge {
   white-space: nowrap !important;
   flex-shrink: 0;
   display: inline-flex !important;
@@ -316,111 +427,143 @@ a:hover {
   word-break: keep-all;
 }
 
-/* Khả dụng / Còn chỗ / Sẵn sàng nhận */
-.status-available,
-.badge-success {
-  background-color: var(--intent-confirm-tint) !important;
-  color: var(--intent-confirm-base) !important;
-  border-color: var(--intent-confirm-border) !important;
+.status-available, .badge-success, .status-badge.ready {
+  background-color: var(--badge-ready-bg) !important;
+  color: var(--badge-ready) !important;
+  border-color: #B8E2C5 !important;
 }
 
-/* Chờ xử lý / Đang in / Sắp đầy */
-.status-pending,
-.badge-warning {
-  background-color: var(--intent-alert-tint) !important;
-  color: var(--intent-alert-base) !important;
-  border-color: var(--intent-alert-border) !important;
+.status-pending, .badge-warning, .status-badge.pending {
+  background-color: var(--badge-pending-bg) !important;
+  color: var(--badge-pending) !important;
+  border-color: #FAE0A7 !important;
 }
 
-/* Đã đầy / Hủy / Lỗi */
-.status-depleted,
-.badge-danger {
-  background-color: var(--intent-danger-tint) !important;
-  color: var(--intent-danger-base) !important;
-  border-color: var(--intent-danger-border) !important;
+.status-depleted, .badge-danger, .status-badge.cancelled {
+  background-color: var(--badge-cancelled-bg) !important;
+  color: var(--badge-cancelled) !important;
+  border-color: #F8C8C5 !important;
 }
 
-/* Trung tính / Thông tin metadata */
-.status-neutral,
-.badge-neutral,
-.badge-secondary {
-  background-color: var(--surface-subtle) !important;
+.status-neutral, .badge-neutral, .badge-secondary {
+  background-color: var(--bg-subtle) !important;
   color: var(--text-muted) !important;
   border-color: var(--border-card) !important;
 }
 
-/* Info Intent Badge */
-.badge-info {
-  background-color: var(--intent-action-tint) !important;
-  color: var(--intent-action-base) !important;
-  border-color: var(--intent-action-border) !important;
+.status-badge.printing, .badge-info {
+  background-color: var(--badge-printing-bg) !important;
+  color: var(--badge-printing) !important;
+  border-color: #BAE6FD !important;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.code-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  background-color: var(--accent-tint);
+  border: 1px solid var(--accent-border);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
 }
 
 /* ==========================================================================
-   CARDS & TONAL PANELS (KHỐI THÔNG TIN PHẲNG)
+   CAPACITY METERS (KỆ IN ẤN)
    ========================================================================== */
-.card {
-  background-color: var(--surface-card);
-  border: 1px solid var(--border-card);
-  border-radius: var(--radius-lg);
-  box-shadow: none !important; /* Xóa bỏ toàn bộ bóng mờ đục */
+.capacity-bar {
+  height: 9px;
+  background: var(--bg-subtle);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  margin: 14px 0 6px 0;
+  border: 1px solid var(--border-subtle);
 }
+.capacity-fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  transition: width 0.3s ease;
+}
+.capacity-fill.fill-green { background: #14532D; }
+.capacity-fill.fill-amber { background: #D97706; }
+.capacity-fill.fill-red   { background: #B83A28; }
 
-.card-header {
-  background-color: var(--surface-card);
-  border-bottom: 1px solid var(--border-card);
-  padding: 14px 18px;
+.capacity-text {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
   font-weight: 600;
 }
 
-.tonal-panel {
-  background-color: var(--surface-card);
-  border: 1px solid var(--border-card);
-  border-radius: var(--radius-lg);
-  padding: 16px 18px;
-}
-
 /* ==========================================================================
-   TABLES (BẢNG DỮ LIỆU PHẲNG)
+   TABLES & ANTI-WRAPPING DATA LAYOUTS
    ========================================================================== */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--card-radius);
+  max-width: 100%;
+}
 .table-container {
-  background-color: var(--surface-card);
+  background-color: var(--bg-surface);
   border: 1px solid var(--border-card);
-  border-radius: var(--radius-lg);
+  border-radius: var(--card-radius);
   overflow: hidden;
+  max-width: 100%;
 }
 
-.table {
+.data-table, .table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
   color: var(--text-body);
   border-color: var(--border-subtle);
   margin-bottom: 0;
 }
-
-.table th {
-  background-color: var(--surface-subtle) !important;
+.data-table th, .table th {
+  background: var(--bg-subtle) !important;
   color: var(--text-muted) !important;
   font-size: 11.5px;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   padding: 12px 16px;
   border-bottom: 1px solid var(--border-card) !important;
   white-space: nowrap !important;
 }
-
-.table td {
+.data-table td, .table td {
   padding: 13px 16px;
-  vertical-align: middle;
   border-bottom: 1px solid var(--border-subtle);
+  vertical-align: middle;
+  background: var(--bg-surface);
   font-size: 13.5px;
 }
+.data-table tr:hover td, .table tbody tr:hover td {
+  background: var(--bg-hover);
+}
 
-.table tbody tr:hover td {
-  background-color: var(--surface-hover);
+.doc-title-cell {
+  max-width: 260px;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
 }
 
 /* ==========================================================================
-   FORM CONTROLS & BROWSER INPUT HARMONIZATION
+   FORM CONTROLS
    ========================================================================== */
 .form-control,
 .form-select,
@@ -431,28 +574,20 @@ select {
   font-size: 13.5px;
   border: 1px solid var(--border-card);
   border-radius: var(--radius-md);
-  background-color: var(--surface-card);
+  background-color: var(--bg-surface);
   color: var(--text-heading);
   padding: 8px 12px;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  max-width: 100%;
 }
-
-textarea,
-textarea.form-control {
-  resize: vertical;
-  min-height: 80px;
-  line-height: 1.5;
-}
-
 .form-control:focus,
 .form-select:focus,
 textarea:focus,
 select:focus {
   border-color: var(--border-focus) !important;
-  box-shadow: 0 0 0 2px var(--intent-action-tint) !important;
+  box-shadow: 0 0 0 2px var(--accent-tint) !important;
   outline: none;
 }
-
 .form-label {
   font-size: 12.5px;
   font-weight: 600;
@@ -460,220 +595,8 @@ select:focus {
   margin-bottom: 6px;
 }
 
-/* 5. Placeholder Appearance */
-::placeholder,
-.form-control::placeholder,
-textarea::placeholder {
-  color: var(--text-subtle);
-  opacity: 0.85;
-  font-weight: 400;
-}
-
-/* 6. Chrome/Edge/WebKit Autofill Override (Fixes garish yellow/blue tint) */
-input:-webkit-autofill,
-input:-webkit-autofill:hover,
-input:-webkit-autofill:focus,
-textarea:-webkit-autofill,
-textarea:-webkit-autofill:hover,
-textarea:-webkit-autofill:focus,
-select:-webkit-autofill,
-select:-webkit-autofill:hover,
-select:-webkit-autofill:focus {
-  -webkit-text-fill-color: var(--text-heading) !important;
-  -webkit-box-shadow: 0 0 0px 1000px var(--surface-card) inset !important;
-  box-shadow: 0 0 0px 1000px var(--surface-card) inset !important;
-  transition: background-color 5000s ease-in-out 0s;
-  caret-color: var(--intent-action-base);
-  font-family: inherit;
-}
-
-/* 7. Custom Styled Checkboxes & Radio Controls */
-input[type="checkbox"],
-input[type="radio"],
-.form-check-input {
-  appearance: none;
-  -webkit-appearance: none;
-  width: 16px;
-  height: 16px;
-  margin-top: 0.15em;
-  vertical-align: middle;
-  background-color: var(--surface-card);
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: contain;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
-  flex-shrink: 0;
-}
-input[type="radio"],
-.form-check-input[type="radio"] {
-  border-radius: 50%;
-}
-input[type="checkbox"]:checked,
-.form-check-input:checked {
-  background-color: var(--intent-action-base);
-  border-color: var(--intent-action-base);
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M6 10l3 3l6-6'/%3e%3c/svg%3e");
-}
-input[type="radio"]:checked,
-.form-check-input[type="radio"]:checked {
-  background-color: var(--intent-action-base);
-  border-color: var(--intent-action-base);
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='2' fill='%23fff'/%3e%3c/svg%3e");
-}
-input[type="checkbox"]:focus-visible,
-input[type="radio"]:focus-visible,
-.form-check-input:focus {
-  border-color: var(--intent-action-base);
-  box-shadow: 0 0 0 2px var(--intent-action-tint);
-  outline: none;
-}
-
-/* 8. Custom Range Sliders */
-input[type="range"],
-.form-range {
-  appearance: none;
-  -webkit-appearance: none;
-  width: 100%;
-  height: 6px;
-  background: var(--surface-subtle);
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--border-card);
-  outline: none;
-  cursor: pointer;
-  padding: 0;
-}
-input[type="range"]::-webkit-slider-thumb,
-.form-range::-webkit-slider-thumb {
-  appearance: none;
-  -webkit-appearance: none;
-  width: 16px;
-  height: 16px;
-  background: var(--intent-action-base);
-  border: 2px solid var(--surface-card);
-  border-radius: 50%;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
-  transition: transform 0.1s ease, background-color 0.15s ease;
-  cursor: pointer;
-}
-input[type="range"]::-webkit-slider-thumb:hover,
-.form-range::-webkit-slider-thumb:hover {
-  transform: scale(1.15);
-  background: var(--intent-action-hover);
-}
-input[type="range"]::-moz-range-thumb,
-.form-range::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
-  background: var(--intent-action-base);
-  border: 2px solid var(--surface-card);
-  border-radius: 50%;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
-  cursor: pointer;
-}
-
-/* 9. File Upload Native Button Harmonization */
-input[type="file"]::file-selector-button,
-input[type="file"]::-webkit-file-upload-button {
-  font-family: var(--font-sans);
-  font-weight: 600;
-  font-size: 12.5px;
-  color: var(--text-heading);
-  background-color: var(--surface-subtle);
-  border: 1px solid var(--border-card);
-  border-radius: var(--radius-sm);
-  padding: 5px 12px;
-  margin-right: 10px;
-  cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
-}
-input[type="file"]::file-selector-button:hover,
-input[type="file"]::-webkit-file-upload-button:hover {
-  background-color: var(--border-subtle);
-  border-color: var(--border-strong);
-}
-
-/* 10. Native Dialog, Popover, Backdrop & Disclosure Elements */
-dialog {
-  background-color: var(--surface-card);
-  color: var(--text-body);
-  border: 1px solid var(--border-card);
-  border-radius: var(--radius-lg);
-  padding: 24px;
-  box-shadow: var(--shadow-md);
-  max-width: 90vw;
-}
-dialog::backdrop {
-  background-color: rgba(25, 28, 27, 0.45);
-  backdrop-filter: blur(3px);
-}
-
-details {
-  border: 1px solid var(--border-card);
-  border-radius: var(--radius-md);
-  background-color: var(--surface-card);
-  padding: 10px 14px;
-  transition: border-color 0.15s ease;
-}
-details[open] {
-  border-color: var(--border-strong);
-}
-summary {
-  font-weight: 600;
-  color: var(--text-heading);
-  cursor: pointer;
-  user-select: none;
-  list-style: none;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-summary::-webkit-details-marker {
-  display: none;
-}
-summary::after {
-  content: "";
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-right: 1.8px solid var(--text-muted);
-  border-bottom: 1.8px solid var(--text-muted);
-  transform: rotate(-45deg);
-  transition: transform 0.2s ease;
-}
-details[open] > summary::after {
-  transform: rotate(45deg);
-}
-
-/* 11. Native Progress & Meter Elements */
-progress,
-meter {
-  appearance: none;
-  -webkit-appearance: none;
-  height: 6px;
-  border-radius: var(--radius-pill);
-  background-color: var(--surface-subtle);
-  border: none;
-  overflow: hidden;
-}
-progress::-webkit-progress-bar {
-  background-color: var(--surface-subtle);
-  border-radius: var(--radius-pill);
-}
-progress::-webkit-progress-value {
-  background-color: var(--intent-action-base);
-  border-radius: var(--radius-pill);
-  transition: width 0.3s ease;
-}
-progress::-moz-progress-bar {
-  background-color: var(--intent-action-base);
-  border-radius: var(--radius-pill);
-}
-
 /* ==========================================================================
-   ALERTS (HỘP THÔNG BÁO Ý NGHĨA)
+   ALERTS
    ========================================================================== */
 .alert {
   border-radius: var(--radius-md);
@@ -704,51 +627,49 @@ progress::-moz-progress-bar {
 }
 
 /* ==========================================================================
-   PROGRESS BARS (THANH ĐO TẢI TỶ LỆ)
-   ========================================================================== */
-.progress {
-  height: 6px !important;
-  background-color: var(--surface-subtle) !important;
-  border-radius: var(--radius-pill) !important;
-  overflow: hidden;
-}
-
-.progress-bar {
-  background-color: var(--intent-action-base) !important;
-  border-radius: var(--radius-pill);
-  transition: width 0.3s ease;
-}
-.progress-bar.bg-warning {
-  background-color: var(--intent-alert-base) !important;
-}
-.progress-bar.bg-danger {
-  background-color: var(--intent-danger-base) !important;
-}
-
-/* ==========================================================================
    DUOTONE SVG ICON SPECIFICATION (ZERO OS EMOJI)
    ========================================================================== */
-.icon-duotone {
+.icon-duotone, .craft-icon {
   width: 18px;
   height: 18px;
   display: inline-block;
   vertical-align: middle;
   flex-shrink: 0;
 }
-.icon-duotone.icon-sm { width: 15px; height: 15px; }
-.icon-duotone.icon-lg { width: 22px; height: 22px; }
+.icon-duotone.icon-sm, .craft-icon.icon-sm { width: 15px; height: 15px; }
+.icon-duotone.icon-lg, .craft-icon.icon-lg { width: 22px; height: 22px; }
 
 .icon-duotone .bg-shape {
   fill: currentColor;
   opacity: 0.14;
 }
-
 .icon-duotone .stroke-shape {
   stroke: currentColor;
   stroke-width: 1.6;
   stroke-linecap: round;
   stroke-linejoin: round;
   fill: none;
+}
+
+/* ==========================================================================
+   SHELVES PHYSICAL GRID
+   ========================================================================== */
+.shelves-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+.shelf-card, .shelf-item-card {
+  background: var(--bg-surface);
+  border: var(--card-border-width) solid var(--border-card);
+  border-radius: var(--card-radius);
+  padding: 22px;
+  box-shadow: var(--shadow-card);
+  position: relative;
+}
+.shelf-card.full, .shelf-item-card.full {
+  border-color: var(--stamp-vermilion);
+  background: #FFFDFD;
 }
 
 /* ==========================================================================
@@ -765,9 +686,8 @@ progress::-moz-progress-bar {
     grid-template-columns: 1fr;
   }
 }
-
 .kanban-column {
-  background-color: var(--surface-subtle);
+  background-color: var(--bg-subtle);
   border: 1px solid var(--border-card);
   border-radius: var(--radius-md);
   padding: 16px;
@@ -776,7 +696,6 @@ progress::-moz-progress-bar {
   gap: 12px;
   min-height: 520px;
 }
-
 .kanban-column-header {
   display: flex;
   justify-content: space-between;
@@ -784,7 +703,6 @@ progress::-moz-progress-bar {
   padding-bottom: 12px;
   border-bottom: 1px solid var(--border-subtle);
 }
-
 .kanban-column-title {
   font-size: 14px;
   font-weight: 700;
@@ -794,25 +712,21 @@ progress::-moz-progress-bar {
   gap: 8px;
   margin: 0;
 }
-
 .kanban-column-subtitle {
   font-size: 11.5px;
   color: var(--text-muted);
   font-weight: 500;
   margin-top: 3px;
 }
-
 .kanban-card-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
-
-/* Individual Job Ticket Card */
 .job-ticket-card {
-  background-color: var(--surface-card);
+  background-color: var(--bg-surface);
   border: 1px solid var(--border-card);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   padding: 14px;
   box-shadow: var(--shadow-sm);
   display: flex;
@@ -824,20 +738,17 @@ progress::-moz-progress-bar {
   border-color: var(--border-strong);
   box-shadow: var(--shadow-md);
 }
-
 .job-ticket-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 8px;
 }
-
 .job-ticket-body {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
-
 .job-ticket-meta {
   display: flex;
   justify-content: space-between;
@@ -845,7 +756,6 @@ progress::-moz-progress-bar {
   padding-top: 8px;
   border-top: 1px dashed var(--border-subtle);
 }
-
 .job-ticket-actions {
   display: flex;
   align-items: center;
@@ -853,7 +763,6 @@ progress::-moz-progress-bar {
   gap: 8px;
   padding-top: 6px;
 }
-
 .shelf-highlight-box {
   background-color: var(--intent-confirm-tint);
   border: 1px solid var(--intent-confirm-border);
@@ -866,9 +775,8 @@ progress::-moz-progress-bar {
   font-weight: 700;
   font-size: 12.5px;
 }
-
 .kanban-empty-ticket {
-  background-color: var(--surface-card);
+  background-color: var(--bg-surface);
   border: 1px dashed var(--border-card);
   border-radius: var(--radius-sm);
   padding: 32px 16px;
@@ -876,4 +784,14 @@ progress::-moz-progress-bar {
   color: var(--text-muted);
   font-size: 12.5px;
   font-weight: 500;
+}
+
+/* ==========================================================================
+   APP FOOTER
+   ========================================================================== */
+.app-footer {
+  flex-shrink: 0;
+  margin-top: auto;
+  background-color: var(--bg-surface);
+  border-top: 1px solid var(--border-card);
 }

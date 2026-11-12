@@ -9,12 +9,18 @@
 
 <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
     <div>
-        <h3 class="fw-bold mb-0">💳 Quản Lý Thanh Toán Đơn In</h3>
+        <h3 class="fw-bold mb-0 font-editorial d-flex align-items-center gap-2" style="font-size: 26px; font-weight: 400;">
+            <svg class="craft-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="5" width="20" height="14" rx="2"/>
+                <line x1="2" y1="10" x2="22" y2="10"/>
+            </svg>
+            Thanh Toán Đơn In
+        </h3>
         <div class="text-muted small">Thu tiền mặt khi giao tài liệu hoặc xác nhận chuyển khoản VietQR qua mã giao dịch ngân hàng.</div>
     </div>
     <form method="get" class="d-flex gap-2">
         <input asp-for="Keyword" class="form-control" placeholder="Mã đơn hoặc tên sinh viên" />
-        <button class="btn btn-outline-primary" type="submit">Tìm kiếm</button>
+        <button class="btn btn-craft-secondary" type="submit">Tìm</button>
     </form>
 </div>
 
@@ -28,9 +34,14 @@
 
 @if (!Model.UnpaidPayments.Any())
 {
-    <div class="card border-0 shadow-sm">
+    <div class="card craft-card print-registered">
         <div class="card-body text-center text-muted py-5">
-            <div class="fs-1 mb-2">🎉</div>
+            <div class="mb-2">
+                <svg class="craft-icon text-muted" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="m9 12 2 2 4-4"/>
+                </svg>
+            </div>
             <div class="fw-semibold">Không có hóa đơn nào đang chờ thanh toán</div>
             <div class="small">Tất cả đơn hàng hiện tại đã được thanh toán đầy đủ hoặc chưa phát sinh đơn mới.</div>
         </div>
@@ -38,17 +49,17 @@
 }
 else
 {
-    <div class="card border-0 shadow-sm">
+    <div class="card craft-card print-registered">
         <div class="table-responsive">
-            <table class="table align-middle mb-0">
-                <thead class="table-light">
+            <table class="table data-table align-middle mb-0">
+                <thead>
                     <tr>
                         <th style="width: 160px;">Mã đơn</th>
                         <th>Sinh viên</th>
                         <th style="width: 140px;">Trạng thái đơn</th>
-                        <th style="width: 170px;">Phương thức chọn</th>
+                        <th style="width: 170px;">Phương thức</th>
                         <th class="text-end" style="width: 130px;">Số tiền</th>
-                        <th style="min-width: 340px;">Xác nhận thanh toán</th>
+                        <th style="min-width: 320px;">Xác nhận thanh toán</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -63,23 +74,23 @@ else
                                 <div class="fw-semibold">@p.StudentName</div>
                             </td>
                             <td>
-                                <span class="badge bg-secondary">@p.OrderStatus</span>
+                                <span class="badge status-neutral">@p.OrderStatus</span>
                             </td>
                             <td>
                                 @if (p.Method == PaymentMethod.Cash)
                                 {
-                                    <span class="badge bg-warning text-dark border border-warning-subtle px-2 py-1">
-                                        💵 @p.MethodText
+                                    <span class="badge status-available">
+                                        Tiền mặt
                                     </span>
                                 }
                                 else
                                 {
-                                    <span class="badge bg-info text-dark border border-info-subtle px-2 py-1">
-                                        🏦 @p.MethodText
+                                    <span class="badge status-pending">
+                                        VietQR (PayOS)
                                     </span>
                                 }
                             </td>
-                            <td class="text-end fw-bold text-success">
+                            <td class="text-end fw-bold mono" style="color: var(--accent);">
                                 @p.Amount.ToString("N0", vnd) đ
                             </td>
                             <td>
@@ -93,10 +104,10 @@ else
                                                 <input type="hidden" name="orderId" value="@p.OrderId" />
                                                 <input type="hidden" name="method" value="@((int)PaymentMethod.Cash)" />
                                                 <input type="hidden" name="keyword" value="@Model.Keyword" />
-                                                <button type="submit" class="btn btn-sm btn-success fw-bold shadow-sm d-inline-flex align-items-center gap-1">
-                                                    💵 Đã thu tiền mặt
+                                                <button type="submit" class="btn btn-sm btn-craft-primary d-inline-flex align-items-center gap-1">
+                                                    Đã thu tiền mặt
                                                 </button>
-                                                <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 11px;">
+                                                <span class="badge status-available" style="font-size: 11px;">
                                                     Sẵn sàng giao
                                                 </span>
                                             </form>
@@ -104,24 +115,24 @@ else
                                         else
                                         {
                                             <div class="d-flex align-items-center gap-2">
-                                                <button type="button" class="btn btn-sm btn-outline-secondary disabled" title="Theo quy định, tiền mặt chỉ thu khi đơn đã in xong và xếp lên kệ">
-                                                    💵 Thu tiền mặt
+                                                <button type="button" class="btn btn-sm btn-craft-secondary disabled" title="Theo quy định, tiền mặt chỉ thu khi đơn đã in xong và xếp lên kệ">
+                                                    Thu tiền mặt
                                                 </button>
                                                 <span class="text-muted small" style="font-size: 11.5px; line-height: 1.3;">
-                                                    ⏳ Thu tiền khi giao tài liệu (Đang chờ in/lên kệ)
+                                                    Thu tiền khi giao tài liệu (Đang in/chờ kệ)
                                                 </span>
                                             </div>
                                         }
 
                                         @* Tùy chọn linh hoạt: Khách đổi ý sang chuyển khoản VietQR *@
                                         <div class="mt-1">
-                                            <a class="text-decoration-none small text-primary" data-bs-toggle="collapse" href="#switchCK-@p.OrderId" role="button" aria-expanded="false" style="font-size: 11.5px;">
+                                            <a class="text-decoration-none small" style="color: var(--accent); font-size: 11.5px;" data-bs-toggle="collapse" href="#switchCK-@p.OrderId" role="button" aria-expanded="false">
                                                 ⇄ Khách đổi sang chuyển khoản VietQR
                                             </a>
                                             <div class="collapse mt-2" id="switchCK-@p.OrderId">
                                                 <div class="small mb-1">
                                                     <span class="text-muted" style="font-size: 11.5px;">Mã CK đối soát:</span>
-                                                    <code class="fw-bold text-primary font-monospace bg-light px-1 py-0.5 rounded border" style="font-size: 11.5px;">@p.ExpectedTransferCode</code>
+                                                    <code class="fw-bold font-monospace bg-light px-1 py-0.5 rounded border" style="font-size: 11.5px; color: var(--accent);">@p.ExpectedTransferCode</code>
                                                 </div>
                                                 <form method="post" asp-page-handler="Confirm" class="d-flex gap-2">
                                                     <input type="hidden" name="orderId" value="@p.OrderId" />
@@ -132,7 +143,7 @@ else
                                                            value="@p.ExpectedTransferCode"
                                                            minlength="3" maxlength="50" pattern="[A-Za-z0-9_-]{3,50}"
                                                            title="Mã GD ngân hàng phải khớp với nội dung chuyển khoản (@p.ExpectedTransferCode)" required />
-                                                    <button type="submit" class="btn btn-sm btn-primary text-nowrap">Duyệt CK</button>
+                                                    <button type="submit" class="btn btn-sm btn-craft-secondary text-nowrap">Duyệt CK</button>
                                                 </form>
                                             </div>
                                         </div>
@@ -144,8 +155,8 @@ else
                                     <div class="d-flex flex-column gap-1">
                                         <div class="small d-flex align-items-center gap-1">
                                             <span class="text-muted" style="font-size: 11.5px;">Nội dung CK:</span>
-                                            <code class="fw-bold text-primary font-monospace bg-light px-1.5 py-0.5 rounded border"
-                                                  style="font-size: 12px; cursor: pointer;"
+                                            <code class="fw-bold font-monospace bg-light px-1.5 py-0.5 rounded border"
+                                                  style="font-size: 12px; cursor: pointer; color: var(--accent);"
                                                   onclick="document.getElementById('txCode-@p.OrderId').value='@p.ExpectedTransferCode'"
                                                   title="Click để tự động điền mã">@p.ExpectedTransferCode</code>
                                         </div>
@@ -158,7 +169,7 @@ else
                                                    value="@p.ExpectedTransferCode"
                                                    minlength="3" maxlength="50" pattern="[A-Za-z0-9_-]{3,50}"
                                                    title="Nhập mã chuyển khoản phải khớp với nội dung: @p.ExpectedTransferCode" required />
-                                            <button type="submit" class="btn btn-sm btn-primary text-nowrap fw-semibold">
+                                            <button type="submit" class="btn btn-sm btn-craft-secondary text-nowrap">
                                                 Duyệt CK
                                             </button>
                                         </form>

@@ -7,8 +7,14 @@
 }
 
 <div class="mb-3">
-    <h3 class="fw-bold mb-0">🏷️ Cấu Hình Bảng Giá In Ấn</h3>
-    <div class="text-muted small">Giá mới áp dụng cho các đơn tạo sau khi lưu. Đơn đã tạo giữ nguyên giá đã chốt (BR02).</div>
+    <h3 class="fw-bold mb-0 font-editorial d-flex align-items-center gap-2" style="font-size: 26px; font-weight: 400;">
+        <svg class="craft-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+            <line x1="7" y1="7" x2="7.01" y2="7"/>
+        </svg>
+        Cấu Hình Bảng Giá In Ấn
+    </h3>
+    <div class="text-muted small">Giá mới áp dụng cho các đơn tạo sau khi lưu. Đơn đã tạo giữ nguyên giá đã chốt ban đầu.</div>
 </div>
 
 @if (!string.IsNullOrEmpty(Model.SuccessMessage))
@@ -29,7 +35,7 @@
 
 <div class="row g-4">
     <div class="col-lg-7">
-        <div class="card border-0 shadow-sm">
+        <div class="card craft-card print-registered">
             <div class="card-body p-4">
                 <form method="post" id="price-form">
                     <div class="row g-3">
@@ -76,7 +82,7 @@
     </div>
 
     <div class="col-lg-5">
-        <div class="card border-0 shadow-sm bg-light">
+        <div class="card craft-card print-registered">
             <div class="card-body">
                 <h6 class="fw-bold">Xem trước: tài liệu 10 trang, 1 bản</h6>
                 <table class="table table-sm mb-0 small">
@@ -91,10 +97,10 @@
     </div>
 </div>
 
-<div class="card border-0 shadow-sm mt-4">
+<div class="card craft-card print-registered mt-4">
     <div class="card-header bg-white fw-bold">Lịch sử bảng giá</div>
     <div class="table-responsive">
-        <table class="table table-sm align-middle mb-0">
+        <table class="table data-table table-sm align-middle mb-0">
             <thead class="table-light">
                 <tr>
                     <th>Thời điểm</th>

@@ -68,8 +68,9 @@
 
                     <p>
                         <strong>Đánh giá trung bình:</strong>
-                        <span class="text-warning fw-bold">
-                            ★ @Model.Material.AverageRating.ToString("F1") / 5.0
+                        <span class="text-warning fw-bold d-inline-flex align-items-center gap-1">
+                            <svg class="craft-icon" width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                            @Model.Material.AverageRating.ToString("F1") / 5.0
                         </span>
                     </p>
 
@@ -135,13 +136,13 @@
                                         class="form-select"
                                         required>
                                     <option value="0">
-                                        -- Chọn số sao --
+                                        -- Chọn số sao đánh giá --
                                     </option>
-                                    <option value="1">★ 1 sao</option>
-                                    <option value="2">★★ 2 sao</option>
-                                    <option value="3">★★★ 3 sao</option>
-                                    <option value="4">★★★★ 4 sao</option>
-                                    <option value="5">★★★★★ 5 sao</option>
+                                    <option value="1">1 sao (Kém)</option>
+                                    <option value="2">2 sao (Tạm được)</option>
+                                    <option value="3">3 sao (Khá)</option>
+                                    <option value="4">4 sao (Tốt)</option>
+                                    <option value="5">5 sao (Xuất sắc)</option>
                                 </select>
                             </div>
 
@@ -199,14 +200,14 @@
                                         @review.StudentName
                                     </strong>
 
-                                    <span class="text-warning fw-bold">
+                                    <span class="d-inline-flex align-items-center gap-0.5" style="color: var(--stamp-amber);">
                                         @for (int i = 0; i < review.Rating; i++)
                                         {
-                                            <text>★</text>
+                                            <svg class="craft-icon" width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                                         }
                                         @for (int i = review.Rating; i < 5; i++)
                                         {
-                                            <text>☆</text>
+                                            <svg class="craft-icon text-muted" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                                         }
                                     </span>
 

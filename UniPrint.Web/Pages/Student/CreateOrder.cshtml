@@ -9,10 +9,11 @@
     <!-- Header Section -->
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
-            <h2 class="mb-1 d-flex align-items-center gap-2">
-                <svg class="icon-duotone icon-lg" style="color: var(--intent-action-base);" viewBox="0 0 24 24">
-                    <path class="bg-shape" d="M6 9h12v9H6z"/>
-                    <path class="stroke-shape" d="M6 9V3h12v6M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v7H6z"/>
+            <h2 class="mb-1 d-flex align-items-center gap-2 font-editorial" style="font-size: 26px; font-weight: 400;">
+                <svg class="craft-icon icon-lg" style="color: var(--accent);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                    <rect x="6" y="14" width="12" height="8"></rect>
                 </svg>
                 ĐẶT IN TÀI LIỆU TRỰC TUYẾN
             </h2>
@@ -131,7 +132,7 @@
         <div class="row g-4">
             <!-- Left Column: Document & Print Configuration Form (Preserved 100% controls) -->
             <div class="col-lg-7">
-                <div class="card p-4">
+                <div class="card craft-card print-registered p-4">
                     <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom" style="border-color: var(--border-subtle) !important;">
                         <span class="badge status-neutral">1</span>
                         <strong style="font-size: 15px; color: var(--text-heading);">Chọn Tài Liệu & Cấu Hình In</strong>
@@ -181,7 +182,7 @@
                                         <svg class="icon-duotone icon-sm" viewBox="0 0 24 24"><circle class="bg-shape" cx="12" cy="12" r="9"/><path class="stroke-shape" d="M12 8v4M12 16h.01"/></svg>
                                         <strong>Kho tài liệu cá nhân đang trống!</strong>
                                     </div>
-                                    <p class="mb-2 text-muted">Bạn cần tải lên tệp PDF hoặc DOCX để hệ thống tự động trích xuất số trang in chuẩn theo quy tắc BR02.</p>
+                                    <p class="mb-2 text-muted">Bạn cần tải lên tệp PDF hoặc DOCX để hệ thống tự động trích xuất số trang in chuẩn và cố định giá in.</p>
                                     <a asp-page="/Student/Documents" class="btn btn-action btn-sm">
                                         <svg class="icon-duotone icon-sm me-1" viewBox="0 0 24 24"><path class="stroke-shape" d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
                                         Tải lên tài liệu ngay
@@ -248,7 +249,7 @@
             <!-- Right Column: Sticky Transparent Electronic Receipt -->
             <div class="col-lg-5">
                 <div style="position: sticky; top: 76px;">
-                    <div class="card p-3 mb-3">
+                    <div class="card craft-card print-registered p-3 mb-3">
                         <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom" style="border-color: var(--border-subtle) !important;">
                             <div class="d-flex align-items-center gap-2">
                                 <svg class="icon-duotone icon-sm" style="color: var(--intent-action-base);" viewBox="0 0 24 24"><path class="stroke-shape" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
