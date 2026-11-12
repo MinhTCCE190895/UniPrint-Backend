@@ -116,6 +116,56 @@ public class PaymentServiceTests : IDisposable
         Assert.Equal(PaymentMethod.VietQR_PayOS, ok.Data.Method);
     }
 
+    [Theory]
+    [InlineData("2")]          // Quá ngắn (1 ký tự)
+    [InlineData("11")]         // Quá ngắn (2 ký tự)
+    [InlineData("FT@123")]      // Chứa ký tự đặc biệt không hợp lệ
+    [InlineData("FT 1234")]     // Chứa khoảng trắng
+    public async Task ConfirmVietQr_InvalidFormatOrTooShort_Fails(string invalidCode)
+    {
+        _order.Status = PrintOrderStatus.Pending;
+        await _db.SaveChangesAsync();
+        var service = Service(_db);
+
+        var result = await service.ConfirmPaymentAsync(_order.Id, _staff.Id,
+            new ConfirmPaymentDto { Method = PaymentMethod.VietQR_PayOS, TransactionCode = invalidCode });
+
+        Assert.False(result.Success);
+        Assert.Contains("không hợp lệ", result.Message);
+        Assert.Equal(PaymentStatus.Pending, _payment.Status);
+    }
+
+    [Fact]
+    public async Task ConfirmVietQr_DuplicateTransactionCode_Fails()
+    {
+        var service = Service(_db);
+        // Đơn 1 duyệt thành công với mã FT20261112999
+        var res1 = await service.ConfirmPaymentAsync(_order.Id, _staff.Id,
+            new ConfirmPaymentDto { Method = PaymentMethod.VietQR_PayOS, TransactionCode = "FT20261112999" });
+        Assert.True(res1.Success);
+
+        // Tạo đơn thứ 2
+        var order2 = new PrintOrder
+        {
+            OrderCode = "ORD-20261028-XYZ789",
+            Student = _student,
+            Document = _order.Document,
+            PrintOption = new PrintOption { NumberOfCopies = 1, TotalPrice = 15000m },
+            Status = PrintOrderStatus.Pending,
+        };
+        var payment2 = new Payment { Order = order2, Amount = 15000m, Method = PaymentMethod.VietQR_PayOS, Status = PaymentStatus.Pending };
+        _db.AddRange(order2, payment2);
+        await _db.SaveChangesAsync();
+
+        // Đơn 2 cố tình dùng lại mã FT20261112999 -> Phải bị chặn chống gian lận
+        var res2 = await service.ConfirmPaymentAsync(order2.Id, _staff.Id,
+            new ConfirmPaymentDto { Method = PaymentMethod.VietQR_PayOS, TransactionCode = "ft20261112999" });
+
+        Assert.False(res2.Success);
+        Assert.Contains("đã được sử dụng cho một đơn khác", res2.Message);
+        Assert.Equal(PaymentStatus.Pending, payment2.Status);
+    }
+
     [Fact]
     public async Task CancelledOrder_CannotBePaid()
     {
