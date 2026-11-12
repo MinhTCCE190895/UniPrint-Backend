@@ -19,6 +19,7 @@ builder.Services.AddDbContext<UniPrintDbContext>(options =>
 });
 
 // 2. Dependency Injection (UnitOfWork & Services)
+builder.Services.AddSingleton<IPasswordResetOtpStore, InMemoryPasswordResetOtpStore>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IDocumentInspector, DocumentInspector>();

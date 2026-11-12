@@ -4,28 +4,129 @@
 @{
     ViewData["Title"] = "Quản Lý Người Dùng";
     string Local(DateTime utc) => DateTime.SpecifyKind(utc, DateTimeKind.Utc).ToLocalTime().ToString("HH:mm dd/MM/yyyy");
+    var hasToast = !string.IsNullOrEmpty(Model.SuccessMessage) || !string.IsNullOrEmpty(Model.ErrorMessage);
+    var isSuccessToast = !string.IsNullOrEmpty(Model.SuccessMessage);
+}
+
+<style>
+    /* Dim only content cells on locked rows instead of opacity on <tr>, avoiding stacking context issues over dropdown menus */
+    .user-row-locked > td:not(:last-child) {
+        background-color: #F8FAFC;
+    }
+
+    .user-row-locked .user-info-dim {
+        opacity: 0.65;
+    }
+
+    .table-users-wrap {
+        overflow: visible;
+    }
+
+    @@media (max-width: 991.98px) {
+        .table-users-wrap {
+            overflow-x: auto;
+        }
+    }
+
+    #usersTable tbody tr {
+        position: relative;
+    }
+
+    #usersTable tbody tr.dropdown-active-row {
+        z-index: 30;
+    }
+
+    #usersTable .dropdown-menu.show {
+        z-index: 1055;
+    }
+</style>
+
+@if (hasToast)
+{
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1090;">
+        <div id="adminActionToast"
+             class="toast border-0 shadow-lg"
+             role="alert"
+             aria-live="assertive"
+             aria-atomic="true"
+             data-bs-delay="5500"
+             style="background-color: @(isSuccessToast ? "var(--intent-confirm-bg, #ECFDF5)" : "var(--intent-danger-bg, #FEF2F2)"); border-left: 4px solid @(isSuccessToast ? "var(--intent-confirm-base)" : "var(--intent-danger-base)") !important;">
+            <div class="toast-body d-flex align-items-start justify-content-between gap-2 p-3">
+                <div class="d-flex align-items-start gap-2">
+                    @if (isSuccessToast)
+                    {
+                        <svg class="icon-duotone icon-sm flex-shrink-0 mt-1" style="color: var(--intent-confirm-base);" viewBox="0 0 24 24">
+                            <circle class="bg-shape" cx="12" cy="12" r="9" />
+                            <path class="stroke-shape" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div>
+                            <div class="fw-bold small" style="color: var(--intent-confirm-base);">Thao tác thành công</div>
+                            <div class="small" style="color: var(--text-heading);">@Model.SuccessMessage</div>
+                        </div>
+                    }
+                    else
+                    {
+                        <svg class="icon-duotone icon-sm flex-shrink-0 mt-1" style="color: var(--intent-danger-base);" viewBox="0 0 24 24">
+                            <circle class="bg-shape" cx="12" cy="12" r="9" />
+                            <path class="stroke-shape" d="M12 8v4M12 16h.01" />
+                        </svg>
+                        <div>
+                            <div class="fw-bold small" style="color: var(--intent-danger-base);">Không thể thực hiện</div>
+                            <div class="small" style="color: var(--text-heading);">@Model.ErrorMessage</div>
+                        </div>
+                    }
+                </div>
+                <button type="button" class="btn-close btn-close-sm ms-2" data-bs-dismiss="toast" aria-label="Đóng"></button>
+            </div>
+        </div>
+    </div>
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
     <div>
         <h3 class="fw-bold mb-1">👥 Quản Lý Người Dùng (Admin)</h3>
-        <p class="text-muted small mb-0">Xem danh sách người dùng toàn hệ thống, phân quyền Role và khóa/mở khóa tài khoản.</p>
+        <p class="text-muted small mb-0">Xem danh sách người dùng toàn hệ thống, tạo tài khoản nhân viên, phân quyền, đặt lại mật khẩu và khóa/mở khóa tài khoản.</p>
     </div>
-    <span class="badge badge-info px-3 py-2 fs-6">Tổng: @Model.TotalUsers người dùng</span>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+        <span class="badge badge-info px-3 py-2 fs-6">Tổng: @Model.TotalUsers người dùng</span>
+        <button type="button"
+                class="btn btn-action d-inline-flex align-items-center gap-2"
+                data-bs-toggle="modal"
+                data-bs-target="#createStaffModal">
+            <svg class="icon-duotone icon-sm" viewBox="0 0 24 24">
+                <circle class="bg-shape" cx="9" cy="7" r="4" style="fill:#fff; opacity:0.25;" />
+                <circle class="stroke-shape" cx="9" cy="7" r="4" style="stroke:#fff;" />
+                <path class="stroke-shape" d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M19 8v6M16 11h6" style="stroke:#fff;" />
+            </svg>
+            <span>Tạo Nhân Viên (Staff)</span>
+        </button>
+    </div>
 </div>
 
 @if (!string.IsNullOrEmpty(Model.SuccessMessage))
 {
-    <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
-        <i class="bi bi-check-circle-fill me-2"></i> @Model.SuccessMessage
+    <div class="alert alert-success alert-dismissible fade show shadow-sm d-flex align-items-center justify-content-between" role="alert">
+        <div class="d-flex align-items-center gap-2">
+            <svg class="icon-duotone icon-sm flex-shrink-0" viewBox="0 0 24 24">
+                <circle class="bg-shape" cx="12" cy="12" r="9" />
+                <path class="stroke-shape" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>@Model.SuccessMessage</span>
+        </div>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 }
 
 @if (!string.IsNullOrEmpty(Model.ErrorMessage))
 {
-    <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
-        <i class="bi bi-exclamation-triangle-fill me-2"></i> @Model.ErrorMessage
+    <div class="alert alert-danger alert-dismissible fade show shadow-sm d-flex align-items-center justify-content-between" role="alert">
+        <div class="d-flex align-items-center gap-2">
+            <svg class="icon-duotone icon-sm flex-shrink-0" viewBox="0 0 24 24">
+                <circle class="bg-shape" cx="12" cy="12" r="9" />
+                <path class="stroke-shape" d="M12 8v4M12 16h.01" />
+            </svg>
+            <span>@Model.ErrorMessage</span>
+        </div>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 }
@@ -93,8 +194,8 @@
 
 <!-- Bảng danh sách người dùng -->
 <div class="card border-0 shadow-sm">
-    <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
+    <div class="table-users-wrap">
+        <table id="usersTable" class="table table-hover align-middle mb-0">
             <thead class="table-light">
                 <tr>
                     <th scope="col" style="min-width: 220px;">Người Dùng</th>
@@ -102,7 +203,7 @@
                     <th scope="col">Vai Trò (Role)</th>
                     <th scope="col">Trạng Thái</th>
                     <th scope="col">Ngày Tham Gia</th>
-                    <th scope="col" class="text-end" style="min-width: 200px;">Thao Tác</th>
+                    <th scope="col" class="text-end" style="min-width: 270px;">Thao Tác</th>
                 </tr>
             </thead>
             <tbody>
@@ -120,10 +221,13 @@
                     @foreach (var user in Model.Users)
                     {
                         var isSelf = user.Id == Model.CurrentAdminId;
-                        <tr class="@(!user.IsActive ? "table-light opacity-75" : "")">
+                        var canChangeRole = !isSelf && user.Role != UserRole.Admin;
+                        var canResetPassword = !isSelf && user.Role != UserRole.Admin;
+
+                        <tr class="@(!user.IsActive ? "user-row-locked" : "")">
                             <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold me-2 shadow-sm"
+                                <div class="d-flex align-items-center user-info-dim">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold me-2 shadow-sm flex-shrink-0"
                                          style="width: 40px; height: 40px; background-color: @(user.Role == UserRole.Admin ? "var(--intent-danger-base)" : user.Role == UserRole.Staff ? "var(--intent-alert-base)" : "var(--intent-action-base)");">
                                         @(string.IsNullOrEmpty(user.FullName) ? "U" : user.FullName.Substring(0, 1).ToUpper())
                                     </div>
@@ -139,10 +243,10 @@
                                     </div>
                                 </div>
                             </td>
-                            <td>
+                            <td class="user-info-dim">
                                 @(string.IsNullOrEmpty(user.PhoneNumber) ? "—" : user.PhoneNumber)
                             </td>
-                            <td>
+                            <td class="user-info-dim">
                                 @switch (user.Role)
                                 {
                                     case UserRole.Admin:
@@ -156,50 +260,69 @@
                                         break;
                                 }
                             </td>
-                            <td>
+                            <td class="user-info-dim">
                                 @if (user.IsActive)
                                 {
-                                    <span class="badge badge-success">
-                                        <i class="bi bi-check-circle me-1"></i> Hoạt động
+                                    <span class="badge badge-success d-inline-flex align-items-center gap-1">
+                                        <svg class="icon-duotone" style="width: 13px; height: 13px;" viewBox="0 0 24 24">
+                                            <circle class="bg-shape" cx="12" cy="12" r="9" />
+                                            <path class="stroke-shape" d="M9 12l2 2 4-4" />
+                                        </svg>
+                                        <span>Hoạt động</span>
                                     </span>
                                 }
                                 else
                                 {
-                                    <span class="badge badge-secondary">
-                                        <i class="bi bi-lock me-1"></i> Đã khóa
+                                    <span class="badge badge-secondary d-inline-flex align-items-center gap-1">
+                                        <svg class="icon-duotone" style="width: 13px; height: 13px;" viewBox="0 0 24 24">
+                                            <rect class="bg-shape" x="5" y="11" width="14" height="10" rx="2" />
+                                            <path class="stroke-shape" d="M7 11V7a5 5 0 0110 0v4M5 11h14v10H5z" />
+                                        </svg>
+                                        <span>Đã khóa</span>
                                     </span>
                                 }
                             </td>
-                            <td class="text-muted small">
+                            <td class="text-muted small user-info-dim">
                                 @Local(user.CreatedAt)
                             </td>
                             <td class="text-end">
-                                <div class="d-inline-flex gap-1">
-                                    <!-- Phân quyền Dropdown -->
+                                <div class="d-inline-flex gap-1 align-items-center">
+                                    <!-- Phân quyền Dropdown (Chỉ chuyển giữa Student <-> Staff, không cho phân quyền lên/từ Admin) -->
                                     <div class="dropdown">
-                                        <button class="btn btn-sm btn-outline-primary dropdown-toggle @(isSelf ? "disabled" : "")"
+                                        <button class="btn btn-sm btn-outline-primary dropdown-toggle @(canChangeRole ? "" : "disabled")"
                                                 type="button"
                                                 data-bs-toggle="dropdown"
+                                                data-bs-boundary="viewport"
                                                 aria-expanded="false"
-                                                title="@(isSelf ? "Không thể tự đổi quyền của chính mình" : "Thay đổi vai trò")">
+                                                disabled="@(!canChangeRole)"
+                                                title="@(isSelf ? "Không thể tự đổi quyền của chính mình" : user.Role == UserRole.Admin ? "Không thể thay đổi vai trò của Quản trị viên" : "Thay đổi vai trò giữa Sinh viên và Nhân viên")">
                                             Phân quyền
                                         </button>
-                                        @if (!isSelf)
+                                        @if (canChangeRole)
                                         {
                                             <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                                                 <li><h6 class="dropdown-header">Chọn vai trò mới:</h6></li>
-                                                @foreach (UserRole r in Enum.GetValues(typeof(UserRole)))
+                                                @foreach (var r in new[] { UserRole.Student, UserRole.Staff })
                                                 {
                                                     if (r != user.Role)
                                                     {
+                                                        var roleLabel = r == UserRole.Staff ? "Nhân viên (Staff)" : "Sinh viên (Student)";
                                                         <li>
-                                                            <form method="post" asp-page-handler="UpdateRole">
-                                                                <input type="hidden" name="userId" value="@user.Id" />
-                                                                <input type="hidden" name="newRole" value="@r" />
-                                                                <button type="submit" class="dropdown-item py-2" onclick="return confirm('Bạn có chắc muốn đổi vai trò của @user.FullName sang @r?');">
-                                                                    Chuyển sang <strong>@r</strong>
-                                                                </button>
-                                                            </form>
+                                                            <button type="button"
+                                                                    class="dropdown-item py-2"
+                                                                    data-confirm-action="role"
+                                                                    data-action-url="@Url.Page("/Admin/Users", "UpdateRole")"
+                                                                    data-user-id="@user.Id"
+                                                                    data-user-name="@user.FullName"
+                                                                    data-user-email="@user.Email"
+                                                                    data-new-role="@r"
+                                                                    data-confirm-title="Xác nhận phân quyền"
+                                                                    data-confirm-message="Bạn có chắc muốn đổi vai trò của @user.FullName sang @roleLabel?"
+                                                                    data-confirm-btn-class="btn-action"
+                                                                    data-confirm-btn-text="Xác nhận đổi vai trò"
+                                                                    onclick="openConfirmModal(this)">
+                                                                Chuyển sang <strong>@roleLabel</strong>
+                                                            </button>
                                                         </li>
                                                     }
                                                 }
@@ -207,34 +330,74 @@
                                         }
                                     </div>
 
-                                    <!-- Khóa / Mở khóa button -->
-                                    @if (!isSelf)
+                                    <!-- Đặt lại mật khẩu -->
+                                    @if (canResetPassword)
                                     {
-                                        <form method="post" asp-page-handler="ToggleStatus" class="d-inline">
-                                            <input type="hidden" name="userId" value="@user.Id" />
-                                            @if (user.IsActive)
-                                            {
-                                                <input type="hidden" name="isActive" value="false" />
-                                                <button type="submit" class="btn btn-sm btn-outline-danger"
-                                                        title="Khóa tài khoản này"
-                                                        onclick="return confirm('Bạn có chắc muốn KHÓA tài khoản của @user.FullName? Người dùng này sẽ không thể đăng nhập.');">
-                                                    Khóa
-                                                </button>
-                                            }
-                                            else
-                                            {
-                                                <input type="hidden" name="isActive" value="true" />
-                                                <button type="submit" class="btn btn-sm btn-outline-success"
-                                                        title="Mở khóa tài khoản này"
-                                                        onclick="return confirm('Bạn có chắc muốn MỞ KHÓA tài khoản của @user.FullName?');">
-                                                    Mở khóa
-                                                </button>
-                                            }
-                                        </form>
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-secondary"
+                                                title="Đặt lại mật khẩu cho người dùng này"
+                                                data-user-id="@user.Id"
+                                                data-user-name="@user.FullName"
+                                                data-user-email="@user.Email"
+                                                onclick="openResetPasswordModal(this)">
+                                            Đặt lại MK
+                                        </button>
                                     }
                                     else
                                     {
-                                        <button class="btn btn-sm btn-outline-secondary disabled" title="Không thể tự khóa tài khoản của bạn">
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-secondary disabled"
+                                                disabled
+                                                title="Không thể đặt lại mật khẩu cho chính bạn hoặc Quản trị viên khác">
+                                            Đặt lại MK
+                                        </button>
+                                    }
+
+                                    <!-- Khóa / Mở khóa button -->
+                                    @if (!isSelf)
+                                    {
+                                        if (user.IsActive)
+                                        {
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-danger"
+                                                    title="Khóa tài khoản này"
+                                                    data-confirm-action="lock"
+                                                    data-action-url="@Url.Page("/Admin/Users", "ToggleStatus")"
+                                                    data-user-id="@user.Id"
+                                                    data-user-name="@user.FullName"
+                                                    data-user-email="@user.Email"
+                                                    data-is-active="false"
+                                                    data-confirm-title="Xác nhận khóa tài khoản"
+                                                    data-confirm-message="Bạn có chắc muốn KHÓA tài khoản của @user.FullName? Người dùng này sẽ không thể đăng nhập hoặc sử dụng hệ thống cho đến khi được mở khóa."
+                                                    data-confirm-btn-class="btn-danger"
+                                                    data-confirm-btn-text="Khóa tài khoản"
+                                                    onclick="openConfirmModal(this)">
+                                                Khóa
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-success"
+                                                    title="Mở khóa tài khoản này"
+                                                    data-confirm-action="unlock"
+                                                    data-action-url="@Url.Page("/Admin/Users", "ToggleStatus")"
+                                                    data-user-id="@user.Id"
+                                                    data-user-name="@user.FullName"
+                                                    data-user-email="@user.Email"
+                                                    data-is-active="true"
+                                                    data-confirm-title="Xác nhận mở khóa tài khoản"
+                                                    data-confirm-message="Bạn có chắc muốn MỞ KHÓA tài khoản của @user.FullName? Người dùng sẽ có thể đăng nhập lại bình thường."
+                                                    data-confirm-btn-class="btn-confirm"
+                                                    data-confirm-btn-text="Mở khóa tài khoản"
+                                                    onclick="openConfirmModal(this)">
+                                                Mở khóa
+                                            </button>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-secondary disabled" disabled title="Không thể tự khóa tài khoản của bạn">
                                             Khóa
                                         </button>
                                     }
@@ -247,3 +410,243 @@
         </table>
     </div>
 </div>
+
+<!-- Modal Xác Nhận Phân Quyền / Khóa / Mở Khóa -->
+<div class="modal fade" id="confirmUserActionModal" tabindex="-1" aria-labelledby="confirmModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold" id="confirmModalTitle">Xác nhận thao tác</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <form id="confirmUserActionForm" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="SearchTerm" value="@Model.SearchTerm" />
+                <input type="hidden" name="RoleFilter" value="@Model.RoleFilter" />
+                <input type="hidden" name="StatusFilter" value="@Model.StatusFilter" />
+                <input type="hidden" name="userId" id="confirmUserId" />
+                <input type="hidden" name="newRole" id="confirmNewRole" disabled />
+                <input type="hidden" name="isActive" id="confirmIsActive" disabled />
+
+                <div class="modal-body">
+                    <div class="p-3 rounded mb-3" style="background: var(--surface-subtle); border: 1px solid var(--border-subtle);">
+                        <div class="fw-semibold" id="confirmTargetName" style="color: var(--text-heading);"></div>
+                        <div class="small text-muted" id="confirmTargetEmail"></div>
+                    </div>
+                    <p class="mb-0" id="confirmModalMessage" style="color: var(--text-body);"></p>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="submit" id="confirmModalSubmitBtn" class="btn btn-action">Xác nhận</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Tạo Nhân Viên (Staff) - BR01 -->
+<div class="modal fade" id="createStaffModal" tabindex="-1" aria-labelledby="createStaffModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-bottom">
+                <div>
+                    <h5 class="modal-title fw-bold mb-0" id="createStaffModalTitle">Tạo Tài Khoản Nhân Viên (Staff)</h5>
+                    <div class="small text-muted">Cấp trực tiếp tài khoản nhân viên vận hành quầy in</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <form method="post" asp-page-handler="CreateStaff">
+                <input type="hidden" name="SearchTerm" value="@Model.SearchTerm" />
+                <input type="hidden" name="RoleFilter" value="@Model.RoleFilter" />
+                <input type="hidden" name="StatusFilter" value="@Model.StatusFilter" />
+
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label asp-for="CreateStaffInput.FullName" class="form-label">Họ và tên <span class="text-danger">*</span></label>
+                        <input asp-for="CreateStaffInput.FullName" class="form-control" placeholder="Ví dụ: Nguyễn Văn An" required />
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="CreateStaffInput.Email" class="form-label">Email nhân viên <span class="text-danger">*</span></label>
+                        <input asp-for="CreateStaffInput.Email" type="email" class="form-control" placeholder="staff.new@uniprint.edu.vn" required />
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="CreateStaffInput.PhoneNumber" class="form-label">Số điện thoại (tùy chọn)</label>
+                        <input asp-for="CreateStaffInput.PhoneNumber" class="form-control" placeholder="0912345678" />
+                    </div>
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label asp-for="CreateStaffInput.Password" class="form-label mb-0">Mật khẩu khởi tạo <span class="text-danger">*</span></label>
+                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" onclick="generatePasswordInto('createStaffPassword')">
+                                Tạo mật khẩu ngẫu nhiên
+                            </button>
+                        </div>
+                        <div class="input-group">
+                            <input asp-for="CreateStaffInput.Password" id="createStaffPassword" type="password" class="form-control" minlength="6" placeholder="Ít nhất 6 ký tự" required />
+                            <button type="button" class="btn btn-secondary" onclick="toggleInputPassword('createStaffPassword', this)">Hiện</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-action">Tạo Tài Khoản Staff</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Admin Đặt Lại Mật Khẩu -->
+<div class="modal fade" id="resetPasswordModal" tabindex="-1" aria-labelledby="resetPasswordModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-bottom">
+                <div>
+                    <h5 class="modal-title fw-bold mb-0" id="resetPasswordModalTitle">Đặt Lại Mật Khẩu Người Dùng</h5>
+                    <div class="small text-muted">Cấp mật khẩu mới cho tài khoản bị quên mật khẩu</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <form method="post" asp-page-handler="ResetPassword">
+                <input type="hidden" name="SearchTerm" value="@Model.SearchTerm" />
+                <input type="hidden" name="RoleFilter" value="@Model.RoleFilter" />
+                <input type="hidden" name="StatusFilter" value="@Model.StatusFilter" />
+                <input type="hidden" name="userId" id="resetTargetUserId" />
+
+                <div class="modal-body">
+                    <div class="p-3 rounded mb-3" style="background: var(--surface-subtle); border: 1px solid var(--border-subtle);">
+                        <div class="fw-semibold" id="resetTargetName" style="color: var(--text-heading);"></div>
+                        <div class="small text-muted" id="resetTargetEmail"></div>
+                    </div>
+
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label for="adminNewPassword" class="form-label mb-0">Mật khẩu mới <span class="text-danger">*</span></label>
+                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" onclick="generatePasswordInto('adminNewPassword')">
+                                Tạo mật khẩu ngẫu nhiên
+                            </button>
+                        </div>
+                        <div class="input-group">
+                            <input type="text" id="adminNewPassword" name="newPassword" class="form-control mono" minlength="6" placeholder="Ít nhất 6 ký tự" required />
+                            <button type="button" class="btn btn-secondary" id="copyResetPwdBtn" onclick="copyResetPassword()">Sao chép</button>
+                        </div>
+                        <div class="form-text">Hãy sao chép mật khẩu này và gửi riêng cho người dùng sau khi xác nhận.</div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="submit" class="btn btn-confirm">Cập Nhật Mật Khẩu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const toastEl = document.getElementById('adminActionToast');
+            if (toastEl && window.bootstrap && bootstrap.Toast) {
+                new bootstrap.Toast(toastEl).show();
+            }
+
+            const usersTable = document.getElementById('usersTable');
+            if (usersTable) {
+                usersTable.addEventListener('show.bs.dropdown', function (event) {
+                    const row = event.target.closest('tr');
+                    if (row) row.classList.add('dropdown-active-row');
+                });
+                usersTable.addEventListener('hidden.bs.dropdown', function (event) {
+                    const row = event.target.closest('tr');
+                    if (row) row.classList.remove('dropdown-active-row');
+                });
+            }
+        });
+
+        function openConfirmModal(triggerBtn) {
+            const modalEl = document.getElementById('confirmUserActionModal');
+            const form = document.getElementById('confirmUserActionForm');
+            const titleEl = document.getElementById('confirmModalTitle');
+            const msgEl = document.getElementById('confirmModalMessage');
+            const nameEl = document.getElementById('confirmTargetName');
+            const emailEl = document.getElementById('confirmTargetEmail');
+            const userIdInput = document.getElementById('confirmUserId');
+            const newRoleInput = document.getElementById('confirmNewRole');
+            const isActiveInput = document.getElementById('confirmIsActive');
+            const submitBtn = document.getElementById('confirmModalSubmitBtn');
+
+            form.action = triggerBtn.dataset.actionUrl || '';
+            titleEl.textContent = triggerBtn.dataset.confirmTitle || 'Xác nhận thao tác';
+            msgEl.textContent = triggerBtn.dataset.confirmMessage || '';
+            nameEl.textContent = triggerBtn.dataset.userName || '';
+            emailEl.textContent = triggerBtn.dataset.userEmail || '';
+            userIdInput.value = triggerBtn.dataset.userId || '';
+
+            if (triggerBtn.dataset.newRole) {
+                newRoleInput.disabled = false;
+                newRoleInput.value = triggerBtn.dataset.newRole;
+            } else {
+                newRoleInput.disabled = true;
+                newRoleInput.value = '';
+            }
+
+            if (typeof triggerBtn.dataset.isActive !== 'undefined') {
+                isActiveInput.disabled = false;
+                isActiveInput.value = triggerBtn.dataset.isActive;
+            } else {
+                isActiveInput.disabled = true;
+                isActiveInput.value = '';
+            }
+
+            submitBtn.className = 'btn ' + (triggerBtn.dataset.confirmBtnClass || 'btn-action');
+            submitBtn.textContent = triggerBtn.dataset.confirmBtnText || 'Xác nhận';
+
+            bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        }
+
+        function openResetPasswordModal(triggerBtn) {
+            const modalEl = document.getElementById('resetPasswordModal');
+            document.getElementById('resetTargetUserId').value = triggerBtn.dataset.userId || '';
+            document.getElementById('resetTargetName').textContent = triggerBtn.dataset.userName || '';
+            document.getElementById('resetTargetEmail').textContent = triggerBtn.dataset.userEmail || '';
+            document.getElementById('adminNewPassword').value = '';
+            const copyBtn = document.getElementById('copyResetPwdBtn');
+            if (copyBtn) copyBtn.textContent = 'Sao chép';
+
+            bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        }
+
+        function generatePasswordInto(inputId) {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+            let result = 'Up' + String.fromCharCode(64);
+            const array = new Uint32Array(7);
+            window.crypto.getRandomValues(array);
+            for (let i = 0; i < array.length; i++) {
+                result += chars[array[i] % chars.length];
+            }
+            const input = document.getElementById(inputId);
+            if (input) {
+                input.value = result;
+                input.type = 'text';
+            }
+        }
+
+        function toggleInputPassword(inputId, btn) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            const show = input.type === 'password';
+            input.type = show ? 'text' : 'password';
+            btn.textContent = show ? 'Ẩn' : 'Hiện';
+        }
+
+        function copyResetPassword() {
+            const input = document.getElementById('adminNewPassword');
+            const copyBtn = document.getElementById('copyResetPwdBtn');
+            if (!input || !input.value) return;
+            navigator.clipboard?.writeText(input.value);
+            if (copyBtn) {
+                copyBtn.textContent = 'Đã chép';
+                setTimeout(() => { copyBtn.textContent = 'Sao chép'; }, 2000);
+            }
+        }
+    </script>
+}

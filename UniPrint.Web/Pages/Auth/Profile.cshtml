@@ -69,7 +69,14 @@
                     </div>
                     <div class="d-flex justify-content-between py-2 border-bottom" style="border-color: var(--border-subtle) !important;">
                         <span class="text-muted">Trạng thái:</span>
-                        <span class="badge status-available">Đang hoạt động</span>
+                        @if (Model.UserProfile?.IsActive != false)
+                        {
+                            <span class="badge status-available">Đang hoạt động</span>
+                        }
+                        else
+                        {
+                            <span class="badge status-depleted">Đã bị khóa</span>
+                        }
                     </div>
                     <div class="d-flex justify-content-between py-2">
                         <span class="text-muted">Số điện thoại:</span>

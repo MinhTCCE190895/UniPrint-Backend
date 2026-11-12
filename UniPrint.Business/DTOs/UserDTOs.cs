@@ -41,3 +41,22 @@ public class ToggleUserStatusDto
     public bool? IsActive { get; set; }
 }
 
+/// <summary>
+/// BR01: Request DTO để Admin tạo trực tiếp tài khoản Nhân viên (Staff).
+/// </summary>
+public class CreateStaffRequestDto
+{
+    public string FullName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
+    public string? PhoneNumber { get; set; }
+}
+
+/// <summary>
+/// Request DTO để Admin đặt lại mật khẩu cho tài khoản người dùng.
+/// </summary>
+public class AdminResetPasswordDto
+{
+    public string NewPassword { get; set; } = string.Empty;
+}
+

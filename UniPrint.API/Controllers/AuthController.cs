@@ -11,10 +11,12 @@ namespace UniPrint.API.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly IWebHostEnvironment _env;
 
-    public AuthController(IAuthService authService)
+    public AuthController(IAuthService authService, IWebHostEnvironment env)
     {
         _authService = authService;
+        _env = env;
     }
 
     [HttpPost("register")]
@@ -65,6 +67,28 @@ public class AuthController : ControllerBase
         if (!Guid.TryParse(userIdStr, out var userId)) return Unauthorized();
 
         var result = await _authService.ChangePasswordAsync(userId, request);
+        if (!result.Success) return BadRequest(result);
+        return Ok(result);
+    }
+
+    [AllowAnonymous]
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword(
+        [FromBody] ForgotPasswordRequestDto request,
+        CancellationToken ct = default)
+    {
+        var result = await _authService.ForgotPasswordAsync(request, _env.IsDevelopment(), ct);
+        if (!result.Success) return BadRequest(result);
+        return Ok(result);
+    }
+
+    [AllowAnonymous]
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword(
+        [FromBody] ResetPasswordRequestDto request,
+        CancellationToken ct = default)
+    {
+        var result = await _authService.ResetPasswordAsync(request, ct);
         if (!result.Success) return BadRequest(result);
         return Ok(result);
     }

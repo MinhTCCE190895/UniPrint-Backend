@@ -318,5 +318,157 @@ public class UserManagementServiceTests : IDisposable
         loginResult.Success.Should().BeFalse();
         loginResult.Message.Should().Contain("Tài khoản của bạn đã bị khóa");
     }
+
+    [Fact]
+    public async Task UpdateUserRoleAsync_ShouldFail_WhenPromotingToAdmin()
+    {
+        // Act
+        var result = await _userService.UpdateUserRoleAsync(_adminId, _staffId, new UpdateUserRoleDto
+        {
+            Role = UserRole.Admin
+        });
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("Admin");
+
+        var staffInDb = await _dbContext.Users.FindAsync(_staffId);
+        staffInDb!.Role.Should().Be(UserRole.Staff);
+    }
+
+    [Fact]
+    public async Task UpdateUserRoleAsync_ShouldFail_WhenChangingOtherAdminRole()
+    {
+        // Arrange: Seed another Admin
+        var otherAdminId = Guid.NewGuid();
+        _dbContext.Users.Add(new User
+        {
+            Id = otherAdminId,
+            FullName = "Second Admin",
+            Email = "admin2@uniprint.edu.vn",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("123456"),
+            Role = UserRole.Admin,
+            IsActive = true
+        });
+        await _dbContext.SaveChangesAsync();
+
+        // Act
+        var result = await _userService.UpdateUserRoleAsync(_adminId, otherAdminId, new UpdateUserRoleDto
+        {
+            Role = UserRole.Staff
+        });
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("Quản trị viên");
+
+        var adminInDb = await _dbContext.Users.FindAsync(otherAdminId);
+        adminInDb!.Role.Should().Be(UserRole.Admin);
+    }
+
+    [Fact]
+    public async Task CreateStaffAsync_ShouldSucceed_WhenValid()
+    {
+        // Act
+        var result = await _userService.CreateStaffAsync(new CreateStaffRequestDto
+        {
+            FullName = "Nhan Vien Quầy In",
+            Email = "Staff.New@uniprint.edu.vn",
+            Password = "StaffPassword123",
+            PhoneNumber = "0912345678"
+        });
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Data.Should().NotBeNull();
+        result.Data!.Role.Should().Be(UserRole.Staff);
+        result.Data.Email.Should().Be("staff.new@uniprint.edu.vn");
+        result.Data.IsActive.Should().BeTrue();
+
+        var createdInDb = await _dbContext.Users.FindAsync(result.Data.Id);
+        createdInDb.Should().NotBeNull();
+        BCrypt.Net.BCrypt.Verify("StaffPassword123", createdInDb!.PasswordHash).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task CreateStaffAsync_ShouldFail_WhenEmailAlreadyExists()
+    {
+        // Act
+        var result = await _userService.CreateStaffAsync(new CreateStaffRequestDto
+        {
+            FullName = "Duplicate Staff",
+            Email = "STUDENT@uniprint.edu.vn",
+            Password = "StaffPassword123"
+        });
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("Email đã được đăng ký");
+    }
+
+    [Fact]
+    public async Task CreateStaffAsync_ShouldFail_WhenPasswordTooShort()
+    {
+        // Act
+        var result = await _userService.CreateStaffAsync(new CreateStaffRequestDto
+        {
+            FullName = "Short Password Staff",
+            Email = "shortpwd@uniprint.edu.vn",
+            Password = "123"
+        });
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("ít nhất 6 ký tự");
+    }
+
+    [Fact]
+    public async Task ResetPasswordAsync_ShouldSucceed_WhenValid()
+    {
+        // Act
+        var result = await _userService.ResetPasswordAsync(_adminId, _studentId, new AdminResetPasswordDto
+        {
+            NewPassword = "ResetPass@2026"
+        });
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Data.Should().NotBeNull();
+        result.Data!.Id.Should().Be(_studentId);
+
+        var studentInDb = await _dbContext.Users.FindAsync(_studentId);
+        BCrypt.Net.BCrypt.Verify("ResetPass@2026", studentInDb!.PasswordHash).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ResetPasswordAsync_ShouldFail_WhenResettingSelfOrOtherAdmin()
+    {
+        // Self reset
+        var selfResult = await _userService.ResetPasswordAsync(_adminId, _adminId, new AdminResetPasswordDto
+        {
+            NewPassword = "ResetPass@2026"
+        });
+        selfResult.Success.Should().BeFalse();
+
+        // Other Admin reset
+        var otherAdminId = Guid.NewGuid();
+        _dbContext.Users.Add(new User
+        {
+            Id = otherAdminId,
+            FullName = "Second Admin",
+            Email = "admin2@uniprint.edu.vn",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("123456"),
+            Role = UserRole.Admin,
+            IsActive = true
+        });
+        await _dbContext.SaveChangesAsync();
+
+        var otherAdminResult = await _userService.ResetPasswordAsync(_adminId, otherAdminId, new AdminResetPasswordDto
+        {
+            NewPassword = "ResetPass@2026"
+        });
+        otherAdminResult.Success.Should().BeFalse();
+        otherAdminResult.Message.Should().Contain("Quản trị viên");
+    }
 }
 

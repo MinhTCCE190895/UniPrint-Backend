@@ -165,6 +165,107 @@ public class UserProfileTests : IDisposable
         result.Message.Should().Contain("không khớp");
     }
 
+    [Fact]
+    public async Task GetProfileAsync_ShouldReflectIsActiveStatus()
+    {
+        var activeResult = await _authService.GetProfileAsync(_userId);
+        activeResult.Success.Should().BeTrue();
+        activeResult.Data!.IsActive.Should().BeTrue();
+
+        var user = await _dbContext.Users.FindAsync(_userId);
+        user!.IsActive = false;
+        await _dbContext.SaveChangesAsync();
+
+        var lockedResult = await _authService.GetProfileAsync(_userId);
+        lockedResult.Success.Should().BeTrue();
+        lockedResult.Data!.IsActive.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ForgotAndResetPasswordAsync_ShouldResetPassword_AndInvalidateUsedOtp()
+    {
+        // Step 1: Request OTP
+        var forgotResult = await _authService.ForgotPasswordAsync(
+            new ForgotPasswordRequestDto { Email = "MINHTC@uniprint.edu.vn" },
+            includeDemoOtp: true);
+
+        forgotResult.Success.Should().BeTrue();
+        forgotResult.Data.Should().NotBeNull();
+        forgotResult.Data!.DemoOtpCode.Should().HaveLength(6);
+
+        var otp = forgotResult.Data.DemoOtpCode!;
+
+        // Step 2: Reset password using OTP
+        var resetResult = await _authService.ResetPasswordAsync(new ResetPasswordRequestDto
+        {
+            Email = "minhtc@uniprint.edu.vn",
+            OtpCode = otp,
+            NewPassword = "ForgotNewPassword@2026",
+            ConfirmPassword = "ForgotNewPassword@2026"
+        });
+
+        resetResult.Success.Should().BeTrue();
+
+        var userInDb = await _dbContext.Users.FindAsync(_userId);
+        BCrypt.Net.BCrypt.Verify("ForgotNewPassword@2026", userInDb!.PasswordHash).Should().BeTrue();
+
+        // Step 3: OTP is single-use and must fail on reuse
+        var reuseResult = await _authService.ResetPasswordAsync(new ResetPasswordRequestDto
+        {
+            Email = "minhtc@uniprint.edu.vn",
+            OtpCode = otp,
+            NewPassword = "AnotherPassword@2026",
+            ConfirmPassword = "AnotherPassword@2026"
+        });
+        reuseResult.Success.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ResetPasswordAsync_ShouldInvalidateOtp_AfterFiveFailedAttempts()
+    {
+        var forgotResult = await _authService.ForgotPasswordAsync(
+            new ForgotPasswordRequestDto { Email = "minhtc@uniprint.edu.vn" },
+            includeDemoOtp: true);
+        var realOtp = forgotResult.Data!.DemoOtpCode!;
+        var wrongOtp = realOtp == "000000" ? "111111" : "000000";
+
+        for (var i = 0; i < 5; i++)
+        {
+            var attempt = await _authService.ResetPasswordAsync(new ResetPasswordRequestDto
+            {
+                Email = "minhtc@uniprint.edu.vn",
+                OtpCode = wrongOtp,
+                NewPassword = "NewPassword456",
+                ConfirmPassword = "NewPassword456"
+            });
+            attempt.Success.Should().BeFalse();
+        }
+
+        // Real OTP should now be invalidated
+        var blockedAttempt = await _authService.ResetPasswordAsync(new ResetPasswordRequestDto
+        {
+            Email = "minhtc@uniprint.edu.vn",
+            OtpCode = realOtp,
+            NewPassword = "NewPassword456",
+            ConfirmPassword = "NewPassword456"
+        });
+        blockedAttempt.Success.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ForgotPasswordAsync_ShouldFail_WhenUserIsLocked()
+    {
+        var user = await _dbContext.Users.FindAsync(_userId);
+        user!.IsActive = false;
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _authService.ForgotPasswordAsync(
+            new ForgotPasswordRequestDto { Email = "minhtc@uniprint.edu.vn" });
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("bị khóa");
+    }
+
     public void Dispose()
     {
         _dbContext.Database.EnsureDeleted();

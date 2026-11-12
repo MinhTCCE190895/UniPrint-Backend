@@ -18,6 +18,9 @@ public class LoginModel : PageModel
     [BindProperty] public string Email    { get; set; } = string.Empty;
     [BindProperty] public string Password { get; set; } = string.Empty;
 
+    [TempData]
+    public string? SuccessMessage { get; set; }
+
     public string? ErrorMessage { get; set; }
 
     public void OnGet([FromQuery] string? returnUrl = null) { }

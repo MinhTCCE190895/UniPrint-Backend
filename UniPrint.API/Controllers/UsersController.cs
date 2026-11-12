@@ -85,5 +85,35 @@ public class UsersController : ControllerBase
         if (!result.Success) return BadRequest(result);
         return Ok(result);
     }
+
+    /// <summary>
+    /// BR01: Admin tạo trực tiếp tài khoản Nhân viên (Staff).
+    /// </summary>
+    [HttpPost("staff")]
+    public async Task<IActionResult> CreateStaff(
+        [FromBody] CreateStaffRequestDto request,
+        CancellationToken ct = default)
+    {
+        var result = await _userService.CreateStaffAsync(request, ct);
+        if (!result.Success) return BadRequest(result);
+        return StatusCode(StatusCodes.Status201Created, result);
+    }
+
+    /// <summary>
+    /// Admin đặt lại mật khẩu cho tài khoản người dùng (không áp dụng cho chính mình hoặc Admin khác).
+    /// </summary>
+    [HttpPut("{id:guid}/reset-password")]
+    public async Task<IActionResult> ResetPassword(
+        Guid id,
+        [FromBody] AdminResetPasswordDto request,
+        CancellationToken ct = default)
+    {
+        var adminIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(adminIdStr, out var adminId)) return Unauthorized();
+
+        var result = await _userService.ResetPasswordAsync(adminId, id, request, ct);
+        if (!result.Success) return BadRequest(result);
+        return Ok(result);
+    }
 }
 

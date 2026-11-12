@@ -34,6 +34,27 @@ public class UserProfileDto
     public string? PhoneNumber { get; set; }
     public string? AvatarUrl { get; set; }
     public UserRole Role { get; set; }
+    public bool IsActive { get; set; } = true;
+}
+
+public class ForgotPasswordRequestDto
+{
+    public string Email { get; set; } = string.Empty;
+}
+
+public class ForgotPasswordResponseDto
+{
+    public string Email { get; set; } = string.Empty;
+    public DateTime ExpiresAtUtc { get; set; }
+    public string? DemoOtpCode { get; set; }
+}
+
+public class ResetPasswordRequestDto
+{
+    public string Email { get; set; } = string.Empty;
+    public string OtpCode { get; set; } = string.Empty;
+    public string NewPassword { get; set; } = string.Empty;
+    public string ConfirmPassword { get; set; } = string.Empty;
 }
 
 public class UpdateProfileRequestDto
