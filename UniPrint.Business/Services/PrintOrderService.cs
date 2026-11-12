@@ -315,7 +315,7 @@ public class PrintOrderService : IPrintOrderService
         var qr = await _unitOfWork.Repository<PickupQR>().Query()
             .Include(q => q.Order)
             .ThenInclude(o => o.Shelf)
-            .FirstOrDefaultAsync(q => q.QrToken == qrToken, ct);
+            .FirstOrDefaultAsync(q => q.QrToken == qrToken || q.Order.OrderCode == qrToken, ct);
 
         if (qr == null)
         {
