@@ -158,7 +158,7 @@ public class UploadModel : PageModel
                 return Page();
             }
 
-            TempData["SuccessMessage"] = "Tài liệu học tập đã được gửi duyệt lên Admin (BR04)!";
+            TempData["SuccessMessage"] = "Tài liệu học tập đã được gửi tới quản trị viên để chờ phê duyệt!";
             return RedirectToPage("/StudyHub/Index");
         }
         catch (Exception ex)

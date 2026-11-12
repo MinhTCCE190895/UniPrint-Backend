@@ -8,10 +8,9 @@
     <!-- Header Section -->
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
-            <h2 class="mb-1 d-flex align-items-center gap-2">
-                <svg class="icon-duotone icon-lg" style="color: var(--intent-action-base);" viewBox="0 0 24 24">
-                    <path class="bg-shape" d="M6 3h8l6 6v12H6z"/>
-                    <path class="stroke-shape" d="M14 3v6h6M6 3h8l6 6v12a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2zM9 13h6M9 17h4"/>
+            <h2 class="mb-1 d-flex align-items-center gap-2 font-editorial" style="font-size: 26px; font-weight: 400;">
+                <svg class="craft-icon icon-lg" style="color: var(--accent);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
                 </svg>
                 QUẢN LÝ TÀI LIỆU CÁ NHÂN
             </h2>
@@ -49,7 +48,7 @@
     }
 
     <!-- Upload Zone (Preserved 100% OnPostUploadAsync binding) -->
-    <div class="card p-4 mb-4">
+    <div class="card craft-card print-registered p-4 mb-4">
         <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom" style="border-color: var(--border-subtle) !important;">
             <svg class="icon-duotone" style="color: var(--intent-action-base);" viewBox="0 0 24 24">
                 <path class="stroke-shape" d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
@@ -93,7 +92,7 @@
         @if (Model.Documents.Any())
         {
             <div class="table-responsive">
-                <table class="table align-middle mb-0">
+                <table class="table data-table align-middle mb-0">
                     <thead>
                         <tr>
                             <th class="ps-3">Tên Tệp Tài Liệu</th>
